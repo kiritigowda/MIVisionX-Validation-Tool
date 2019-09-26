@@ -224,14 +224,12 @@ if __name__ == '__main__':
 
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
-	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
 	setupDir = '~/.mivisionx-validation-tool'
 	analyzerDir = os.path.expanduser(setupDir)
 	modelDir = analyzerDir+'/'+modelName+'_dir'
 	nnirDir = modelDir+'/nnir-files'
 	openvxDir = modelDir+'/openvx-files'
 	modelBuildDir = modelDir+'/build'
-	adatOutputDir = os.path.expanduser(outputDir)
 	inputImageDir = os.path.expanduser(imageDir)
 	trainedModel = os.path.expanduser(modelLocation)
 	labelText = os.path.expanduser(label)
@@ -318,7 +316,7 @@ if __name__ == '__main__':
 			#os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size 1 nnir-files nnir-files)')
 		elif(modelFormat == 'nnef'):
 			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files )')
-			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + n_i + ' nnir-files nnir-files)')
+			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + str_n_i + ' nnir-files nnir-files)')
 		else:
 			print("ERROR: Neural Network Format Not supported, use caffe/onnx/nnef in arugment --model_format")
 			quit()
@@ -391,14 +389,20 @@ if __name__ == '__main__':
 	# process images
 	correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 	
+	#create output dict for all the images
+	guiResults = {}
+
 	#image_tensor has the input tensor required for inference
 	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
 		imageFileName = loader.get_input_name()
 		groundTruthIndex = loader.get_ground_truth()
-		#print imageFileName, groundTruthIndex
 		groundTruthIndex = int(groundTruthIndex)
+
+		#create output list for each image
+		augmentedResults = []
+
 		for i in range(loader.getOutputImageCount()):
-			#grountTruth = imageValidation[x].decode("utf-8").split(' ')		
+			#using tensor output of RALI as frame 		
 			frame = image_tensor
 
 			# run inference
@@ -449,15 +453,27 @@ if __name__ == '__main__':
 			pTxt = 'progress: '+str(percentage)+'%'
 			cv2.putText(progressImage,pTxt,(175,170),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
 
+			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 			if(groundTruthIndex == topIndex[4 + i*4]):
 				correctTop1 = correctTop1 + 1
 				correctTop5 = correctTop5 + 1
+				augmentedResults.append(1)
 			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
 				correctTop5 = correctTop5 + 1
+				if (groundTruthIndex == topIndex[3 + i*4]):
+					augmentedResults.append(2)
+				elif (groundTruthIndex == topIndex[2 + i*4]):
+					augmentedResults.append(3)
+				elif (groundTruthIndex == topIndex[1 + i*4]):
+					augmentedResults.append(4)
+				elif (groundTruthIndex == topIndex[0 + i*4]):
+					augmentedResults.append(5)
 			elif(groundTruthIndex == -1):
 				noGroundTruth = noGroundTruth + 1
+				augmentedResults.append(-1)
 			else:
 				wrong = wrong + 1
+				augmentedResults.append(0)
 
 			# top 1 progress
 			cv2.rectangle(progressImage, (50,200), (450,230), (192,192,192), -1)
@@ -503,24 +519,9 @@ if __name__ == '__main__':
 		if key == 113:
 			exit(0)
 
+		guiResults[imageFileName] = augmentedResults
 
 	print("\nSUCCESS: Images Inferenced with the Model\n")
-	#cv2.destroyWindow(windowInput)
-	#cv2.destroyWindow(windowResult)
-
-	# Create ADAT folder and file
-	print("\nADAT tool called to create the analysis toolkit\n")
-	if(not os.path.exists(adatOutputDir)):
-		os.system('mkdir ' + adatOutputDir)
-	
-	if(hierarchy == ''):
-		os.system('python '+ADATPath+'/generate-visualization.py -i '+finalImageResultsFile+
-		' -d '+inputImageDir+' -l '+labelText+' -m '+modelName+' -o '+adatOutputDir+' -f '+modelName+'-ADAT')
-	else:
-		os.system('python '+ADATPath+'/generate-visualization.py -i '+finalImageResultsFile+
-		' -d '+inputImageDir+' -l '+labelText+' -h '+hierarchyText+' -m '+modelName+' -o '+adatOutputDir+' -f '+modelName+'-ADAT')
-	print("\nSUCCESS: Image Analysis Toolkit Created\n")
-	print("Press ESC to exit or close progess window\n")
 
 	while True:
 		key = cv2.waitKey(2)
@@ -529,6 +530,3 @@ if __name__ == '__main__':
 			break        
 		if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
 			break
-
-	outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
-	os.system('firefox '+outputHTMLFile)
