@@ -540,13 +540,19 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
+
+			original_image = image_batch[0:224, 0:224]
+			cloned_image = image_batch[:]
+			#cv2.rectangle(original_image, (0,0),(224,224), (255,255,255), 4, cv2.LINE_8, 0)
+			cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))
+
 			#show RALI augmented images
 			if augmentedResults[i] == 0:
-				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				cv2.rectangle(cloned_image, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
 			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:				
-				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+				cv2.rectangle(cloned_image, (0,(i*224+i)),(224,224*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(image_batch, 4)
+			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
 			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 			viewer.showImage(final_image_batch)
