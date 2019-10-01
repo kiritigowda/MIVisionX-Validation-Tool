@@ -538,22 +538,12 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-		#show RALI augmented images
-		#for img_ind in range(loader.getOutputImageCount()):
-			cloned_image = image_batch
+			#show RALI augmented images
 			if augmentedResults[i] == 0:
-				#cv2.imshow('cloned_image', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
 				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-				cloned_image[(i*224+i):(224*(i+1) + i), 0:224] = image_batch[(i*224+i):(224*(i+1) + i), 0:224]
-				#cv2.waitKey(0)
-				#cloned_image[(i*224+i):(i*224+i+1) , 0:224] = image_batch[(i*224+i):(i*224+i+1) , 0:224]
 			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:				
-				#cv2.imshow('cloned_image', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
 				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-				cloned_image[(i*224+i):(224*(i+1) + i), 0:224] = image_batch[(i*224+i):(224*(i+1) + i), 0:224]
-				#cv2.waitKey(0)
-				#cloned_image[(i*224+i):(i*224+i+1) , 0:224] = image_batch[(i*224+i):(i*224+i+1) , 0:224]
-			cv2.imshow('augmented_images', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
+			cv2.imshow('augmented_images', cv2.cvtColor(image_batch, cv2.COLOR_RGB2BGR))
 
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
