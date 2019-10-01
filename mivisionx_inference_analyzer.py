@@ -191,6 +191,7 @@ if __name__ == '__main__':
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
 		modelLocation = (str)(panel.model)
+		modelBatchSize = (str)(panel.batch)
 		modelInputDims = (str)(panel.input_dims)
 		modelOutputDims = (str)(panel.output_dims)
 		label = (str)(panel.label)
@@ -208,6 +209,7 @@ if __name__ == '__main__':
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
 		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
 		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file                 [required]')
+		parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
 		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
@@ -226,6 +228,7 @@ if __name__ == '__main__':
 		modelFormat = args.model_format
 		modelName = args.model_name
 		modelLocation = args.model
+		modelBatchSize = args.model_batch_size
 		modelInputDims = args.model_input_dims
 		modelOutputDims = args.model_output_dims
 		label = args.label
@@ -265,7 +268,7 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
-	modelBatchSize = str(16)
+
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 	c_i = int(str_c_i); h_i = int(str_h_i); w_i = int(str_w_i)
