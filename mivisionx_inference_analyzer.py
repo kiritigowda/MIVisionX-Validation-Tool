@@ -19,6 +19,7 @@ from numpy.ctypeslib import ndpointer
 from rali import *
 from rali_image_iterator import *
 from inference_control import *
+from inference_viewer import *
 
 # global variables
 FP16inference = False
@@ -421,6 +422,7 @@ if __name__ == '__main__':
 	#create output dict for all the images
 	guiResults = {}
 
+	viewer = inference_viewer()
 	#image_tensor has the input tensor required for inference
 	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
 		imageFileName = loader.get_input_name()
@@ -546,8 +548,8 @@ if __name__ == '__main__':
 
 			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(image_batch, 4)
 			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
-			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-
+			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+			viewer.showImage(final_image_batch)
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
 		if key == 27: 
