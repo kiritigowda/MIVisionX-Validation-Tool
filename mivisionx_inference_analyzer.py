@@ -265,7 +265,7 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
-
+	modelBatchSize = str(16)
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 	c_i = int(str_c_i); h_i = int(str_h_i); w_i = int(str_w_i)
@@ -539,18 +539,18 @@ if __name__ == '__main__':
 		#for img_ind in range(loader.getOutputImageCount()):
 			cloned_image = image_batch
 			if augmentedResults[i] == 0:
-				cloned_image[0:224, 0:224] = image_batch[0:224, 0:224]
-				cv2.imshow('cloned_image', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
-				cv2.rectangle(cloned_image, (0,0),(224,224), (255,0,0), 4, cv2.LINE_8, 0)
+				#cv2.imshow('cloned_image', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
+				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				cloned_image[(i*224+i):(224*(i+1) + i), 0:224] = image_batch[(i*224+i):(224*(i+1) + i), 0:224]
 				#cv2.waitKey(0)
 				#cloned_image[(i*224+i):(i*224+i+1) , 0:224] = image_batch[(i*224+i):(i*224+i+1) , 0:224]
-			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:
-				cloned_image[0:224, 0:224] = image_batch[0:224, 0:224]
-				cv2.imshow('cloned_image', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
-				cv2.rectangle(cloned_image, ((i*224)+i,0),((i*224)+i+1,224), (0,255,0), 4, cv2.LINE_8, 0)
+			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:				
+				#cv2.imshow('cloned_image', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
+				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+				cloned_image[(i*224+i):(224*(i+1) + i), 0:224] = image_batch[(i*224+i):(224*(i+1) + i), 0:224]
 				#cv2.waitKey(0)
 				#cloned_image[(i*224+i):(i*224+i+1) , 0:224] = image_batch[(i*224+i):(i*224+i+1) , 0:224]
-			#cv2.imshow('augmented_images', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
+			cv2.imshow('augmented_images', cv2.cvtColor(cloned_image, cv2.COLOR_RGB2BGR))
 
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
