@@ -543,7 +543,10 @@ if __name__ == '__main__':
 				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
 			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:				
 				cv2.rectangle(image_batch, (0,(i*224+i)),(224,224*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-			cv2.imshow('augmented_images', cv2.cvtColor(image_batch, cv2.COLOR_RGB2BGR))
+
+			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(image_batch, 4)
+			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
+			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
