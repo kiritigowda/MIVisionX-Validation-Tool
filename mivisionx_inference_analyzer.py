@@ -147,7 +147,7 @@ if __name__ == '__main__':
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
 		modelLocation = (str)(panel.model)
-		batchSize = (str)(panel.batch)
+		modelBatchSize = (str)(panel.batch)
 		modelInputDims = (str)(panel.input_dims)
 		modelOutputDims = (str)(panel.output_dims)
 		label = (str)(panel.label)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
 		modelFormat = args.model_format
 		modelName = args.model_name
 		modelLocation = args.model
-		batchSize = args.model_batch_size
+		modelBatchSize = args.model_batch_size
 		modelInputDims = args.model_input_dims
 		modelOutputDims = args.model_output_dims
 		label = args.label
@@ -230,6 +230,7 @@ if __name__ == '__main__':
 	str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
 	c_o = int(str_c_o); h_o = int(str_h_o); w_o = int(str_w_o)
 
+	modelBatchSizeInt = int(modelBatchSize)
 	# input pre-processing values
 	Ax=[0,0,0]
 	if(inputAdd != ''):
