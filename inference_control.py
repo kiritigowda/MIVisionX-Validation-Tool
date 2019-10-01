@@ -171,7 +171,6 @@ class inference_control(QtGui.QMainWindow):
                         self.ui.image_pushButton.setEnabled(False)
                         self.ui.val_pushButton.setEnabled(False)
                         self.ui.hier_pushButton.setEnabled(False)
-                        self.ui.replace_checkBox.setEnabled(False)
                         self.ui.verbose_checkBox.setEnabled(False)
                         self.ui.file_pushButton.setEnabled(False)
                         self.ui.format_comboBox.setEnabled(False)

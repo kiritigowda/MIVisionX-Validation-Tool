@@ -737,6 +737,7 @@
   <tabstop>file_pushButton</tabstop>
   <tabstop>format_comboBox</tabstop>
   <tabstop>name_lineEdit</tabstop>
+  <tabstop>batch_lineEdit</tabstop>
   <tabstop>idims_lineEdit</tabstop>
   <tabstop>odims_lineEdit</tabstop>
   <tabstop>padd_lineEdit</tabstop>
