@@ -16,6 +16,7 @@ import time
 import numpy
 import numpy as np
 from numpy.ctypeslib import ndpointer
+from inference_control import *
 
 # global variables
 FP16inference = False
@@ -137,41 +138,61 @@ def processClassificationOutput(inputImage, modelName, modelOutput):
 
 # MIVisionX Classifier
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
-	parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
-	parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file                 [required]')
-	parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
-	parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
-	parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
-	parser.add_argument('--output_dir',			type=str, required=True,	help='output dir to store ADAT results       [required]')
-	parser.add_argument('--image_dir',			type=str, required=True,	help='image directory for analysis           [required]')
-	parser.add_argument('--image_val',			type=str, default='',		help='image list with ground truth           [optional]')
-	parser.add_argument('--hierarchy',			type=str, default='',		help='AMD proprietary hierarchical file      [optional]')
-	parser.add_argument('--add',				type=str, default='', 		help='input preprocessing factor [optional - default:[0,0,0]]')
-	parser.add_argument('--multiply',			type=str, default='',		help='input preprocessing factor [optional - default:[1,1,1]]')
-	parser.add_argument('--fp16',				type=str, default='no',		help='quantize to FP16 			[optional - default:no]')
-	parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
-	parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
-	args = parser.parse_args()
-
-	# get arguments
-	modelFormat = args.model_format
-	modelName = args.model_name
-	modelLocation = args.model
-	modelInputDims = args.model_input_dims
-	modelOutputDims = args.model_output_dims
-	label = args.label
-	outputDir = args.output_dir
-	imageDir = args.image_dir
-	imageVal = args.image_val
-	hierarchy = args.hierarchy
-	inputAdd = args.add
-	inputMultiply = args.multiply
-	fp16 = args.fp16
-	replaceModel = args.replace
-	verbose = args.verbose
-
+    
+	if len(sys.argv) == 1:
+		app = QtGui.QApplication(sys.argv)
+		panel = inference_control()
+		app.exec_()
+		modelFormat = (str)(panel.model_format)
+		modelName = (str)(panel.model_name)
+		modelLocation = (str)(panel.model)
+		modelInputDims = (str)(panel.input_dims)
+		modelOutputDims = (str)(panel.output_dims)
+		label = (str)(panel.label)
+		outputDir = (str)(panel.output)
+		imageDir = (str)(panel.image)
+		imageVal = (str)(panel.val)
+		hierarchy = (str)(panel.hier)
+		inputAdd = (str)(panel.add)
+		inputMultiply = (str)(panel.multiply)
+		fp16 = (str)(panel.fp16)
+		replaceModel = (str)(panel.replace)
+		verbose = (str)(panel.verbose)
+	else:
+		parser = argparse.ArgumentParser()
+		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
+		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
+		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file                 [required]')
+		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
+		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
+		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
+		parser.add_argument('--output_dir',			type=str, required=True,	help='output dir to store ADAT results       [required]')
+		parser.add_argument('--image_dir',			type=str, required=True,	help='image directory for analysis           [required]')
+		parser.add_argument('--image_val',			type=str, default='',		help='image list with ground truth           [optional]')
+		parser.add_argument('--hierarchy',			type=str, default='',		help='AMD proprietary hierarchical file      [optional]')
+		parser.add_argument('--add',				type=str, default='', 		help='input preprocessing factor [optional - default:[0,0,0]]')
+		parser.add_argument('--multiply',			type=str, default='',		help='input preprocessing factor [optional - default:[1,1,1]]')
+		parser.add_argument('--fp16',				type=str, default='no',		help='quantize to FP16 			[optional - default:no]')
+		parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
+		parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
+		args = parser.parse_args()
+		
+		# get arguments
+		modelFormat = args.model_format
+		modelName = args.model_name
+		modelLocation = args.model
+		modelInputDims = args.model_input_dims
+		modelOutputDims = args.model_output_dims
+		label = args.label
+		outputDir = args.output_dir
+		imageDir = args.image_dir
+		imageVal = args.image_val
+		hierarchy = args.hierarchy
+		inputAdd = args.add
+		inputMultiply = args.multiply
+		fp16 = args.fp16
+		replaceModel = args.replace
+		verbose = args.verbose
 	# set verbose print
 	if(verbose != 'no'):
 		verbosePrint = True
@@ -239,17 +260,16 @@ if __name__ == '__main__':
 	else:
 		print("\nMIVisionX Inference Analyzer Created\n")
 		os.system('(cd ; mkdir .mivisionx-inference-analyzer)')
-
 	# Setup Text File for Demo
 	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
 		f = open(analyzerDir + "/setupFile.txt", "w")
-		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel)
+		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 		f.close()
 	else:
 		count = len(open(analyzerDir + "/setupFile.txt").readlines())
 		if count < 10:
 			f = open(analyzerDir + "/setupFile.txt", "a")
-			f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel)
+			f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 			f.close()
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
@@ -261,7 +281,7 @@ if __name__ == '__main__':
 			with open(analyzerDir + "/setupFile.txt", "w") as fout:
 			    fout.writelines(data[1:])
 			with open(analyzerDir + "/setupFile.txt", "a") as fappend:
-				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel)
+				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 				fappend.close()
 
 	# Compile Model and generate python .so files
