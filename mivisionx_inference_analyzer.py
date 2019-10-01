@@ -17,6 +17,7 @@ import numpy
 import numpy as np
 from numpy.ctypeslib import ndpointer
 from inference_control import *
+from inference_viewer import *
 
 # global variables
 FP16inference = False
@@ -146,6 +147,7 @@ if __name__ == '__main__':
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
 		modelLocation = (str)(panel.model)
+		batchSize = (str)(panel.batch)
 		modelInputDims = (str)(panel.input_dims)
 		modelOutputDims = (str)(panel.output_dims)
 		label = (str)(panel.label)
@@ -163,6 +165,7 @@ if __name__ == '__main__':
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
 		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
 		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file                 [required]')
+		parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
 		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
@@ -181,6 +184,7 @@ if __name__ == '__main__':
 		modelFormat = args.model_format
 		modelName = args.model_name
 		modelLocation = args.model
+		batchSize = args.model_batch_size
 		modelInputDims = args.model_input_dims
 		modelOutputDims = args.model_output_dims
 		label = args.label
@@ -482,6 +486,8 @@ if __name__ == '__main__':
 			# Calibration
 				# TBD:
 
+	viewer = inference_viewer()
+	viewer.showImage()
 	print("\nSUCCESS: Images Inferenced with the Model\n")
 	cv2.destroyWindow(windowInput)
 	cv2.destroyWindow(windowResult)
