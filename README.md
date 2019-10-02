@@ -61,32 +61,33 @@ MIVisionX provides developers with [docker images](https://hub.docker.com/u/mivi
 * Run [Samples](#samples)
 
 ## Usage
+### Command Line Interface (CLI)
 ````
-usage: mivisionx_inference_analyzer.py [-h] 
-                             	       --model_format MODEL_FORMAT 
-                                       --model_name MODEL_NAME 
-                                       --model MODEL 
-                                       --model_input_dims MODEL_INPUT_DIMS 
-                                       --model_output_dims MODEL_OUTPUT_DIMS 
-                                       --label LABEL 
-                                       --output_dir OUTPUT_DIR 
-                                       --image_dir IMAGE_DIR
-                                       [--image_val IMAGE_VAL] 
-                                       [--hierarchy HIERARCHY]
-                                       [--add ADD] 
-                                       [--multiply MULTIPLY]
-				       [--fp16 FP16]
-                                       [--replace REPLACE] 
-                                       [--verbose VERBOSE]
+usage: python mivisionx_inference_analyzer.py 	[-h] 
+                             	       		--model_format MODEL_FORMAT 
+                                       		--model_name MODEL_NAME 
+                                       		--model MODEL 
+                                       		--model_input_dims MODEL_INPUT_DIMS 
+                                       		--model_output_dims MODEL_OUTPUT_DIMS 
+                                       		--label LABEL 
+                                       		--output_dir OUTPUT_DIR 
+                                       		--image_dir IMAGE_DIR
+                                       		[--image_val IMAGE_VAL] 
+                                       		[--hierarchy HIERARCHY]
+                                       		[--add ADD] 
+                                       		[--multiply MULTIPLY]
+				       		[--fp16 FP16]
+                                       		[--replace REPLACE] 
+                                       		[--verbose VERBOSE]
 
 ````
-### Usage help
+#### Usage help
 
 ```
   -h, --help            show this help message and exit
   --model_format        pre-trained model format, options:caffe/onnx/nnef [required]
   --model_name          model name                                        [required]
-  --model               pre_trained model file                            [required]
+  --model               pre_trained model file/folder                     [required]
   --model_input_dims    c,h,w - channel,height,width                      [required]
   --model_output_dims   c,h,w - channel,height,width                      [required]
   --label               labels text file                                  [required]
@@ -101,6 +102,12 @@ usage: mivisionx_inference_analyzer.py [-h]
   --verbose             verbose                              [optional - default:no]
 
 ```
+### Graphical User Interface (GUI)
+````
+usage: python mivisionx_inference_analyzer.py
+````
+<p align="center"><img width="75%" src="data/images/analyzer-4.png" /></p>
+
 ## Supported Pre-Trained Model Formats
 
 <p align="center"><img width="50%" src="https://raw.githubusercontent.com/GPUOpen-ProfessionalCompute-Libraries/MIVisionX/master/docs/images/modelCompilerFrameWorks.png" /></p>
