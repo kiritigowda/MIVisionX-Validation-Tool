@@ -1,7 +1,8 @@
 __author__      = "Kiriti Nagesh Gowda"
 __copyright__   = "Copyright 2019, AMD MIVisionX"
+__credits__     = ["Hansel Yang; Lakshmi Kumar;"]
 __license__     = "MIT"
-__version__     = "0.9.0"
+__version__     = "0.9.5"
 __maintainer__  = "Kiriti Nagesh Gowda"
 __email__       = "Kiriti.NageshGowda@amd.com"
 __status__      = "ALPHA"
@@ -162,7 +163,7 @@ if __name__ == '__main__':
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
 		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
-		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file                 [required]')
+		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file/folder          [required]')
 		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
@@ -255,11 +256,12 @@ if __name__ == '__main__':
 		if(replaceModel == 'yes'):
 			os.system('rm -rf '+modelDir)
 		elif(os.path.exists(modelDir)):
-			print("ERROR: Model exists, use --replace yes option to overwrite or use a different name in --model_name")
-			quit()
+			print("OK: Model exists")
+
 	else:
 		print("\nMIVisionX Inference Analyzer Created\n")
 		os.system('(cd ; mkdir .mivisionx-inference-analyzer)')
+
 	# Setup Text File for Demo
 	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
 		f = open(analyzerDir + "/setupFile.txt", "w")
@@ -268,9 +270,15 @@ if __name__ == '__main__':
 	else:
 		count = len(open(analyzerDir + "/setupFile.txt").readlines())
 		if count < 10:
-			f = open(analyzerDir + "/setupFile.txt", "a")
-			f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
-			f.close()
+			with open(analyzerDir + "/setupFile.txt", "r") as fin:
+				data = fin.read().splitlines(True)
+				modelList = []
+				for i in range(len(data)):
+					modelList.append(data[i].split(';')[1])
+				if modelName not in modelList:
+					f = open(analyzerDir + "/setupFile.txt", "a")
+					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+					f.close()
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
 				data = fin.read().splitlines(True)
@@ -285,39 +293,42 @@ if __name__ == '__main__':
 				fappend.close()
 
 	# Compile Model and generate python .so files
-	os.system('mkdir '+modelDir)
-	if(os.path.exists(modelDir)):
-		# convert to NNIR
-		if(modelFormat == 'caffe'):
-			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/caffe_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
-		elif(modelFormat == 'onnx'):
-			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/onnx_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
-		elif(modelFormat == 'nnef'):
-			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files )')
-		else:
-			print("ERROR: Neural Network Format Not supported, use caffe/onnx/nnef in arugment --model_format")
-			quit()
-		# convert the model to FP16
-		if(FP16inference):
-			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --convert-fp16 1 --fuse-ops 1 nnir-files nnir-files)')
-			print("\nModel Quantized to FP16\n")
-		# convert to openvx
-		if(os.path.exists(nnirDir)):
-			os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_to_openvx.py nnir-files openvx-files)')
-		else:
-			print("ERROR: Converting Pre-Trained model to NNIR Failed")
-			quit()
-		# build model
-		if(os.path.exists(openvxDir)):
-			os.system('mkdir '+modelBuildDir)
-			os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
-			print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
-		else:
-			print("ERROR: Converting NNIR to OpenVX Failed")
-			quit()
-	else:
-		print("ERROR: MIVisionX Inference Analyzer Failed")
-		quit()
+	if (replaceModel == 'yes' or not os.path.exists(modelDir)):
+		os.system('mkdir '+modelDir)
+		if(os.path.exists(modelDir)):
+			# convert to NNIR
+			if(modelFormat == 'caffe'):
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/caffe_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
+			elif(modelFormat == 'onnx'):
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/onnx_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
+			elif(modelFormat == 'nnef'):
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files )')
+			else:
+				print("ERROR: Neural Network Format Not supported, use caffe/onnx/nnef in arugment --model_format")
+				quit()
+			# convert the model to FP16
+			if(FP16inference):
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --convert-fp16 1 --fuse-ops 1 nnir-files nnir-files)')
+				print("\nModel Quantized to FP16\n")
+			# convert to openvx
+			if(os.path.exists(nnirDir)):
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_to_openvx.py nnir-files openvx-files)')
+			else:
+				print("ERROR: Converting Pre-Trained model to NNIR Failed")
+				quit()
+			
+			# build model
+			if(os.path.exists(openvxDir)):
+				os.system('mkdir '+modelBuildDir)
+			else:
+				print("ERROR: Converting NNIR to OpenVX Failed")
+				quit()
+	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
+	
+	#else:
+		#print("ERROR: MIVisionX Inference Analyzer Failed")
+		#quit()
 
 	# opencv display window
 	windowInput = "MIVisionX Inference Analyzer - Input Image"
@@ -479,9 +490,7 @@ if __name__ == '__main__':
 			if key == 27: 
 				break
 
-			# Calibration
-				# TBD:
-
+	# Inference Analyzer Successful
 	print("\nSUCCESS: Images Inferenced with the Model\n")
 	cv2.destroyWindow(windowInput)
 	cv2.destroyWindow(windowResult)
@@ -492,14 +501,15 @@ if __name__ == '__main__':
 		os.system('mkdir ' + adatOutputDir)
 	
 	if(hierarchy == ''):
-		os.system('python '+ADATPath+'/generate-visualization.py -i '+finalImageResultsFile+
-		' -d '+inputImageDir+' -l '+labelText+' -m '+modelName+' -o '+adatOutputDir+' -f '+modelName+'-ADAT')
+		os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+		' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
 	else:
-		os.system('python '+ADATPath+'/generate-visualization.py -i '+finalImageResultsFile+
-		' -d '+inputImageDir+' -l '+labelText+' -h '+hierarchyText+' -m '+modelName+' -o '+adatOutputDir+' -f '+modelName+'-ADAT')
+		os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+		' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
 	print("\nSUCCESS: Image Analysis Toolkit Created\n")
 	print("Press ESC to exit or close progess window\n")
 
+	# Wait to quit
 	while True:
 		key = cv2.waitKey(2)
 		if key == 27:

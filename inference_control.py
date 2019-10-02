@@ -38,13 +38,14 @@ class inference_control(QtGui.QMainWindow):
         self.ui.label_lineEdit.textChanged.connect(self.checkInput)
         self.ui.image_lineEdit.textChanged.connect(self.checkInput)
         self.ui.image_lineEdit.textChanged.connect(self.checkInput)
-
+        self.ui.close_pushButton.clicked.connect(self.close)
         self.ui.idims_lineEdit.setPlaceholderText("c,h,w [required]")
         self.ui.odims_lineEdit.setPlaceholderText("c,h,w [required]")
         self.ui.padd_lineEdit.setPlaceholderText("r,g,b [optional]")
         self.ui.pmul_lineEdit.setPlaceholderText("r,g,b [optional]")
         self.ui.val_lineEdit.setPlaceholderText("[optional]")
         self.ui.hier_lineEdit.setPlaceholderText("[optional]")
+        self.ui.close_pushButton.setStyleSheet("color: white; background-color: darkRed")
         self.readSetupFile()
         self.ui.show()
 
@@ -203,3 +204,7 @@ class inference_control(QtGui.QMainWindow):
         self.replace = 'yes' if self.ui.replace_checkBox.isChecked() else 'no'
         self.verbose = 'yes' if self.ui.verbose_checkBox.isChecked() else 'no'
         self.ui.close()
+
+    def close(self):
+        self.ui.close()
+        exit(0)

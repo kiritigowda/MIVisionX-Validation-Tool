@@ -484,16 +484,6 @@
     </item>
     <item>
      <layout class="QGridLayout" name="inference_gridLayout">
-      <item row="1" column="2">
-       <widget class="QLineEdit" name="label_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
       <item row="4" column="1">
        <widget class="QLabel" name="hier_label">
         <property name="text">
@@ -504,7 +494,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="3">
+      <item row="2" column="4">
        <widget class="QPushButton" name="image_pushButton">
         <property name="enabled">
          <bool>true</bool>
@@ -514,7 +504,7 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
+      <item row="3" column="4">
        <widget class="QPushButton" name="val_pushButton">
         <property name="enabled">
          <bool>true</bool>
@@ -524,43 +514,13 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
+      <item row="4" column="4">
        <widget class="QPushButton" name="hier_pushButton">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
          <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QLineEdit" name="hier_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QLineEdit" name="val_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLineEdit" name="output_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
         </property>
        </widget>
       </item>
@@ -632,7 +592,7 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="3">
+      <item row="1" column="4">
        <widget class="QPushButton" name="label_pushButton">
         <property name="enabled">
          <bool>true</bool>
@@ -652,16 +612,6 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QLineEdit" name="image_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="QLabel" name="image_label">
         <property name="text">
@@ -672,7 +622,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
+      <item row="0" column="4">
        <widget class="QPushButton" name="output_pushButton">
         <property name="enabled">
          <bool>true</bool>
@@ -692,13 +642,92 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="3">
+      <item row="5" column="4">
        <widget class="QPushButton" name="run_pushButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
          <string>Run</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::MinimumExpanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="5" column="3">
+       <widget class="QPushButton" name="close_pushButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Close</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2" colspan="2">
+       <widget class="QLineEdit" name="hier_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2" colspan="2">
+       <widget class="QLineEdit" name="val_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2" colspan="2">
+       <widget class="QLineEdit" name="image_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" colspan="2">
+       <widget class="QLineEdit" name="label_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" colspan="2">
+       <widget class="QLineEdit" name="output_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>
