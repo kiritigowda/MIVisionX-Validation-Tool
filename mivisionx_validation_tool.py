@@ -39,36 +39,35 @@ raliList = ['original', 'warpAffine', 'contrast', 'rain',
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
-    def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation):
+    def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation, h_img, w_img):
         RaliGraph.__init__(self, batch_size, affinity)
         self.validation_dict = {}
         self.process_validation(image_validation)
         self.setSeed(0)
         self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-        #self.input = self.cropResize(self.jpg_img, 224,224, True, 1.0, 0, 0)
-        self.input = self.resize(self.jpg_img, 224,224, True)
+        self.input = self.resize(self.jpg_img, h_img, w_img, True)
         
         self.warped = self.warpAffine(self.input,True)
 
         self.contrast_img = self.contrast(self.input,True)
-        self.rain_img = self.rain(self.contrast_img, True)
+        self.rain_img = self.rain(self.input, True)
 
         self.bright_img = self.brightness(self.input,True)
-        self.temp_img = self.colorTemp(self.bright_img, True)
+        self.temp_img = self.colorTemp(self.input, True)
 
         self.exposed_img = self.exposure(self.input, True)
-        self.vignette_img = self.vignette(self.exposed_img, True)
-        self.fog_img = self.fog(self.vignette_img, True)
-        self.snow_img = self.snow(self.fog_img, True)
+        self.vignette_img = self.vignette(self.input, True)
+        self.fog_img = self.fog(self.input, True)
+        self.snow_img = self.snow(self.input, True)
 
         self.pixelate_img = self.pixelate(self.input, True)
-        self.snp_img = self.SnPNoise(self.pixelate_img, True, 0.2)
-        self.gamma_img = self.gamma(self.snp_img, True)
+        self.snp_img = self.SnPNoise(self.input, True, 0.2)
+        self.gamma_img = self.gamma(self.input, True)
 
         self.rotate_img = self.rotate(self.input, True)
-        self.jitter_img = self.jitter(self.rotate_img, True)
+        self.jitter_img = self.jitter(self.input, True)
 		
-        self.blend_img = self.blend(self.bright_img, self.contrast_img, True)
+        self.blend_img = self.blend(self.input, self.contrast_img, True)
 
     def get_input_name(self):
         return self.jpg_img.name(0)
@@ -160,28 +159,7 @@ def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 	if(verbosePrint):
 		print '%30s' % 'Processed results in ', str((end - start)*1000), 'ms'
 
-	# display output
-	start = time.time()
-	# initialize the result image
-	resultImage = np.zeros((250, 525, 3), dtype="uint8")
-	resultImage.fill(255)
-	cv2.putText(resultImage, 'MIVisionX Object Classification', (25,  25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2)
-	topK = 1   
-	for i in reversed(range(5)):
-		txt =  topLabels[i].decode('utf-8')[:-1]
-		conf = topProb[i]
-		txt = 'Top'+str(topK)+':'+txt+' '+str(int(round((conf*100), 0)))+'%' 
-		size = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-		t_width = size[0][0]
-		t_height = size[0][1]
-		textColor = (colors[topK - 1])
-		cv2.putText(resultImage,txt,(45,t_height+(topK*30+40)),cv2.FONT_HERSHEY_SIMPLEX,0.5,textColor,1)
-		topK = topK + 1
-	end = time.time()
-	if(verbosePrint):
-		print '%30s' % 'Processed results image in ', str((end - start)*1000), 'ms'
-
-	return resultImage, topIndex, topProb
+	return topIndex, topProb
 
 # MIVisionX Classifier
 if __name__ == '__main__':   
@@ -374,13 +352,6 @@ if __name__ == '__main__':
 		print("ERROR: MIVisionX Inference Analyzer Failed")
 		quit()
 
-	# opencv display window
-	#windowInput = "MIVisionX Inference Analyzer - Input Image"
-	#windowResult = "MIVisionX Inference Analyzer - Results"
-	#windowProgress = "MIVisionX Inference Analyzer - Progress"
-	#cv2.namedWindow(windowInput, cv2.WINDOW_GUI_EXPANDED)
-	#cv2.resizeWindow(windowInput, 800, 800)
-
 	# create inference classifier
 	classifier = annieObjectWrapper(pythonLib, weightsFile)
 
@@ -408,16 +379,12 @@ if __name__ == '__main__':
 
 	#setup for Rali
 	batchSize = 1
-	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_GPU, imageValidation)
+	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i)
 	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
-	#print "Input shape", loader.input.shape()
 	print ('Pipeline created ...')
 	print 'Image iterator created ... number of images', imageIterator.imageCount()
 	print 'Loader created ...num of images' , loader.getOutputImageCount()
 
-	if totalImages != imageIterator.imageCount():
-		print 'Please check validation text for discrepencies'
-		quit()
 	# process images
 	correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 	
@@ -427,6 +394,7 @@ if __name__ == '__main__':
 	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
 	#image_tensor has the input tensor required for inference
 	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+		start_main = time.time()
 		imageFileName = loader.get_input_name()
 		groundTruthIndex = loader.get_ground_truth()
 		groundTruthIndex = int(groundTruthIndex)
@@ -434,22 +402,25 @@ if __name__ == '__main__':
 		#create output list for each image
 		augmentedResults = []
 
+		#create images for display
+		original_image = image_batch[0:h_i-1, 0:w_i-1]
+		#cloned_image = np.copy(image_batch)
+		cloned_image = image_batch[0:224, 0:224]
+		frame = image_tensor
+		viewer.showImage(cloned_image)
+		# run inference
+		start = time.time()
+		output = classifier.classify(frame)
+		end = time.time()
+		if(verbosePrint):
+			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+
 		for i in range(loader.getOutputImageCount()):
 			#using tensor output of RALI as frame 		
-			frame = image_tensor
-
-			# run inference
-			start = time.time()
-			output = classifier.classify(frame)
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
-
+			
 			# process output and display
 			start = time.time()
-			resultImage, topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
-			#cv2.imshow(windowInput, frame)
-			#cv2.imshow(windowResult, resultImage)
+			topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
@@ -509,14 +480,28 @@ if __name__ == '__main__':
 			cloned_image = image_batch[:]
 			#cv2.rectangle(original_image, (0,0),(224,224), (255,255,255), 4, cv2.LINE_8, 0)
 			#cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))
+			#show original image
+			#cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
+			#cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
+			#viewer.showImage(original_image)
+			#write type of augmentation on image
+			text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0]
+			text_off_x = 5
+			text_off_y = (i*h_i)+h_i-7
+			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+			cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
+			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1)	
+
 			#show RALI augmented images
 			if augmentedResults[i] == 0:
-				cv2.rectangle(cloned_image, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:				
-				cv2.rectangle(cloned_image, (0,(i*224+i)),(224,224*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
+			#split RALI augmented images into a grid
 			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
+			cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 			#viewer.showImage(final_image_batch)
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
@@ -530,6 +515,8 @@ if __name__ == '__main__':
 			exit(0)
 
 		guiResults[imageFileName] = augmentedResults
+		end_main = time.time()
+		print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
 
 	print("\nSUCCESS: Images Inferenced with the Model\n")
 

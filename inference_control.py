@@ -175,6 +175,7 @@ class inference_control(QtGui.QMainWindow):
                         self.ui.image_pushButton.setEnabled(False)
                         self.ui.val_pushButton.setEnabled(False)
                         self.ui.hier_pushButton.setEnabled(False)
+                        #self.ui.replace_checkBox.setEnabled(False)
                         self.ui.verbose_checkBox.setEnabled(False)
                         self.ui.file_pushButton.setEnabled(False)
                         self.ui.format_comboBox.setEnabled(False)
@@ -213,5 +214,4 @@ class inference_control(QtGui.QMainWindow):
         self.fp16 = 'yes' if self.ui.fp16_checkBox.isChecked() else 'no'
         self.replace = 'yes' if self.ui.replace_checkBox.isChecked() else 'no'
         self.verbose = 'yes' if self.ui.verbose_checkBox.isChecked() else 'no'
-
         self.ui.close()
