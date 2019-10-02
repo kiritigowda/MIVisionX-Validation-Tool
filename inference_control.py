@@ -4,8 +4,6 @@ from PyQt4 import QtGui, uic
 class inference_control(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(inference_control, self).__init__(parent)
-        self.ui = uic.loadUi("inference_control.ui")
-        #self.ui.setStyleSheet("background-color: white")
         self.model_format = ''
         self.model_name = ''
         self.model = ''
@@ -23,6 +21,11 @@ class inference_control(QtGui.QMainWindow):
         self.replace = 'no'
         self.verbose = 'no'
 
+        self.initUI()
+
+    def initUI(self):
+        self.ui = uic.loadUi("inference_control.ui")
+        #self.ui.setStyleSheet("background-color: white")
         self.ui.upload_comboBox.activated.connect(self.fromFile)
         self.ui.file_pushButton.clicked.connect(self.browseFile)
         self.ui.output_pushButton.clicked.connect(self.browseOutput)
@@ -41,6 +44,7 @@ class inference_control(QtGui.QMainWindow):
         self.ui.image_lineEdit.textChanged.connect(self.checkInput)
         self.ui.image_lineEdit.textChanged.connect(self.checkInput)
 
+        self.ui.file_lineEdit.setProperty("mandatoryField", True);
         self.ui.batch_lineEdit.setPlaceholderText("n [required]")
         self.ui.idims_lineEdit.setPlaceholderText("c,h,w [required]")
         self.ui.odims_lineEdit.setPlaceholderText("c,h,w [required]")
@@ -80,7 +84,7 @@ class inference_control(QtGui.QMainWindow):
                 token = line.split(';')
                 if len(token) > 1:
                     modelName = token[1]
-                self.ui.upload_comboBox.addItem(modelName)
+                    self.ui.upload_comboBox.addItem(modelName)
             
     def fromFile(self):
         if self.ui.upload_comboBox.currentIndex() == 0:

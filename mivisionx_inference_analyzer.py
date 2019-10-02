@@ -243,6 +243,8 @@ if __name__ == '__main__':
 		replaceModel = args.replace
 		verbose = args.verbose
 
+	#viewer = inference_viewer(modelName, )
+	
 	# set verbose print
 	if(verbose != 'no'):
 		verbosePrint = True
@@ -324,7 +326,7 @@ if __name__ == '__main__':
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
 				data = fin.read().splitlines(True)
-			delModelName = data[0].split(';')[1]
+				delModelName = data[0].split(';')[1]
 			delmodelPath = analyzerDir + '/' + delModelName + '_dir'
 			if(os.path.exists(delmodelPath)): 
 				os.system('rm -rf ' + delmodelPath)
@@ -375,7 +377,7 @@ if __name__ == '__main__':
 	# opencv display window
 	#windowInput = "MIVisionX Inference Analyzer - Input Image"
 	#windowResult = "MIVisionX Inference Analyzer - Results"
-	windowProgress = "MIVisionX Inference Analyzer - Progress"
+	#windowProgress = "MIVisionX Inference Analyzer - Progress"
 	#cv2.namedWindow(windowInput, cv2.WINDOW_GUI_EXPANDED)
 	#cv2.resizeWindow(windowInput, 800, 800)
 
@@ -422,7 +424,7 @@ if __name__ == '__main__':
 	#create output dict for all the images
 	guiResults = {}
 
-	viewer = inference_viewer()
+	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
 	#image_tensor has the input tensor required for inference
 	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
 		imageFileName = loader.get_input_name()
@@ -465,24 +467,6 @@ if __name__ == '__main__':
 
 			# create progress image
 			start = time.time()
-			progressImage = np.zeros((400, 500, 3), dtype="uint8")
-			progressImage.fill(255)
-			cv2.putText(progressImage, 'Inference Analyzer Progress', (25,  25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2)
-			size = cv2.getTextSize(modelName, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-			t_width = size[0][0]
-			t_height = size[0][1]
-			headerX_start = int(250 -(t_width/2))
-			cv2.putText(progressImage,modelName,(headerX_start,t_height+(20+40)),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,0,0),2)
-			txt = 'Processed: '+str((modelBatchSizeInt*x)+i+1)+' of '+str(totalImages*modelBatchSizeInt)
-			size = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-			cv2.putText(progressImage,txt,(50,t_height+(60+40)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# progress bar
-			cv2.rectangle(progressImage, (50,150), (450,180), (192,192,192), -1)
-			progressWidth = int(50+ (400*((modelBatchSizeInt*x)+i+1))/(totalImages*modelBatchSizeInt))
-			cv2.rectangle(progressImage, (50,150), (progressWidth,180), (255,204,153), -1)
-			percentage = int((((modelBatchSizeInt*x)+i+1)/float(totalImages*modelBatchSizeInt))*100)
-			pTxt = 'progress: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(175,170),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
 
 			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 			if(groundTruthIndex == topIndex[4 + i*4]):
@@ -506,46 +490,25 @@ if __name__ == '__main__':
 				wrong = wrong + 1
 				augmentedResults.append(0)
 
-			# top 1 progress
-			cv2.rectangle(progressImage, (50,200), (450,230), (192,192,192), -1)
-			progressWidth = int(50 + ((400*correctTop1)/(totalImages*modelBatchSizeInt)))
-			cv2.rectangle(progressImage, (50,200), (progressWidth,230), (0,153,0), -1)
-			percentage = int((correctTop1/float(totalImages*modelBatchSizeInt))*100)
-			pTxt = 'Top1: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(195,220),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# top 5 progress
-			cv2.rectangle(progressImage, (50,250), (450,280), (192,192,192), -1)
-			progressWidth = int(50+ ((400*correctTop5)/(totalImages*modelBatchSizeInt)))
-			cv2.rectangle(progressImage, (50,250), (progressWidth,280), (0,255,0), -1)
-			percentage = int((correctTop5/float(totalImages*modelBatchSizeInt))*100)
-			pTxt = 'Top5: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(195,270),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# wrong progress
-			cv2.rectangle(progressImage, (50,300), (450,330), (192,192,192), -1)
-			progressWidth = int(50+ ((400*wrong)/(totalImages*modelBatchSizeInt)))
-			cv2.rectangle(progressImage, (50,300), (progressWidth,330), (0,0,255), -1)
-			percentage = int((wrong/float(totalImages*modelBatchSizeInt))*100)
-			pTxt = 'Mismatch: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(175,320),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# no ground truth progress
-			cv2.rectangle(progressImage, (50,350), (450,380), (192,192,192), -1)
-			progressWidth = int(50+ ((400*noGroundTruth)/(totalImages*modelBatchSizeInt)))
-			cv2.rectangle(progressImage, (50,350), (progressWidth,380), (0,255,255), -1)
-			percentage = int((noGroundTruth/float(totalImages*modelBatchSizeInt))*100)
-			pTxt = 'Ground Truth unavailable: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(125,370),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			
-			cv2.imshow(windowProgress, progressImage)
+			# Total progress
+			viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
+			# Top 1 progress
+			viewer.setTop1Progress(correctTop1)
+			# Top 5 progress
+			viewer.setTop5Progress(correctTop5)
+			# Mismatch progress
+			viewer.setMisProgress(wrong)
+			# No ground truth progress
+			viewer.setNoGTProgress(noGroundTruth)
+
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-
 			original_image = image_batch[0:224, 0:224]
 			cloned_image = image_batch[:]
 			#cv2.rectangle(original_image, (0,0),(224,224), (255,255,255), 4, cv2.LINE_8, 0)
-			cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))
-
+			#cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))
 			#show RALI augmented images
 			if augmentedResults[i] == 0:
 				cv2.rectangle(cloned_image, (0,(i*224+i)),(224,224*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
@@ -554,8 +517,8 @@ if __name__ == '__main__':
 
 			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
-			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-			viewer.showImage(final_image_batch)
+			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+			#viewer.showImage(final_image_batch)
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
 		if key == 27: 
@@ -589,8 +552,8 @@ if __name__ == '__main__':
 		if key == 27:
 			cv2.destroyAllWindows()
 			break   
-		if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-			break
+		# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+		# 	break
 
 	outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
 	os.system('firefox '+outputHTMLFile)
