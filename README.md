@@ -128,7 +128,7 @@ usage: python mivisionx_inference_analyzer.py
 
 	````
 	% cd && mkdir sample-1 && cd sample-1
-	% git clone https://github.com/kiritigowda/MIVisionX-inference-analyzer.git
+	% git clone https://github.com/kiritigowda/MIVisionX-validation-tool.git
 	````
 
 	**Note:**
@@ -149,7 +149,7 @@ usage: python mivisionx_inference_analyzer.py
 
 	* View inference analyzer usage
 	```
-	% cd ~/sample-1/MIVisionX-inference-analyzer/
+	% cd ~/sample-1/MIVisionX-validation-tool/
 	% python mivisionx_inference_analyzer.py -h
 	```
 	
@@ -171,7 +171,7 @@ usage: python mivisionx_inference_analyzer.py
 
 	````
 	% cd && mkdir sample-2 && cd sample-2
-	% git clone https://github.com/kiritigowda/MIVisionX-inference-analyzer.git
+	% git clone https://github.com/kiritigowda/MIVisionX-validation-tool.git
 	````
 
 	**Note:**
@@ -186,7 +186,7 @@ usage: python mivisionx_inference_analyzer.py
 
 	* View inference analyzer usage
 	```
-	% cd ~/sample-2/MIVisionX-inference-analyzer/
+	% cd ~/sample-2/MIVisionX-validation-tool/
 	% python mivisionx_inference_analyzer.py -h
 	```
 	
@@ -206,7 +206,7 @@ usage: python mivisionx_inference_analyzer.py
 
 	````
 	% cd && mkdir sample-3 && cd sample-3
-	% git clone https://github.com/kiritigowda/MIVisionX-inference-analyzer.git
+	% git clone https://github.com/kiritigowda/MIVisionX-validation-tool.git
 	````
 
 	**Note:**
@@ -225,7 +225,7 @@ usage: python mivisionx_inference_analyzer.py
 
 	* View inference analyzer usage
 	```
-	% cd ~/sample-3/MIVisionX-inference-analyzer/
+	% cd ~/sample-3/MIVisionX-validation-tool/
 	% python mivisionx_inference_analyzer.py -h
 	```
 	

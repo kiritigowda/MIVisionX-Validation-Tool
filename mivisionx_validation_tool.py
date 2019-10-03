@@ -6,7 +6,7 @@ __version__     = "0.9.5"
 __maintainer__  = "Kiriti Nagesh Gowda"
 __email__       = "Kiriti.NageshGowda@amd.com"
 __status__      = "ALPHA"
-__script_name__ = "MIVisionX Inference Analyzer"
+__script_name__ = "MIVisionX Validation Tool"
 
 import argparse
 import os
@@ -17,7 +17,10 @@ import time
 import numpy
 import numpy as np
 from numpy.ctypeslib import ndpointer
+from rali import *
+from rali_image_iterator import *
 from inference_control import *
+from inference_viewer import *
 
 # global variables
 FP16inference = False
@@ -30,6 +33,53 @@ colors =[
         (0,128,255),      # Top4
         (255,102,102),    # Top5
         ];
+raliList = ['original', 'warpAffine', 'contrast', 'rain', 
+			'brightness', 'colorTemp', 'exposure', 'vignette', 
+			'fog', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'jitter', 'blend']
+
+# Class to initialize Rali and call the augmentations 
+class DataLoader(RaliGraph):
+    def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation, h_img, w_img):
+        RaliGraph.__init__(self, batch_size, affinity)
+        self.validation_dict = {}
+        self.process_validation(image_validation)
+        self.setSeed(0)
+        self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+        self.input = self.resize(self.jpg_img, h_img, w_img, True)
+        
+        self.warped = self.warpAffine(self.input,True)
+
+        self.contrast_img = self.contrast(self.input,True)
+        self.rain_img = self.rain(self.input, True)
+
+        self.bright_img = self.brightness(self.input,True)
+        self.temp_img = self.colorTemp(self.input, True)
+
+        self.exposed_img = self.exposure(self.input, True)
+        self.vignette_img = self.vignette(self.input, True)
+        self.fog_img = self.fog(self.input, True)
+        self.snow_img = self.snow(self.input, True)
+
+        self.pixelate_img = self.pixelate(self.input, True)
+        self.snp_img = self.SnPNoise(self.input, True, 0.2)
+        self.gamma_img = self.gamma(self.input, True)
+
+        self.rotate_img = self.rotate(self.input, True)
+        self.jitter_img = self.jitter(self.input, True)
+		
+        self.blend_img = self.blend(self.input, self.contrast_img, True)
+
+    def get_input_name(self):
+        return self.jpg_img.name(0)
+
+    def process_validation(self, validation_list):
+		for i in range(len(validation_list)):
+			name, groundTruthIndex = validation_list[i].decode("utf-8").split(' ')
+			self.validation_dict[name] = groundTruthIndex
+
+    def get_ground_truth(self):
+		return self.validation_dict[self.get_input_name()]
 
 # AMD Neural Net python wrapper
 class AnnAPI:
@@ -58,7 +108,6 @@ class AnnAPI:
 # classifier definition
 class annieObjectWrapper():
 	def __init__(self, annpythonlib, weightsfile):
-		select = 1
 		self.api = AnnAPI(annpythonlib)
 		input_info,output_info,empty = self.api.annQueryInference().decode("utf-8").split(';')
 		input,name,n_i,c_i,h_i,w_i = input_info.split(',')
@@ -76,70 +125,45 @@ class annieObjectWrapper():
 	def __del__(self):
 		self.api.annReleaseInference(self.hdl)
 
-	def runInference(self, img, out):
-		# create input.f32 file
-		img_r = img[:,:,0]
-		img_g = img[:,:,1]
-		img_b = img[:,:,2]
-		img_t = np.concatenate((img_r, img_g, img_b), 0)	
+	def runInference(self, img_tensor, out):
 		# copy input f32 to inference input
-		status = self.api.annCopyToInferenceInput(self.hdl, np.ascontiguousarray(img_t, dtype=np.float32), (img.shape[0]*img.shape[1]*3*4), 0)
+		status = self.api.annCopyToInferenceInput(self.hdl, np.ascontiguousarray(img_tensor, dtype=np.float32), img_tensor.nbytes, 0)
 		# run inference
 		status = self.api.annRunInference(self.hdl, 1)
 		# copy output f32
 		status = self.api.annCopyFromInferenceOutput(self.hdl, np.ascontiguousarray(out, dtype=np.float32), out.nbytes)
 		return out
 
-	def classify(self, img):
+	def classify(self, img_tensor):
 		# create output.f32 buffer
 		out_buf = bytearray(self.outputDim[0]*self.outputDim[1]*self.outputDim[2]*self.outputDim[3]*4)
 		out = np.frombuffer(out_buf, dtype=numpy.float32)
 		# run inference & receive output
-		output = self.runInference(img, out)
+		output = self.runInference(img_tensor, out)
 		return output
 
 # process classification output function
-def processClassificationOutput(inputImage, modelName, modelOutput):
+def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 	# post process output file
 	start = time.time()
 	softmaxOutput = np.float32(modelOutput)
+	outputList = np.split(softmaxOutput, batchSize)
 	topIndex = []
 	topLabels = []
 	topProb = []
-	for x in softmaxOutput.argsort()[-5:]:
-		topIndex.append(x)
-		topLabels.append(labelNames[x])
-		topProb.append(softmaxOutput[x])
+	for i in range(len(outputList)):
+		for x in outputList[i].argsort()[-5:]:
+			topIndex.append(x)
+			topLabels.append(labelNames[x])
+			topProb.append(softmaxOutput[x])
 	end = time.time()
 	if(verbosePrint):
 		print '%30s' % 'Processed results in ', str((end - start)*1000), 'ms'
 
-	# display output
-	start = time.time()
-	# initialize the result image
-	resultImage = np.zeros((250, 525, 3), dtype="uint8")
-	resultImage.fill(255)
-	cv2.putText(resultImage, 'MIVisionX Object Classification', (25,  25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2)
-	topK = 1   
-	for i in reversed(range(5)):
-		txt =  topLabels[i].decode('utf-8')[:-1]
-		conf = topProb[i]
-		txt = 'Top'+str(topK)+':'+txt+' '+str(int(round((conf*100), 0)))+'%' 
-		size = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-		t_width = size[0][0]
-		t_height = size[0][1]
-		textColor = (colors[topK - 1])
-		cv2.putText(resultImage,txt,(45,t_height+(topK*30+40)),cv2.FONT_HERSHEY_SIMPLEX,0.5,textColor,1)
-		topK = topK + 1
-	end = time.time()
-	if(verbosePrint):
-		print '%30s' % 'Processed results image in ', str((end - start)*1000), 'ms'
-
-	return resultImage, topIndex, topProb
+	return topIndex, topProb
 
 # MIVisionX Classifier
-if __name__ == '__main__':
-    
+if __name__ == '__main__':   
 	if len(sys.argv) == 1:
 		app = QtGui.QApplication(sys.argv)
 		panel = inference_control()
@@ -147,6 +171,7 @@ if __name__ == '__main__':
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
 		modelLocation = (str)(panel.model)
+		modelBatchSize = (str)(panel.batch)
 		modelInputDims = (str)(panel.input_dims)
 		modelOutputDims = (str)(panel.output_dims)
 		label = (str)(panel.label)
@@ -164,6 +189,7 @@ if __name__ == '__main__':
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
 		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
 		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file/folder          [required]')
+		parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
 		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
@@ -182,6 +208,7 @@ if __name__ == '__main__':
 		modelFormat = args.model_format
 		modelName = args.model_name
 		modelLocation = args.model
+		modelBatchSize = args.model_batch_size
 		modelInputDims = args.model_input_dims
 		modelOutputDims = args.model_output_dims
 		label = args.label
@@ -194,6 +221,9 @@ if __name__ == '__main__':
 		fp16 = args.fp16
 		replaceModel = args.replace
 		verbose = args.verbose
+
+	#viewer = inference_viewer(modelName, )
+	
 	# set verbose print
 	if(verbose != 'no'):
 		verbosePrint = True
@@ -205,7 +235,7 @@ if __name__ == '__main__':
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
 	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
-	setupDir = '~/.mivisionx-inference-analyzer'
+	setupDir = '~/.mivisionx-validation-tool'
 	analyzerDir = os.path.expanduser(setupDir)
 	modelDir = analyzerDir+'/'+modelName+'_dir'
 	nnirDir = modelDir+'/nnir-files'
@@ -226,7 +256,7 @@ if __name__ == '__main__':
 	c_i = int(str_c_i); h_i = int(str_h_i); w_i = int(str_w_i)
 	str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
 	c_o = int(str_c_o); h_o = int(str_h_o); w_o = int(str_w_o)
-
+	modelBatchSizeInt = int(modelBatchSize)
 	# input pre-processing values
 	Ax=[0,0,0]
 	if(inputAdd != ''):
@@ -251,7 +281,7 @@ if __name__ == '__main__':
 
 	# MIVisionX setup
 	if(os.path.exists(analyzerDir)):
-		print("\nMIVisionX Inference Analyzer\n")
+		print("\nMIVisionX Validation Tool\n")
 		# replace old model or throw error
 		if(replaceModel == 'yes'):
 			os.system('rm -rf '+modelDir)
@@ -259,13 +289,12 @@ if __name__ == '__main__':
 			print("OK: Model exists")
 
 	else:
-		print("\nMIVisionX Inference Analyzer Created\n")
-		os.system('(cd ; mkdir .mivisionx-inference-analyzer)')
-
+		print("\nMIVisionX Validation Tool Created\n")
+		os.system('(cd ; mkdir .mivisionx-validation-tool)')
 	# Setup Text File for Demo
 	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
 		f = open(analyzerDir + "/setupFile.txt", "w")
-		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 		f.close()
 	else:
 		count = len(open(analyzerDir + "/setupFile.txt").readlines())
@@ -282,14 +311,14 @@ if __name__ == '__main__':
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
 				data = fin.read().splitlines(True)
-			delModelName = data[0].split(';')[1]
+				delModelName = data[0].split(';')[1]
 			delmodelPath = analyzerDir + '/' + delModelName + '_dir'
 			if(os.path.exists(delmodelPath)): 
 				os.system('rm -rf ' + delmodelPath)
 			with open(analyzerDir + "/setupFile.txt", "w") as fout:
 			    fout.writelines(data[1:])
 			with open(analyzerDir + "/setupFile.txt", "a") as fappend:
-				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 				fappend.close()
 
 	# Compile Model and generate python .so files
@@ -298,11 +327,14 @@ if __name__ == '__main__':
 		if(os.path.exists(modelDir)):
 			# convert to NNIR
 			if(modelFormat == 'caffe'):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/caffe_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/caffe_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,' + modelInputDims + ')')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + modelBatchSize + ' nnir-files nnir-files)')
 			elif(modelFormat == 'onnx'):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/onnx_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/onnx_to_nnir.py '+trainedModel+' nnir-files --input_dims 1,' + modelInputDims + ')')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + modelBatchSize + ' nnir-files nnir-files)')
 			elif(modelFormat == 'nnef'):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files )')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files --batch-size ' + modelBatchSize + ')')
+				#os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + modelBatchSize + ' nnir-files nnir-files)')
 			else:
 				print("ERROR: Neural Network Format Not supported, use caffe/onnx/nnef in arugment --model_format")
 				quit()
@@ -323,19 +355,9 @@ if __name__ == '__main__':
 			else:
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
+
 	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
-	
-	#else:
-		#print("ERROR: MIVisionX Inference Analyzer Failed")
-		#quit()
-
-	# opencv display window
-	windowInput = "MIVisionX Inference Analyzer - Input Image"
-	windowResult = "MIVisionX Inference Analyzer - Results"
-	windowProgress = "MIVisionX Inference Analyzer - Progress"
-	cv2.namedWindow(windowInput, cv2.WINDOW_GUI_EXPANDED)
-	cv2.resizeWindow(windowInput, 800, 800)
 
 	# create inference classifier
 	classifier = annieObjectWrapper(pythonLib, weightsFile)
@@ -359,52 +381,53 @@ if __name__ == '__main__':
 	orig_stdout = sys.stdout
 	# setup results output file
 	sys.stdout = open(finalImageResultsFile,'a')
-	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,\
-    		Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
+	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
+
+	#setup for Rali
+	batchSize = 1
+	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i)
+	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+	print ('Pipeline created ...')
+	print 'Image iterator created ... number of images', imageIterator.imageCount()
+	print 'Loader created ...num of images' , loader.getOutputImageCount()
 
 	# process images
 	correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-	for x in range(totalImages):
-		imageFileName,grountTruth = imageValidation[x].decode("utf-8").split(' ')
-		groundTruthIndex = int(grountTruth)
-		imageFile = os.path.expanduser(inputImageDir+'/'+imageFileName)
-		if (not os.path.isfile(imageFile)):
-			print 'Image File - '+imageFile+' not found'
-			quit()
-		else:
-			# read image
-			start = time.time()
-			frame = cv2.imread(imageFile)
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Read Image in ', str((end - start)*1000), 'ms'
+	
+	#create output dict for all the images
+	guiResults = {}
 
-			# resize and process frame
-			start = time.time()
-			resizedFrame = cv2.resize(frame, (w_i,h_i))
-			RGBframe = cv2.cvtColor(resizedFrame, cv2.COLOR_BGR2RGB)
-			if(inputAdd != '' or inputMultiply != ''):
-				pFrame = np.zeros(RGBframe.shape).astype('float32')
-				for i in range(RGBframe.shape[2]):
-					pFrame[:,:,i] = RGBframe.copy()[:,:,i] * Mx[i] + Ax[i]
-				RGBframe = pFrame
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Input pre-processed in ', str((end - start)*1000), 'ms'
+	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+	#image_tensor has the input tensor required for inference
+	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+		start_main = time.time()
+		imageFileName = loader.get_input_name()
+		groundTruthIndex = loader.get_ground_truth()
+		groundTruthIndex = int(groundTruthIndex)
 
-			# run inference
-			start = time.time()
-			output = classifier.classify(RGBframe)
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+		#create output list for each image
+		augmentedResults = []
 
+		#create images for display
+		original_image = image_batch[0:h_i-1, 0:w_i-1]
+		cloned_image = np.copy(image_batch)
+		#cloned_image = image_batch[0:224, 0:224]
+		frame = image_tensor
+		#viewer.showImage(cloned_image)
+		# run inference
+		start = time.time()
+		output = classifier.classify(frame)
+		end = time.time()
+		if(verbosePrint):
+			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+
+		for i in range(loader.getOutputImageCount()):
+			#using tensor output of RALI as frame 		
+			
 			# process output and display
-			resultImage, topIndex, topProb = processClassificationOutput(resizedFrame, modelName, output)
 			start = time.time()
-			cv2.imshow(windowInput, frame)
-			cv2.imshow(windowResult, resultImage)
+			topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
@@ -412,9 +435,9 @@ if __name__ == '__main__':
 			# write image results to a file
 			start = time.time()
 			sys.stdout = open(finalImageResultsFile,'a')
-			print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4])+
-				','+str(topIndex[3])+','+str(topIndex[2])+','+str(topIndex[1])+','+str(topIndex[0])+','+str(topProb[4])+
-				','+str(topProb[3])+','+str(topProb[2])+','+str(topProb[1])+','+str(topProb[0]))
+			print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
+			','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
+			','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
 			sys.stdout = orig_stdout
 			end = time.time()
 			if(verbosePrint):
@@ -422,78 +445,83 @@ if __name__ == '__main__':
 
 			# create progress image
 			start = time.time()
-			progressImage = np.zeros((400, 500, 3), dtype="uint8")
-			progressImage.fill(255)
-			cv2.putText(progressImage, 'Inference Analyzer Progress', (25,  25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2)
-			size = cv2.getTextSize(modelName, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-			t_width = size[0][0]
-			t_height = size[0][1]
-			headerX_start = int(250 -(t_width/2))
-			cv2.putText(progressImage,modelName,(headerX_start,t_height+(20+40)),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,0,0),2)
-			txt = 'Processed: '+str(x+1)+' of '+str(totalImages)
-			size = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-			cv2.putText(progressImage,txt,(50,t_height+(60+40)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# progress bar
-			cv2.rectangle(progressImage, (50,150), (450,180), (192,192,192), -1)
-			progressWidth = int(50+ ((400*(x+1))/totalImages))
-			cv2.rectangle(progressImage, (50,150), (progressWidth,180), (255,204,153), -1)
-			percentage = int(((x+1)/float(totalImages))*100)
-			pTxt = 'progress: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(175,170),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
 
-			if(groundTruthIndex == topIndex[4]):
+			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
+			if(groundTruthIndex == topIndex[4 + i*4]):
 				correctTop1 = correctTop1 + 1
 				correctTop5 = correctTop5 + 1
-			elif(groundTruthIndex == topIndex[3] or groundTruthIndex == topIndex[2] or groundTruthIndex == topIndex[1] or groundTruthIndex == topIndex[0]):
+				augmentedResults.append(1)
+			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
 				correctTop5 = correctTop5 + 1
+				if (groundTruthIndex == topIndex[3 + i*4]):
+					augmentedResults.append(2)
+				elif (groundTruthIndex == topIndex[2 + i*4]):
+					augmentedResults.append(3)
+				elif (groundTruthIndex == topIndex[1 + i*4]):
+					augmentedResults.append(4)
+				elif (groundTruthIndex == topIndex[0 + i*4]):
+					augmentedResults.append(5)
 			elif(groundTruthIndex == -1):
 				noGroundTruth = noGroundTruth + 1
+				augmentedResults.append(-1)
 			else:
 				wrong = wrong + 1
+				augmentedResults.append(0)
 
-			# top 1 progress
-			cv2.rectangle(progressImage, (50,200), (450,230), (192,192,192), -1)
-			progressWidth = int(50 + ((400*correctTop1)/totalImages))
-			cv2.rectangle(progressImage, (50,200), (progressWidth,230), (0,153,0), -1)
-			percentage = int((correctTop1/float(totalImages))*100)
-			pTxt = 'Top1: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(195,220),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# top 5 progress
-			cv2.rectangle(progressImage, (50,250), (450,280), (192,192,192), -1)
-			progressWidth = int(50+ ((400*correctTop5)/totalImages))
-			cv2.rectangle(progressImage, (50,250), (progressWidth,280), (0,255,0), -1)
-			percentage = int((correctTop5/float(totalImages))*100)
-			pTxt = 'Top5: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(195,270),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# wrong progress
-			cv2.rectangle(progressImage, (50,300), (450,330), (192,192,192), -1)
-			progressWidth = int(50+ ((400*wrong)/totalImages))
-			cv2.rectangle(progressImage, (50,300), (progressWidth,330), (0,0,255), -1)
-			percentage = int((wrong/float(totalImages))*100)
-			pTxt = 'Mismatch: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(175,320),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			# no ground truth progress
-			cv2.rectangle(progressImage, (50,350), (450,380), (192,192,192), -1)
-			progressWidth = int(50+ ((400*noGroundTruth)/totalImages))
-			cv2.rectangle(progressImage, (50,350), (progressWidth,380), (0,255,255), -1)
-			percentage = int((noGroundTruth/float(totalImages))*100)
-			pTxt = 'Ground Truth unavailable: '+str(percentage)+'%'
-			cv2.putText(progressImage,pTxt,(125,370),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
-			
-			cv2.imshow(windowProgress, progressImage)
+			# Total progress
+			viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
+			# Top 1 progress
+			viewer.setTop1Progress(correctTop1)
+			# Top 5 progress
+			viewer.setTop5Progress(correctTop5)
+			# Mismatch progress
+			viewer.setMisProgress(wrong)
+			# No ground truth progress
+			viewer.setNoGTProgress(noGroundTruth)
+
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-			# exit on ESC
-			key = cv2.waitKey(2)
-			if key == 27: 
-				break
+			#show original image
+			cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
+			cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
+			#viewer.showImage(original_image)
+			#write type of augmentation on image
+			text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0]
+			text_off_x = 5
+			text_off_y = (i*h_i)+h_i-7
+			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+			cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
+			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1)	
 
-	# Inference Analyzer Successful
+			#show RALI augmented images
+			if augmentedResults[i] == 0:
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
+			#split RALI augmented images into a grid
+			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
+			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
+			cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+			#viewer.showImage(final_image_batch)
+		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
+		key = cv2.waitKey(2)
+		if key == 27: 
+			break
+		if key == 32:
+			if cv2.waitKey(0) == 32:
+				continue
+		if key == 113:
+			exit(0)
+
+		guiResults[imageFileName] = augmentedResults
+		end_main = time.time()
+		print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
+
 	print("\nSUCCESS: Images Inferenced with the Model\n")
-	cv2.destroyWindow(windowInput)
-	cv2.destroyWindow(windowResult)
 
 	# Create ADAT folder and file
 	print("\nADAT tool called to create the analysis toolkit\n")
@@ -514,9 +542,9 @@ if __name__ == '__main__':
 		key = cv2.waitKey(2)
 		if key == 27:
 			cv2.destroyAllWindows()
-			break        
-		if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-			break
+			break   
+		# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+		# 	break
 
 	outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
 	os.system('firefox '+outputHTMLFile)
