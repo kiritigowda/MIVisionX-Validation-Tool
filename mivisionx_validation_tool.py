@@ -33,42 +33,100 @@ colors =[
         (0,128,255),      # Top4
         (255,102,102),    # Top5
         ];
-raliList = ['original', 'warpAffine', 'contrast', 'rain', 
+raliList_mode1 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
 			'gamma', 'rotate', 'jitter', 'blend']
-
+raliList_mode2 = ['original', 'warpAffine', 'contrast', 'contrast+rain', 
+			'brightness', 'brightness+colorTemp', 'exposure', 'exposure+vignette', 
+			'fog', 'fog+snow', 'pixelate', 'pixelate+SnPNoise', 
+			'gamma', 'rotate', 'rotate+jitter', 'blend']
+raliList_mode3 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain', 
+			'brightness', 'colorTemp', 'exposure', 'vignette', 
+			'fog', 'vignette+snow', 'pixelate', 'gamma',
+			'SnPNoise+gamma', 'rotate', 'jitter+pixelate', 'blend']
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
-    def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation, h_img, w_img):
+    def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode):
         RaliGraph.__init__(self, batch_size, affinity)
         self.validation_dict = {}
         self.process_validation(image_validation)
         self.setSeed(0)
-        self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-        self.input = self.resize(self.jpg_img, h_img, w_img, True)
-        
-        self.warped = self.warpAffine(self.input,True)
+        if raliMode == 1:
+	        self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+	        self.input = self.resize(self.jpg_img, h_img, w_img, True)
+	        
+	        self.warped = self.warpAffine(self.input,True)
 
-        self.contrast_img = self.contrast(self.input,True)
-        self.rain_img = self.rain(self.input, True)
+	        self.contrast_img = self.contrast(self.input,True)
+	        self.rain_img = self.rain(self.input, True)
 
-        self.bright_img = self.brightness(self.input,True)
-        self.temp_img = self.colorTemp(self.input, True)
+	        self.bright_img = self.brightness(self.input,True)
+	        self.temp_img = self.colorTemp(self.input, True)
 
-        self.exposed_img = self.exposure(self.input, True)
-        self.vignette_img = self.vignette(self.input, True)
-        self.fog_img = self.fog(self.input, True)
-        self.snow_img = self.snow(self.input, True)
+	        self.exposed_img = self.exposure(self.input, True)
+	        self.vignette_img = self.vignette(self.input, True)
+	        self.fog_img = self.fog(self.input, True)
+	        self.snow_img = self.snow(self.input, True)
 
-        self.pixelate_img = self.pixelate(self.input, True)
-        self.snp_img = self.SnPNoise(self.input, True, 0.2)
-        self.gamma_img = self.gamma(self.input, True)
+	        self.pixelate_img = self.pixelate(self.input, True)
+	        self.snp_img = self.SnPNoise(self.input, True, 0.2)
+	        self.gamma_img = self.gamma(self.input, True)
 
-        self.rotate_img = self.rotate(self.input, True)
-        self.jitter_img = self.jitter(self.input, True)
-		
-        self.blend_img = self.blend(self.input, self.contrast_img, True)
+	        self.rotate_img = self.rotate(self.input, True)
+	        self.jitter_img = self.jitter(self.input, True)
+			
+	        self.blend_img = self.blend(self.input, self.contrast_img, True)
+        elif raliMode == 2:
+	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+	        self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+	    	self.warped = self.warpAffine(self.input,True)
+
+	    	self.contrast_img = self.contrast(self.input,True)
+	    	self.rain_img = self.rain(self.contrast_img, True)
+
+	    	self.bright_img = self.brightness(self.input,True)
+	    	self.temp_img = self.colorTemp(self.bright_img, True)
+
+	    	self.exposed_img = self.exposure(self.input, True)
+	    	self.vignette_img = self.vignette(self.exposed_img, True)
+	    	self.fog_img = self.fog(self.input, True)
+	    	self.snow_img = self.snow(self.fog_img, True)
+
+	    	self.pixelate_img = self.pixelate(self.input, True)
+	    	self.snp_img = self.SnPNoise(self.pixelate_img, True, 0.2)
+	    	self.gamma_img = self.gamma(self.input, True)
+
+	    	self.rotate_img = self.rotate(self.input, True)
+	    	self.jitter_img = self.jitter(self.rotate_img, True)
+
+	        self.blend_img = self.blend(self.rotate_img, self.warped, True)
+        elif raliMode == 3:
+	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+	        self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+	    	self.warped = self.warpAffine(self.input,True)
+
+	    	self.contrast_img = self.contrast(self.input,True)
+	    	self.rain_img = self.rain(self.warped, True)
+
+	    	self.bright_img = self.brightness(self.input,True)
+	    	self.temp_img = self.colorTemp(self.input, True)
+
+	    	self.exposed_img = self.exposure(self.input, True)
+	    	self.vignette_img = self.vignette(self.input, True)
+	    	self.fog_img = self.fog(self.input, True)
+	    	self.snow_img = self.snow(self.vignette_img, True)
+
+	    	self.pixelate_img = self.pixelate(self.input, True)
+	    	self.gamma_img = self.gamma(self.input, True)
+	    	self.snp_img = self.SnPNoise(self.gamma_img, True, 0.2)
+
+	    	self.rotate_img = self.rotate(self.input, True)
+	    	self.jitter_img = self.jitter(self.pixelate_img, True)
+
+	        self.blend_img = self.blend(self.snow_img, self.bright_img, True)
 
     def get_input_name(self):
         return self.jpg_img.name(0)
@@ -250,6 +308,7 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
+	raliMode = 1
 
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
@@ -380,13 +439,13 @@ if __name__ == '__main__':
 	# original std out location 
 	orig_stdout = sys.stdout
 	# setup results output file
-	sys.stdout = open(finalImageResultsFile,'a')
+	sys.stdout = open(finalImageResultsFile,'w')	
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
 	#setup for Rali
 	batchSize = 1
-	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i)
+	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
 	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
 	print ('Pipeline created ...')
 	print 'Image iterator created ... number of images', imageIterator.imageCount()
@@ -410,7 +469,7 @@ if __name__ == '__main__':
 		augmentedResults = []
 
 		#create images for display
-		original_image = image_batch[0:h_i-1, 0:w_i-1]
+		original_image = image_batch[0:h_i, 0:w_i]
 		cloned_image = np.copy(image_batch)
 		#cloned_image = image_batch[0:224, 0:224]
 		frame = image_tensor
@@ -421,6 +480,10 @@ if __name__ == '__main__':
 		end = time.time()
 		if(verbosePrint):
 			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+
+		#show original image
+		cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
+		cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
 
 		for i in range(loader.getOutputImageCount()):
 			#using tensor output of RALI as frame 		
@@ -483,11 +546,15 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-			#show original image
-			cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
-			cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
 			#viewer.showImage(original_image)
 			#write type of augmentation on image
+			if raliMode == 1:
+				raliList = raliList_mode1
+			elif raliMode == 2:
+				raliList = raliList_mode2
+			elif raliMode == 3:
+				raliList = raliList_mode3
+
 			text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0]
 			text_off_x = 5
 			text_off_y = (i*h_i)+h_i-7
@@ -501,11 +568,12 @@ if __name__ == '__main__':
 			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
 				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-			#split RALI augmented images into a grid
-			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
-			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
-			cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+		#split RALI augmented images into a grid
+		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
+		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
+		cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+		cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+
 			#viewer.showImage(final_image_batch)
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
@@ -519,7 +587,7 @@ if __name__ == '__main__':
 
 		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
-		print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
+		#print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
 
 	print("\nSUCCESS: Images Inferenced with the Model\n")
 
