@@ -1,8 +1,8 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-# MIVisionX Python Inference Analyzer
+# MIVisionX Python ML Model Validation Tool
 
-[MIVisionX](https://gpuopen-professionalcompute-libraries.github.io/MIVisionX/) Inference Analyzer Application using pre-trained `ONNX`/`NNEF`/`Caffe` models to analyze and summarize images.
+[MIVisionX](https://gpuopen-professionalcompute-libraries.github.io/MIVisionX/) ML Model Validation Tool using pre-trained `ONNX`/`NNEF`/`Caffe` models to analyze, summarize, & validate.
 
 <p align="center"><img width="60%" src="data/images/inference_analyzer.gif" /></p>
 
