@@ -222,8 +222,6 @@ if __name__ == '__main__':
 		replaceModel = args.replace
 		verbose = args.verbose
 
-	#viewer = inference_viewer(modelName, )
-	
 	# set verbose print
 	if(verbose != 'no'):
 		verbosePrint = True
@@ -410,11 +408,14 @@ if __name__ == '__main__':
 		augmentedResults = []
 
 		#create images for display
-		original_image = image_batch[0:h_i-1, 0:w_i-1]
+		original_image = image_batch[0:h_i, 0:w_i]
 		cloned_image = np.copy(image_batch)
-		#cloned_image = image_batch[0:224, 0:224]
 		frame = image_tensor
-		#viewer.showImage(cloned_image)
+		#show original image
+		# cv2.resize(original_image, (112,112))
+		# cv2.imshow('original_images2', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))
+		viewer.showImage(original_image)
+		#app.exec_()
 		# run inference
 		start = time.time()
 		output = classifier.classify(frame)
@@ -483,10 +484,6 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-			#show original image
-			cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
-			cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
-			#viewer.showImage(original_image)
 			#write type of augmentation on image
 			text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0]
 			text_off_x = 5
@@ -501,12 +498,13 @@ if __name__ == '__main__':
 			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
 				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-			#split RALI augmented images into a grid
-			image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
-			final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
-			cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-			cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-			#viewer.showImage(final_image_batch)
+		#split RALI augmented images into a grid
+		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
+		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
+		viewer.showAugImage(final_image_batch)
+		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+		
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
 		if key == 27: 
