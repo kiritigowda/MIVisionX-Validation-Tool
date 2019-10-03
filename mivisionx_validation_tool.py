@@ -6,7 +6,7 @@ __version__     = "0.9.5"
 __maintainer__  = "Kiriti Nagesh Gowda"
 __email__       = "Kiriti.NageshGowda@amd.com"
 __status__      = "ALPHA"
-__script_name__ = "MIVisionX Inference Analyzer"
+__script_name__ = "MIVisionX Validation Tool"
 
 import argparse
 import os
@@ -281,7 +281,7 @@ if __name__ == '__main__':
 
 	# MIVisionX setup
 	if(os.path.exists(analyzerDir)):
-		print("\nMIVisionX Inference Analyzer\n")
+		print("\nMIVisionX Validation Tool\n")
 		# replace old model or throw error
 		if(replaceModel == 'yes'):
 			os.system('rm -rf '+modelDir)
@@ -289,7 +289,7 @@ if __name__ == '__main__':
 			print("OK: Model exists")
 
 	else:
-		print("\nMIVisionX Inference Analyzer Created\n")
+		print("\nMIVisionX Validation Tool Created\n")
 		os.system('(cd ; mkdir .mivisionx-validation-tool)')
 	# Setup Text File for Demo
 	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
@@ -327,11 +327,14 @@ if __name__ == '__main__':
 		if(os.path.exists(modelDir)):
 			# convert to NNIR
 			if(modelFormat == 'caffe'):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/caffe_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/caffe_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,' + modelInputDims + ')')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + modelBatchSize + ' nnir-files nnir-files)')
 			elif(modelFormat == 'onnx'):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/onnx_to_nnir.py '+trainedModel+' nnir-files --input-dims 1,'+modelInputDims+' )')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/onnx_to_nnir.py '+trainedModel+' nnir-files --input_dims 1,' + modelInputDims + ')')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + modelBatchSize + ' nnir-files nnir-files)')
 			elif(modelFormat == 'nnef'):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files )')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnef_to_nnir.py '+trainedModel+' nnir-files --batch-size ' + modelBatchSize + ')')
+				#os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --batch-size ' + modelBatchSize + ' nnir-files nnir-files)')
 			else:
 				print("ERROR: Neural Network Format Not supported, use caffe/onnx/nnef in arugment --model_format")
 				quit()
@@ -352,12 +355,9 @@ if __name__ == '__main__':
 			else:
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
+
 	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
-	
-	#else:
-		#print("ERROR: MIVisionX Inference Analyzer Failed")
-		#quit()
 
 	# create inference classifier
 	classifier = annieObjectWrapper(pythonLib, weightsFile)
@@ -483,10 +483,6 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-			original_image = image_batch[0:224, 0:224]
-			cloned_image = image_batch[:]
-			#cv2.rectangle(original_image, (0,0),(224,224), (255,255,255), 4, cv2.LINE_8, 0)
-			#cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))
 			#show original image
 			cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
 			cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	

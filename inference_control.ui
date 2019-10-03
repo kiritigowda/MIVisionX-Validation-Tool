@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MIVisionX Inference Analyzer</string>
+   <string>MIVisionX Validation Tool</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -497,10 +497,33 @@
     </item>
     <item>
      <layout class="QGridLayout" name="inference_gridLayout">
-      <item row="4" column="1">
-       <widget class="QLabel" name="hier_label">
+      <item row="2" column="1">
+       <widget class="QLabel" name="image_label">
         <property name="text">
-         <string>Hierarchy</string>
+         <string>Image Directory</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="QPushButton" name="close_pushButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Close</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="output_label">
+        <property name="text">
+         <string>Output Directory</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -517,33 +540,33 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="4">
-       <widget class="QPushButton" name="val_pushButton">
+      <item row="2" column="2" colspan="2">
+       <widget class="QLineEdit" name="image_lineEdit">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Browse...</string>
+         <string/>
         </property>
        </widget>
       </item>
-      <item row="4" column="4">
-       <widget class="QPushButton" name="hier_pushButton">
+      <item row="3" column="2" colspan="2">
+       <widget class="QLineEdit" name="val_lineEdit">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Browse...</string>
+         <string/>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="val_label">
-        <property name="text">
-         <string>Label text file</string>
+      <item row="1" column="2" colspan="2">
+       <widget class="QLineEdit" name="label_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>
@@ -605,8 +628,8 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="4">
-       <widget class="QPushButton" name="label_pushButton">
+      <item row="4" column="4">
+       <widget class="QPushButton" name="hier_pushButton">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -615,30 +638,23 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="output_label">
-        <property name="text">
-         <string>Output Directory</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="image_label">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QLineEdit" name="hier_lineEdit">
+      <item row="0" column="2" colspan="2">
+       <widget class="QLineEdit" name="output_lineEdit">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
          <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="4">
+       <widget class="QPushButton" name="run_pushButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Run</string>
         </property>
        </widget>
       </item>
@@ -662,16 +678,6 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="4">
-       <widget class="QPushButton" name="run_pushButton">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
       <item row="5" column="2">
        <spacer name="horizontalSpacer">
         <property name="orientation">
@@ -688,61 +694,48 @@
         </property>
        </spacer>
       </item>
-      <item row="5" column="3">
-       <widget class="QPushButton" name="close_pushButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+      <item row="3" column="4">
+       <widget class="QPushButton" name="val_pushButton">
+        <property name="enabled">
+         <bool>true</bool>
         </property>
         <property name="text">
-         <string>Close</string>
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QPushButton" name="label_pushButton">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="val_label">
+        <property name="text">
+         <string>Validation txt file</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Label txt file</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
       <item row="4" column="2" colspan="2">
        <widget class="QLineEdit" name="hier_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2" colspan="2">
-       <widget class="QLineEdit" name="val_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2" colspan="2">
-       <widget class="QLineEdit" name="image_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2" colspan="2">
-       <widget class="QLineEdit" name="label_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" colspan="2">
-       <widget class="QLineEdit" name="output_lineEdit">
         <property name="enabled">
          <bool>true</bool>
         </property>
