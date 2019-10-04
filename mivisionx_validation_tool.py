@@ -308,6 +308,7 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
+	raliMode = 1
 
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
@@ -482,6 +483,10 @@ if __name__ == '__main__':
 		if(verbosePrint):
 			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 
+		#show original image
+		cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
+		cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
+
 		for i in range(loader.getOutputImageCount()):
 			#using tensor output of RALI as frame 		
 			
@@ -575,13 +580,13 @@ if __name__ == '__main__':
 		
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
-		if key == 27: 
-			break
-		if key == 32:
-			if cv2.waitKey(0) == 32:
-				continue
-		if key == 113:
-			exit(0)
+		# if key == 27: 
+		# 	break
+		# if key == 32:
+		# 	if cv2.waitKey(0) == 32:
+		# 		continue
+		# if key == 113:
+		# 	exit(0)
 
 		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
