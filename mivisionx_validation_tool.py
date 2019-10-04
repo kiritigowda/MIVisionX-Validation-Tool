@@ -573,7 +573,7 @@ if __name__ == '__main__':
 		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
 
-		#show augmented images
+    #show augmented images
 		viewer.showAugImage(final_image_batch)
 		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
