@@ -481,6 +481,10 @@ if __name__ == '__main__':
 		if(verbosePrint):
 			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 
+		#show original image
+		cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
+		cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
+
 		for i in range(loader.getOutputImageCount()):
 			#using tensor output of RALI as frame 		
 			
@@ -567,11 +571,11 @@ if __name__ == '__main__':
 		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
 
-		#show augmented images
+    #show augmented images
 		viewer.showAugImage(final_image_batch)
 		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-		
+
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
 		# if key == 27: 
