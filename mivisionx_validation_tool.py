@@ -556,7 +556,7 @@ if __name__ == '__main__':
 			text_off_y = (i*h_i)+h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
-			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1)	
+			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
 
 			#show RALI augmented images
 			if augmentedResults[i] == 0:
@@ -575,13 +575,13 @@ if __name__ == '__main__':
 		
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
-		# if key == 27: 
-		# 	break
-		# if key == 32:
-		# 	if cv2.waitKey(0) == 32:
-		# 		continue
-		# if key == 113:
-		# 	exit(0)
+		if key == 27: 
+			break
+		if key == 32:
+			if cv2.waitKey(0) == 32:
+				continue
+		if key == 113:
+			exit(0)
 
 		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
