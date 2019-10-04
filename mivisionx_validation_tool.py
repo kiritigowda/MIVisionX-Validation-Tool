@@ -280,8 +280,6 @@ if __name__ == '__main__':
 		replaceModel = args.replace
 		verbose = args.verbose
 
-	#viewer = inference_viewer(modelName, )
-	
 	# set verbose print
 	if(verbose != 'no'):
 		verbosePrint = True
@@ -471,9 +469,11 @@ if __name__ == '__main__':
 		#create images for display
 		original_image = image_batch[0:h_i, 0:w_i]
 		cloned_image = np.copy(image_batch)
-		#cloned_image = image_batch[0:224, 0:224]
 		frame = image_tensor
-		#viewer.showImage(cloned_image)
+
+		#show original image
+		viewer.showImage(original_image)
+
 		# run inference
 		start = time.time()
 		output = classifier.classify(frame)
@@ -546,7 +546,6 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-			#viewer.showImage(original_image)
 			#write type of augmentation on image
 			if raliMode == 1:
 				raliList = raliList_mode1
@@ -571,19 +570,21 @@ if __name__ == '__main__':
 		#split RALI augmented images into a grid
 		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
-		cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-		cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 
-			#viewer.showImage(final_image_batch)
+    #show augmented images
+		viewer.showAugImage(final_image_batch)
+		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
-		if key == 27: 
-			break
-		if key == 32:
-			if cv2.waitKey(0) == 32:
-				continue
-		if key == 113:
-			exit(0)
+		# if key == 27: 
+		# 	break
+		# if key == 32:
+		# 	if cv2.waitKey(0) == 32:
+		# 		continue
+		# if key == 113:
+		# 	exit(0)
 
 		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
