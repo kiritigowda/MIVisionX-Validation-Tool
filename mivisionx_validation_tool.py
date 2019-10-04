@@ -230,6 +230,7 @@ if __name__ == '__main__':
 		modelName = (str)(panel.model_name)
 		modelLocation = (str)(panel.model)
 		modelBatchSize = (str)(panel.batch)
+		raliMode = (int)(panel.mode) + 1
 		modelInputDims = (str)(panel.input_dims)
 		modelOutputDims = (str)(panel.output_dims)
 		label = (str)(panel.label)
@@ -248,6 +249,7 @@ if __name__ == '__main__':
 		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
 		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file/folder          [required]')
 		parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
+		parser.add_argument('--rali_mode',			type=str, required=True,	help='rali mode (1/2/3)			             [required]')
 		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
@@ -267,6 +269,7 @@ if __name__ == '__main__':
 		modelName = args.model_name
 		modelLocation = args.model
 		modelBatchSize = args.model_batch_size
+		raliMode = (int)(args.rali_mode)
 		modelInputDims = args.model_input_dims
 		modelOutputDims = args.model_output_dims
 		label = args.label
@@ -287,7 +290,6 @@ if __name__ == '__main__':
 	# set fp16 inference turned on/off
 	if(fp16 != 'no'):
 		FP16inference = True
-
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
 	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
@@ -306,7 +308,6 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
-	raliMode = 1
 
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
