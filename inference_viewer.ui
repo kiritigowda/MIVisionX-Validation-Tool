@@ -18,7 +18,11 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
+<<<<<<< HEAD
+       <widget class="QLabel" name="AMD_logo">
+=======
        <widget class="QLabel" name="AMD_label">
+>>>>>>> upstream/master
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -29,7 +33,11 @@
          <string/>
         </property>
         <property name="pixmap">
+<<<<<<< HEAD
+         <pixmap>data/images/AMD Radeon.png</pixmap>
+=======
          <pixmap>../MIVisionX-inference-analyzer/data/images/AMD Radeon.png</pixmap>
+>>>>>>> upstream/master
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -37,6 +45,9 @@
        </widget>
       </item>
       <item>
+<<<<<<< HEAD
+       <widget class="QLabel" name="MIViionX_logo">
+=======
        <widget class="QLabel" name="MIVisionX_label">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -44,11 +55,16 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+>>>>>>> upstream/master
         <property name="text">
          <string/>
         </property>
         <property name="pixmap">
+<<<<<<< HEAD
+         <pixmap>data/images/MIVisionX-logo.png</pixmap>
+=======
          <pixmap>../MIVisionX-inference-analyzer/data/images/MIVisionX.png</pixmap>
+>>>>>>> upstream/master
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -56,7 +72,11 @@
        </widget>
       </item>
       <item>
+<<<<<<< HEAD
+       <widget class="QLabel" name="EPYC_logo">
+=======
        <widget class="QLabel" name="EPYC_label">
+>>>>>>> upstream/master
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -67,7 +87,11 @@
          <string/>
         </property>
         <property name="pixmap">
+<<<<<<< HEAD
+         <pixmap>data/images/EPYC-blue.png</pixmap>
+=======
          <pixmap>../MIVisionX-inference-analyzer/data/images/EPYC-blue.png</pixmap>
+>>>>>>> upstream/master
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -497,7 +521,11 @@
             </property>
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -524,7 +552,11 @@
             </property>
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -551,7 +583,11 @@
             </property>
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -572,7 +608,11 @@
            <widget class="QProgressBar" name="total_progressBar">
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -596,7 +636,11 @@
            <widget class="QProgressBar" name="top1_progressBar">
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -620,7 +664,11 @@
            <widget class="QProgressBar" name="top5_progressBar">
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -644,7 +692,11 @@
            <widget class="QProgressBar" name="mis_progressBar">
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>
@@ -668,7 +720,11 @@
            <widget class="QProgressBar" name="noGT_progressBar">
             <property name="maximumSize">
              <size>
+<<<<<<< HEAD
+              <width>650</width>
+=======
               <width>450</width>
+>>>>>>> upstream/master
               <height>16777215</height>
              </size>
             </property>

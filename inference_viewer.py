@@ -77,6 +77,6 @@ class inference_viewer(QtGui.QMainWindow):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
             self.close()
-            exit(0)
+            
         if event.key() == QtCore.Qt.Key_Space:
             print 'space'
