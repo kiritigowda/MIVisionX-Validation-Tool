@@ -1,4 +1,6 @@
 import sys, os
+#import numpy as np
+#import pyqtgraph as pg
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QImage
 
@@ -30,6 +32,7 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
+        self.setStyleSheet("background-color: white")
         self.name_label.setText(self.model_name)
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
@@ -41,6 +44,12 @@ class inference_viewer(QtGui.QMainWindow):
         self.top5_progressBar.setMaximum(self.total_images)
         self.mis_progressBar.setMaximum(self.total_images)
         self.noGT_progressBar.setMaximum(self.total_images)
+        # staticPlt = pg.PlotWidget(self)
+        # x = np.random.normal(size=10)
+        # y = np.random.normal(size=10)
+
+        # staticPlt.plot(x,y,clear=True)
+
         self.show()
 
     def setTotalProgress(self, value):

@@ -491,7 +491,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -518,7 +518,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -545,7 +545,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -566,7 +566,7 @@
            <widget class="QProgressBar" name="total_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -590,7 +590,7 @@
            <widget class="QProgressBar" name="top1_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -614,7 +614,7 @@
            <widget class="QProgressBar" name="top5_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -638,7 +638,7 @@
            <widget class="QProgressBar" name="mis_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -662,7 +662,7 @@
            <widget class="QProgressBar" name="noGT_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
