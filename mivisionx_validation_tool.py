@@ -222,8 +222,8 @@ def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 
 # MIVisionX Classifier
 if __name__ == '__main__':   
+	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
-		app = QtGui.QApplication(sys.argv)
 		panel = inference_control()
 		app.exec_()
 		modelFormat = (str)(panel.model_format)
