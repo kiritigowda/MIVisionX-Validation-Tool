@@ -365,7 +365,7 @@ if __name__ == '__main__':
 					modelList.append(data[i].split(';')[1])
 				if modelName not in modelList:
 					f = open(analyzerDir + "/setupFile.txt", "a")
-					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 					f.close()
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
@@ -482,10 +482,6 @@ if __name__ == '__main__':
 		end = time.time()
 		if(verbosePrint):
 			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
-
-		#show original image
-		cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
-		cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
 
 		for i in range(loader.getOutputImageCount()):
 			#using tensor output of RALI as frame 		
