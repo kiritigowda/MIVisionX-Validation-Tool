@@ -131,50 +131,53 @@
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="5" column="1">
-       <widget class="QLabel" name="padd_label">
-        <property name="font">
-         <font>
-          <family>Ubuntu</family>
-         </font>
+      <item row="3" column="4" colspan="2">
+       <widget class="QComboBox" name="mode_comboBox">
+        <property name="enabled">
+         <bool>true</bool>
         </property>
-        <property name="text">
-         <string>Preprocess(add)</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 3</string>
+         </property>
+        </item>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="format_label">
-        <property name="font">
-         <font>
-          <family>Ubuntu</family>
-         </font>
-        </property>
-        <property name="text">
-         <string>Format</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="3">
-       <widget class="QLabel" name="pmul_label">
-        <property name="font">
-         <font>
-          <family>Ubuntu</family>
-         </font>
-        </property>
-        <property name="text">
-         <string>Preprocess(mul)</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
+      <item row="6" column="3">
+       <layout class="QHBoxLayout" name="fp16_Layout">
+        <item>
+         <widget class="QLabel" name="fp16_label">
+          <property name="font">
+           <font>
+            <family>Ubuntu</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>FP16</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="fp16_checkBox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="0" column="1">
        <widget class="QLabel" name="upload_label">
@@ -189,22 +192,26 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="5">
-       <widget class="QPushButton" name="file_pushButton">
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <widget class="QLabel" name="name_label">
-        <property name="text">
-         <string>Model Name</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
+      <item row="6" column="2">
+       <layout class="QHBoxLayout" name="replace_Layout">
+        <item>
+         <widget class="QLabel" name="replace_label">
+          <property name="text">
+           <string>Replace</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="replace_checkBox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="0" column="0" rowspan="6">
        <widget class="QFrame" name="model_frame">
@@ -267,21 +274,6 @@
         </layout>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QLabel" name="odims_label">
-        <property name="font">
-         <font>
-          <family>Ubuntu</family>
-         </font>
-        </property>
-        <property name="text">
-         <string>Output Dims</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="1">
        <widget class="QLabel" name="file_label">
         <property name="minimumSize">
@@ -303,26 +295,75 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="4" colspan="2">
-       <widget class="QLineEdit" name="pmul_lineEdit">
+      <item row="4" column="1">
+       <widget class="QLabel" name="idims__label">
+        <property name="font">
+         <font>
+          <family>Ubuntu</family>
+         </font>
+        </property>
         <property name="text">
-         <string/>
+         <string>Input Dims</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
-      <item row="0" column="2" colspan="4">
-       <widget class="QComboBox" name="upload_comboBox">
+      <item row="3" column="1">
+       <widget class="QLabel" name="batch_label">
+        <property name="text">
+         <string>Batch Size</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="5">
+       <layout class="QHBoxLayout" name="loop_Layout" stretch="0,0">
         <item>
-         <property name="text">
-          <string>Choose or Upload a pre-trained model</string>
-         </property>
+         <widget class="QLabel" name="loop_label">
+          <property name="text">
+           <string>Loop</string>
+          </property>
+         </widget>
         </item>
+        <item>
+         <widget class="QCheckBox" name="loop_checkBox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="5" column="2">
+       <widget class="QLineEdit" name="padd_lineEdit">
+        <property name="text">
+         <string/>
+        </property>
        </widget>
       </item>
       <item row="2" column="4" colspan="2">
        <widget class="QLineEdit" name="name_lineEdit">
         <property name="text">
          <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="QLabel" name="pmul_label">
+        <property name="font">
+         <font>
+          <family>Ubuntu</family>
+         </font>
+        </property>
+        <property name="text">
+         <string>Preprocess(mul)</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -347,6 +388,67 @@
         </item>
        </layout>
       </item>
+      <item row="2" column="3">
+       <widget class="QLabel" name="name_label">
+        <property name="text">
+         <string>Model Name</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QLabel" name="odims_label">
+        <property name="font">
+         <font>
+          <family>Ubuntu</family>
+         </font>
+        </property>
+        <property name="text">
+         <string>Output Dims</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLineEdit" name="batch_lineEdit"/>
+      </item>
+      <item row="3" column="3">
+       <widget class="QLabel" name="mode_label">
+        <property name="text">
+         <string>RALI Mode</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QPushButton" name="file_pushButton">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" colspan="4">
+       <widget class="QComboBox" name="upload_comboBox">
+        <item>
+         <property name="text">
+          <string>Choose or Upload a pre-trained model</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="5" column="4" colspan="2">
+       <widget class="QLineEdit" name="pmul_lineEdit">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
       <item row="4" column="2">
        <widget class="QLineEdit" name="idims_lineEdit">
         <property name="text">
@@ -354,76 +456,15 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="2">
-       <widget class="QLineEdit" name="padd_lineEdit">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="4" colspan="2">
-       <widget class="QLineEdit" name="odims_lineEdit">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="2">
-       <layout class="QHBoxLayout" name="replace_Layout">
-        <item>
-         <widget class="QLabel" name="replace_label">
-          <property name="text">
-           <string>Replace</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="replace_checkBox">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="6" column="3">
-       <layout class="QHBoxLayout" name="fp16_Layout">
-        <item>
-         <widget class="QLabel" name="fp16_label">
-          <property name="font">
-           <font>
-            <family>Ubuntu</family>
-           </font>
-          </property>
-          <property name="text">
-           <string>FP16</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="fp16_checkBox">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="4" column="1">
-       <widget class="QLabel" name="idims__label">
+      <item row="5" column="1">
+       <widget class="QLabel" name="padd_label">
         <property name="font">
          <font>
           <family>Ubuntu</family>
          </font>
         </property>
         <property name="text">
-         <string>Input Dims</string>
+         <string>Preprocess(add)</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -467,49 +508,26 @@
         </item>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="batch_label">
+      <item row="2" column="1">
+       <widget class="QLabel" name="format_label">
+        <property name="font">
+         <font>
+          <family>Ubuntu</family>
+         </font>
+        </property>
         <property name="text">
-         <string>Batch Size</string>
+         <string>Format</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QLineEdit" name="batch_lineEdit"/>
-      </item>
-      <item row="3" column="3">
-       <widget class="QLabel" name="mode_label">
+      <item row="4" column="4" colspan="2">
+       <widget class="QLineEdit" name="odims_lineEdit">
         <property name="text">
-         <string>RALI Mode</string>
+         <string/>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="4" colspan="2">
-       <widget class="QComboBox" name="mode_comboBox">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <item>
-         <property name="text">
-          <string>Augmentation Set 1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Augmentation Set 2</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Augmentation Set 3</string>
-         </property>
-        </item>
        </widget>
       </item>
      </layout>

@@ -8,9 +8,12 @@ __email__       = "Kiriti.NageshGowda@amd.com"
 __status__      = "ALPHA"
 __script_name__ = "MIVisionX Validation Tool"
 
-import argparse
-import os
 import sys
+#setup python path for RALI
+sys.path.append('/opt/rocm/mivisionx/rali/python/')
+
+import os
+import argparse
 import ctypes
 import cv2
 import time
@@ -247,7 +250,7 @@ def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 	return topIndex, topProb
 
 # MIVisionX Classifier
-if __name__ == '__main__':   
+if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
 		panel = inference_control()
@@ -269,6 +272,7 @@ if __name__ == '__main__':
 		fp16 = (str)(panel.fp16)
 		replaceModel = (str)(panel.replace)
 		verbose = (str)(panel.verbose)
+		loop = (str)(panel.loop)
 	else:
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
@@ -288,6 +292,7 @@ if __name__ == '__main__':
 		parser.add_argument('--fp16',				type=str, default='no',		help='quantize to FP16 			[optional - default:no]')
 		parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
 		parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
+		parser.add_argument('--loop',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
 		args = parser.parse_args()
 		
 		# get arguments
@@ -308,6 +313,7 @@ if __name__ == '__main__':
 		fp16 = args.fp16
 		replaceModel = args.replace
 		verbose = args.verbose
+		loop = args.loop
 
 	# set verbose print
 	if(verbose != 'no'):
@@ -335,6 +341,12 @@ if __name__ == '__main__':
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
 	raliMode = 1
+
+	#set ADAT Flag to generate ADAT only once
+	ADATFlag = False
+
+	#set loop Flag based on user input
+	loopFlag = True
 
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
@@ -379,7 +391,7 @@ if __name__ == '__main__':
 	# Setup Text File for Demo
 	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
 		f = open(analyzerDir + "/setupFile.txt", "w")
-		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 		f.close()
 	else:
 		count = len(open(analyzerDir + "/setupFile.txt").readlines())
@@ -392,7 +404,7 @@ if __name__ == '__main__':
 						modelList.append(data[i].split(';')[1])
 				if modelName not in modelList:
 					f = open(analyzerDir + "/setupFile.txt", "a")
-					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 					f.close()
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
@@ -404,7 +416,7 @@ if __name__ == '__main__':
 			with open(analyzerDir + "/setupFile.txt", "w") as fout:
 			    fout.writelines(data[1:])
 			with open(analyzerDir + "/setupFile.txt", "a") as fappend:
-				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 				fappend.close()
 
 	# Compile Model and generate python .so files
@@ -483,171 +495,180 @@ if __name__ == '__main__':
 	print 'Image iterator created ... number of images', raliNumberOfImages
 	print 'Loader created ...num of images' , loader.getOutputImageCount()
 
-	# process images
-	correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-	
-	#create output dict for all the images
-	guiResults = {}
+	while loopFlag == True:	
+		# process images
+		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
+		
+		#create output dict for all the images
+		guiResults = {}
 
-	#build augmentation list based on RALI mode
-	if raliMode == 1:
-		raliList = raliList_mode1
-	elif raliMode == 2:
-		raliList = raliList_mode2
-	elif raliMode == 3:
-		raliList = raliList_mode3
+		#build augmentation list based on RALI mode
+		if raliMode == 1:
+			raliList = raliList_mode1
+		elif raliMode == 2:
+			raliList = raliList_mode2
+		elif raliMode == 3:
+			raliList = raliList_mode3
 
-	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
-	avg_benchmark = 0.0
-	#image_tensor has the input tensor required for inference
-	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
-		start_main = time.time()
-		imageFileName = loader.get_input_name()
-		groundTruthIndex = loader.get_ground_truth()
-		groundTruthIndex = int(groundTruthIndex)
+		viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+		avg_benchmark = 0.0
+		#image_tensor has the input tensor required for inference
+		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+			start_main = time.time()
+			imageFileName = loader.get_input_name()
+			groundTruthIndex = loader.get_ground_truth()
+			groundTruthIndex = int(groundTruthIndex)
 
-		#create output list for each image
-		augmentedResults = []
+			#create output list for each image
+			augmentedResults = []
 
-		#create images for display
-		original_image = image_batch[0:h_i, 0:w_i]
-		cloned_image = np.copy(image_batch)
-		frame = image_tensor
+			#create images for display
+			original_image = image_batch[0:h_i, 0:w_i]
+			cloned_image = np.copy(image_batch)
+			frame = image_tensor
 
-		#show original image
-		viewer.showImage(original_image)
+			#show original image
+			viewer.showImage(original_image)
 
-		# run inference
-		start = time.time()
-		output = classifier.classify(frame)
-		end = time.time()
+			# run inference
+			start = time.time()
+			output = classifier.classify(frame)
+			end = time.time()
+			if(verbosePrint):
+				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+
+			for i in range(loader.getOutputImageCount()):
+				#using tensor output of RALI as frame 		
+				
+				# process output and display
+				start = time.time()
+				topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
+				end = time.time()
+				if(verbosePrint):
+					print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
+
+				# write image results to a file
+				start = time.time()
+				sys.stdout = open(finalImageResultsFile,'a')
+				print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
+				','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
+				','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
+				sys.stdout = orig_stdout
+				end = time.time()
+				if(verbosePrint):
+					print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
+
+				# create progress image
+				start = time.time()
+
+				# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
+				if(groundTruthIndex == topIndex[4 + i*4]):
+					correctTop1 = correctTop1 + 1
+					correctTop5 = correctTop5 + 1
+					augmentedResults.append(1)
+				elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
+					correctTop5 = correctTop5 + 1
+					if (groundTruthIndex == topIndex[3 + i*4]):
+						augmentedResults.append(2)
+					elif (groundTruthIndex == topIndex[2 + i*4]):
+						augmentedResults.append(3)
+					elif (groundTruthIndex == topIndex[1 + i*4]):
+						augmentedResults.append(4)
+					elif (groundTruthIndex == topIndex[0 + i*4]):
+						augmentedResults.append(5)
+				elif(groundTruthIndex == -1):
+					noGroundTruth = noGroundTruth + 1
+					augmentedResults.append(-1)
+				else:
+					wrong = wrong + 1
+					augmentedResults.append(0)
+
+				# Total progress
+				viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
+				# Top 1 progress
+				viewer.setTop1Progress(correctTop1)
+				# Top 5 progress
+				viewer.setTop5Progress(correctTop5)
+				# Mismatch progress
+				viewer.setMisProgress(wrong)
+				# No ground truth progress
+				viewer.setNoGTProgress(noGroundTruth)
+
+				end = time.time()
+				if(verbosePrint):
+					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
+
+				text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
+				text_off_x = 5
+				text_off_y = (i*h_i)+h_i-7
+				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
+				cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
+
+				#show RALI augmented images
+				if augmentedResults[i] == 0:
+					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
+					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
+			#split RALI augmented images into a grid
+			""" splits it as 8X8
+			image_batch = np.vsplit(cloned_image, 8)
+			final_image_batch = np.hstack((image_batch))
+			"""
+			#split 16X4
+			image_batch = np.vsplit(cloned_image, 16)
+			final_image_batch = np.hstack((image_batch))
+	    	#show augmented images
+			viewer.showAugImage(final_image_batch)
+			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+
+			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
+			key = cv2.waitKey(2)
+			# if key == 27: 
+			#  	break
+			# if key == 32:
+			# 	if cv2.waitKey(0) == 32:
+			# 		continue
+			# if key == 113:
+			# 	exit(0)
+
+			guiResults[imageFileName] = augmentedResults
+			end_main = time.time()
+			if(verbosePrint):
+				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
+			avg_benchmark += (end_main - start_main)*1000
 		if(verbosePrint):
-			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+		print("\nSUCCESS: Images Inferenced with the Model\n")
 
-		for i in range(loader.getOutputImageCount()):
-			#using tensor output of RALI as frame 		
+		if ADATFlag == False:
+			# Create ADAT folder and file
+			print("\nADAT tool called to create the analysis toolkit\n")
+			if(not os.path.exists(adatOutputDir)):
+				os.system('mkdir ' + adatOutputDir)
 			
-			# process output and display
-			start = time.time()
-			topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
-
-			# write image results to a file
-			start = time.time()
-			sys.stdout = open(finalImageResultsFile,'a')
-			print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
-			','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
-			','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
-			sys.stdout = orig_stdout
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
-
-			# create progress image
-			start = time.time()
-
-			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
-			if(groundTruthIndex == topIndex[4 + i*4]):
-				correctTop1 = correctTop1 + 1
-				correctTop5 = correctTop5 + 1
-				augmentedResults.append(1)
-			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
-				correctTop5 = correctTop5 + 1
-				if (groundTruthIndex == topIndex[3 + i*4]):
-					augmentedResults.append(2)
-				elif (groundTruthIndex == topIndex[2 + i*4]):
-					augmentedResults.append(3)
-				elif (groundTruthIndex == topIndex[1 + i*4]):
-					augmentedResults.append(4)
-				elif (groundTruthIndex == topIndex[0 + i*4]):
-					augmentedResults.append(5)
-			elif(groundTruthIndex == -1):
-				noGroundTruth = noGroundTruth + 1
-				augmentedResults.append(-1)
+			if(hierarchy == ''):
+				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+				' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
 			else:
-				wrong = wrong + 1
-				augmentedResults.append(0)
+				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+				' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+			print("\nSUCCESS: Image Analysis Toolkit Created\n")
+			print("Press ESC to exit or close progess window\n")
+			ADATFlag = True
 
-			# Total progress
-			viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
-			# Top 1 progress
-			viewer.setTop1Progress(correctTop1)
-			# Top 5 progress
-			viewer.setTop5Progress(correctTop5)
-			# Mismatch progress
-			viewer.setMisProgress(wrong)
-			# No ground truth progress
-			viewer.setNoGTProgress(noGroundTruth)
+		if loop == 'no':
+			loopFlag = False
+			# Wait to quit
+			while True:
+				key = cv2.waitKey(2)
+				if key == 27:
+					cv2.destroyAllWindows()
+					break   
+				# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+				# 	break
 
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
-
-			text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
-			text_off_x = 5
-			text_off_y = (i*h_i)+h_i-7
-			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-			cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
-			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
-
-			#show RALI augmented images
-			if augmentedResults[i] == 0:
-				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
-				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-
-		#split RALI augmented images into a grid
-		image_batch1, image_batch2, image_batch3, image_batch4, image_batch5, image_batch6, image_batch7, image_batch8 = np.vsplit(cloned_image, 8)
-		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4, image_batch5, image_batch6, image_batch7, image_batch8))
-
-    	#show augmented images
-		viewer.showAugImage(final_image_batch)
-		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-
-		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
-		key = cv2.waitKey(2)
-		# if key == 27: 
-		#  	break
-		# if key == 32:
-		# 	if cv2.waitKey(0) == 32:
-		# 		continue
-		# if key == 113:
-		# 	exit(0)
-
-		guiResults[imageFileName] = augmentedResults
-		end_main = time.time()
-		if(verbosePrint):
-			print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
-		avg_benchmark += (end_main - start_main)*1000
-	if(verbosePrint):
-		print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
-	print("\nSUCCESS: Images Inferenced with the Model\n")
-
-	# Create ADAT folder and file
-	print("\nADAT tool called to create the analysis toolkit\n")
-	if(not os.path.exists(adatOutputDir)):
-		os.system('mkdir ' + adatOutputDir)
-	
-	if(hierarchy == ''):
-		os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-		' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-	else:
-		os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-		' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-	print("\nSUCCESS: Image Analysis Toolkit Created\n")
-	print("Press ESC to exit or close progess window\n")
-
-	# Wait to quit
-	while True:
-		key = cv2.waitKey(2)
-		if key == 27:
-			cv2.destroyAllWindows()
-			break   
-		# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-		# 	break
-
-	outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
-	os.system('firefox '+outputHTMLFile)
+		#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
+		#os.system('firefox '+outputHTMLFile)
