@@ -248,14 +248,15 @@ def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 
 # MIVisionX Classifier
 if __name__ == '__main__':   
+	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
-		app = QtGui.QApplication(sys.argv)
 		panel = inference_control()
 		app.exec_()
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
 		modelLocation = (str)(panel.model)
 		modelBatchSize = (str)(panel.batch)
+		raliMode = (int)(panel.mode) + 1
 		modelInputDims = (str)(panel.input_dims)
 		modelOutputDims = (str)(panel.output_dims)
 		label = (str)(panel.label)
@@ -274,6 +275,7 @@ if __name__ == '__main__':
 		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
 		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file/folder          [required]')
 		parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
+		parser.add_argument('--rali_mode',			type=str, required=True,	help='rali mode (1/2/3)			             [required]')
 		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
 		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
@@ -293,6 +295,7 @@ if __name__ == '__main__':
 		modelName = args.model_name
 		modelLocation = args.model
 		modelBatchSize = args.model_batch_size
+		raliMode = (int)(args.rali_mode)
 		modelInputDims = args.model_input_dims
 		modelOutputDims = args.model_output_dims
 		label = args.label
@@ -313,7 +316,6 @@ if __name__ == '__main__':
 	# set fp16 inference turned on/off
 	if(fp16 != 'no'):
 		FP16inference = True
-
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
 	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
@@ -390,7 +392,7 @@ if __name__ == '__main__':
 						modelList.append(data[i].split(';')[1])
 				if modelName not in modelList:
 					f = open(analyzerDir + "/setupFile.txt", "a")
-					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
 					f.close()
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
@@ -522,10 +524,6 @@ if __name__ == '__main__':
 		if(verbosePrint):
 			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 
-		#show original image
-		cv2.namedWindow('original_image', cv2.WINDOW_GUI_EXPANDED)
-		cv2.imshow('original_image', cv2.cvtColor(original_image, cv2.COLOR_RGB2BGR))	
-		
 		for i in range(loader.getOutputImageCount()):
 			#using tensor output of RALI as frame 		
 			
@@ -592,7 +590,7 @@ if __name__ == '__main__':
 			text_off_y = (i*h_i)+h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
-			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)	
+			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
 
 			#show RALI augmented images
 			if augmentedResults[i] == 0:
@@ -606,11 +604,11 @@ if __name__ == '__main__':
 
     	#show augmented images
 		viewer.showAugImage(final_image_batch)
-		cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-		cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
-		# key = cv2.waitKey(2)
+		key = cv2.waitKey(2)
 		# if key == 27: 
 		#  	break
 		# if key == 32:

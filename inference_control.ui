@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>756</width>
-    <height>663</height>
+    <width>809</width>
+    <height>732</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -66,7 +66,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>data/images/MIVisionX.png</pixmap>
+         <pixmap>data/images/MIVisionX-logo.png</pixmap>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -480,6 +480,38 @@
       <item row="3" column="2">
        <widget class="QLineEdit" name="batch_lineEdit"/>
       </item>
+      <item row="3" column="3">
+       <widget class="QLabel" name="mode_label">
+        <property name="text">
+         <string>RALI Mode</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="4" colspan="2">
+       <widget class="QComboBox" name="mode_comboBox">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 3</string>
+         </property>
+        </item>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -753,7 +785,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>756</width>
+     <width>809</width>
      <height>22</height>
     </rect>
    </property>
@@ -767,6 +799,7 @@
   <tabstop>format_comboBox</tabstop>
   <tabstop>name_lineEdit</tabstop>
   <tabstop>batch_lineEdit</tabstop>
+  <tabstop>mode_comboBox</tabstop>
   <tabstop>idims_lineEdit</tabstop>
   <tabstop>odims_lineEdit</tabstop>
   <tabstop>padd_lineEdit</tabstop>
@@ -784,6 +817,7 @@
   <tabstop>val_pushButton</tabstop>
   <tabstop>hier_lineEdit</tabstop>
   <tabstop>hier_pushButton</tabstop>
+  <tabstop>close_pushButton</tabstop>
   <tabstop>run_pushButton</tabstop>
  </tabstops>
  <resources/>

@@ -18,7 +18,7 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QLabel" name="AMD_label">
+       <widget class="QLabel" name="AMD_logo">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -29,7 +29,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>../MIVisionX-inference-analyzer/data/images/AMD Radeon.png</pixmap>
+         <pixmap>data/images/AMD Radeon.png</pixmap>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -37,18 +37,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="MIVisionX_label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="QLabel" name="MIViionX_logo">
         <property name="text">
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>../MIVisionX-inference-analyzer/data/images/MIVisionX.png</pixmap>
+         <pixmap>data/images/MIVisionX-logo.png</pixmap>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -56,7 +50,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="EPYC_label">
+       <widget class="QLabel" name="EPYC_logo">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -67,7 +61,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>../MIVisionX-inference-analyzer/data/images/EPYC-blue.png</pixmap>
+         <pixmap>data/images/EPYC-blue.png</pixmap>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -497,7 +491,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -524,7 +518,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -551,7 +545,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -572,7 +566,7 @@
            <widget class="QProgressBar" name="total_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -596,7 +590,7 @@
            <widget class="QProgressBar" name="top1_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -620,7 +614,7 @@
            <widget class="QProgressBar" name="top5_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -644,7 +638,7 @@
            <widget class="QProgressBar" name="mis_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
@@ -668,7 +662,7 @@
            <widget class="QProgressBar" name="noGT_progressBar">
             <property name="maximumSize">
              <size>
-              <width>450</width>
+              <width>550</width>
               <height>16777215</height>
              </size>
             </property>
