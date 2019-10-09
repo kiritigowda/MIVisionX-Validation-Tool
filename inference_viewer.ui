@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1207</width>
+    <width>1492</width>
     <height>847</height>
    </rect>
   </property>
@@ -38,11 +38,17 @@
       </item>
       <item>
        <widget class="QLabel" name="MIViionX_logo">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="text">
          <string/>
         </property>
         <property name="pixmap">
          <pixmap>data/images/MIVisionX-logo.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>false</bool>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -732,7 +738,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1207</width>
+     <width>1492</width>
      <height>22</height>
     </rect>
    </property>

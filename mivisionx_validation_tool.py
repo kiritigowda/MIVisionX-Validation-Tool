@@ -222,9 +222,10 @@ def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 
 # MIVisionX Classifier
 if __name__ == '__main__':   
+	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
-		app = QtGui.QApplication(sys.argv)
 		panel = inference_control()
+		panel.show()
 		app.exec_()
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
@@ -362,7 +363,8 @@ if __name__ == '__main__':
 				data = fin.read().splitlines(True)
 				modelList = []
 				for i in range(len(data)):
-					modelList.append(data[i].split(';')[1])
+					if data[i] != '\n':
+						modelList.append(data[i].split(';')[1])
 				if modelName not in modelList:
 					f = open(analyzerDir + "/setupFile.txt", "a")
 					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
@@ -458,8 +460,10 @@ if __name__ == '__main__':
 	guiResults = {}
 
 	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+	viewer.show()
 	#image_tensor has the input tensor required for inference
 	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+		viewer.runState = True
 		start_main = time.time()
 		imageFileName = loader.get_input_name()
 		groundTruthIndex = loader.get_ground_truth()
@@ -474,7 +478,10 @@ if __name__ == '__main__':
 		frame = image_tensor
 
 		#show original image
-		viewer.showImage(original_image)
+		width = original_image.shape[0]
+		height = original_image.shape[1]
+#		viewer.putImage(original_image, width, height)
+		viewer.showImage(original_image, width, height)
 
 		# run inference
 		start = time.time()
@@ -569,13 +576,27 @@ if __name__ == '__main__':
 		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
 		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
 
-    #show augmented images
-		viewer.showAugImage(final_image_batch)
+    	#show augmented images
+		aug_width = final_image_batch.shape[0]
+		aug_height = final_image_batch.shape[1]
+		#viewer.putAugImage(final_image_batch, width, height)
+		viewer.showAugImage(final_image_batch, aug_width, aug_height)
+		#viewer.showImage()
+		#viewer.update()
 		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-		
+		#app.exec_()
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 		key = cv2.waitKey(2)
+		if not viewer.runState:
+			break
+		while viewer.pauseState:
+			cv2.waitKey(0)
+			print 'hi'
+			if not viewer.runState:
+				print 'hi2'
+				break
+			
 		# if key == 27: 
 		# 	break
 		# if key == 32:
@@ -605,13 +626,13 @@ if __name__ == '__main__':
 	print("Press ESC to exit or close progess window\n")
 
 	# Wait to quit
-	while True:
-		key = cv2.waitKey(2)
-		if key == 27:
-			cv2.destroyAllWindows()
-			break   
-		# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-		# 	break
+	# while True:
+	# 	key = cv2.waitKey(2)
+	# 	if key == 27:
+	# 		cv2.destroyAllWindows()
+	# 		break   
+	# 	# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+	# 	# 	break
 
 	outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
 	os.system('firefox '+outputHTMLFile)

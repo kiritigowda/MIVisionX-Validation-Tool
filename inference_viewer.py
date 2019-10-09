@@ -1,8 +1,12 @@
 import sys, os
+import Queue
 #import numpy as np
 #import pyqtgraph as pg
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QImage
+from PyQt4.QtCore import QTimer, QObject
+
+import resources
 
 class inference_viewer(QtGui.QMainWindow):
     def __init__(self, model_name, total_images, parent=None):
@@ -12,6 +16,8 @@ class inference_viewer(QtGui.QMainWindow):
         self.imgCount = 0
         self.frameCount = 16
         self.imageList = []
+        self.origImageQueue = Queue.Queue()
+        self.augImageQueue = Queue.Queue()
         self.initUI()
         self.imageList.append(self.image_label)
         self.imageList.append(self.image_label2)
@@ -29,10 +35,19 @@ class inference_viewer(QtGui.QMainWindow):
         self.imageList.append(self.image_label14)
         self.imageList.append(self.image_label15)
         self.imageList.append(self.image_label16)
+        self.runState = False
+        self.pauseState = False
+        # self.timer = QTimer(self)
+        # QtCore.QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("showImage()"))
+        # self.timer.timeout.connect(self.showImage)
+        # self.timer.start(40)
+
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
         self.setStyleSheet("background-color: white")
+        # pixmap = QPixmap (":/EPYC-blue.png");
+        # self.AMD_logo.setPixmap(pixmap);
         self.name_label.setText(self.model_name)
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
@@ -50,8 +65,6 @@ class inference_viewer(QtGui.QMainWindow):
 
         # staticPlt.plot(x,y,clear=True)
 
-        self.show()
-
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
         self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images))
@@ -68,24 +81,43 @@ class inference_viewer(QtGui.QMainWindow):
     def setNoGTProgress(self, value):
         self.noGT_progressBar.setValue(value)
 
-    def showImage(self, image):
-        width = image.shape[0]
-        height = image.shape[1]
+    def showImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.KeepAspectRatio)
+        qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)
         self.imageList[(self.imgCount % self.frameCount)].setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
         self.imgCount += 1
 
-    def showAugImage(self, image):
-        width = image.shape[0]
-        height = image.shape[1]
+
+    def showAugImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
         qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
-        self.aug_label.setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
+        pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+        self.aug_label.setPixmap(pixmap)
+
+    # def putAugImage(self, image, width, height):
+    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
+    #     qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
+    #     pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+    #     self.augImageQueue.put(pixmap)
+
+    # def putImage(self, image, width, height):
+    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
+    #     qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.KeepAspectRatio)
+    #     pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+    #     self.origImageQueue.put(pixmap)
+
+    # def showImage(self):
+    #     if not self.origImageQueue.empty():
+    #         origImage = self.origImageQueue.get()
+    #         augImage = self.augImageQueue.get()
+    #         self.imageList[(self.imgCount % self.frameCount)].setPixmap(origImage)
+    #         self.aug_label.setPixmap(augImage)
+    #         self.imgCount += 1
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
+            self.runState = False
             self.close()
             
         if event.key() == QtCore.Qt.Key_Space:
-            print 'space'
+            self.pauseState = not self.pauseState

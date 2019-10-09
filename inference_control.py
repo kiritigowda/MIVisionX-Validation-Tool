@@ -58,7 +58,6 @@ class inference_control(QtGui.QMainWindow):
         self.hier_lineEdit.setPlaceholderText("[optional]")
         self.close_pushButton.setStyleSheet("color: white; background-color: darkRed")
         self.readSetupFile()
-        self.show()
 
     def browseFile(self):
         if self.format_comboBox.currentText() == 'nnef':
@@ -86,10 +85,11 @@ class inference_control(QtGui.QMainWindow):
         analyzerDir = os.path.expanduser(setupDir)
         if os.path.isfile(analyzerDir + "/setupFile.txt"):
             for line in open(analyzerDir + "/setupFile.txt", "r"):
-                token = line.split(';')
-                if len(token) > 1:
-                    modelName = token[1]
-                    self.upload_comboBox.addItem(modelName)
+                if len(line) > 1:
+                    token = line.split(';')
+                    if len(token) > 1:
+                        modelName = token[1]
+                        self.upload_comboBox.addItem(modelName)
             
     def fromFile(self):
         if self.upload_comboBox.currentIndex() == 0:
