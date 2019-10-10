@@ -515,8 +515,10 @@ if __name__ == '__main__':
 			raliList = raliList_mode3
 		
 		avg_benchmark = 0.0
+		frameMsecs = 0.0
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+			msFrame = 0.0
 			start_main = time.time()
 			imageFileName = loader.get_input_name()
 			groundTruthIndex = loader.get_ground_truth()
@@ -526,19 +528,30 @@ if __name__ == '__main__':
 			augmentedResults = []
 
 			#create images for display
+			start = time.time()
 			original_image = image_batch[0:h_i, 0:w_i]
 			cloned_image = np.copy(image_batch)
 			frame = image_tensor
+			end = time.time()
+			msFrame += (end - start)*1000
+			if(verbosePrint):
+				print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
 			#show original image
+			start = time.time()
 			width = original_image.shape[1]
 			height = original_image.shape[0]
 			viewer.showImage(original_image, width, height)
+			end = time.time()
+			msFrame += (end - start)*1000
+			if(verbosePrint):
+				print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
 			
 			# run inference
 			start = time.time()
 			output = classifier.classify(frame)
 			end = time.time()
+			msFrame += (end - start)*1000
 			if(verbosePrint):
 				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 			for i in range(loader.getOutputImageCount()):
@@ -548,6 +561,7 @@ if __name__ == '__main__':
 				start = time.time()
 				topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
 				end = time.time()
+				msFrame += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
 
@@ -559,6 +573,7 @@ if __name__ == '__main__':
 				','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
 				sys.stdout = orig_stdout
 				end = time.time()
+				msFrame += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
 
@@ -599,14 +614,16 @@ if __name__ == '__main__':
 				viewer.setNoGTProgress(noGroundTruth)
 
 				end = time.time()
+				msFrame += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
+				start = time.time()
 				text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
 				text_off_x = 5
 				text_off_y = (i*h_i)+h_i-7
 				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
+				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245,147,66), cv2.FILLED)
 				cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
 
 				#show RALI augmented images
@@ -615,8 +632,14 @@ if __name__ == '__main__':
 				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
 					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
+				end = time.time()
+				msFrame += (end - start)*1000
+				if(verbosePrint):
+					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
+
 			#split RALI augmented images into a grid
 			#split 16X4
+			start = time.time()
 			image_batch = np.vsplit(cloned_image, 16)
 			final_image_batch = np.hstack((image_batch))
 	    	#show augmented images
@@ -625,6 +648,10 @@ if __name__ == '__main__':
 			viewer.showAugImage(final_image_batch, aug_width, aug_height)
 			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+			end = time.time()
+			msFrame += (end - start)*1000
+			if(verbosePrint):
+				print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
 
 			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 			key = cv2.waitKey(2)
@@ -641,6 +668,11 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
 			avg_benchmark += (end_main - start_main)*1000
+
+			frameMsecs += msFrame
+			frameMsecs = 1000/(frameMsecs/64)
+			print '%30s' % 'FPS is ', str(frameMsecs), '\n'
+
 		if(verbosePrint):
 			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
 
