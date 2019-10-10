@@ -20,6 +20,7 @@ class inference_control(QtGui.QMainWindow):
         self.fp16 = 'no'
         self.replace = 'no'
         self.verbose = 'no'
+        self.loop = 'yes'
         self.runningState = False
         self.initUI()
 
@@ -109,6 +110,7 @@ class inference_control(QtGui.QMainWindow):
             self.fp16_checkBox.setEnabled(True)
             self.replace_checkBox.setEnabled(True)
             self.verbose_checkBox.setEnabled(True)
+            self.loop_checkBox.setEnabled(True)
             self.file_pushButton.setEnabled(True)
             self.format_comboBox.setEnabled(True)
             self.output_pushButton.setEnabled(True)
@@ -132,6 +134,7 @@ class inference_control(QtGui.QMainWindow):
             self.fp16_checkBox.setChecked(False)
             self.replace_checkBox.setChecked(False)
             self.verbose_checkBox.setChecked(False)
+            self.loop_checkBox.setChecked(True)
         else:
             modelName = self.upload_comboBox.currentText()
             setupDir = '~/.mivisionx-validation-tool'
@@ -162,7 +165,8 @@ class inference_control(QtGui.QMainWindow):
                         self.pmul_lineEdit.setText(tokens[12])
                         self.fp16_checkBox.setChecked(True) if tokens[13] == 'yes\n' or tokens[13] == 'yes' else self.fp16_checkBox.setChecked(False)
                         self.replace_checkBox.setChecked(True) if tokens[14] == 'yes\n' or tokens[14] == 'yes' else self.replace_checkBox.setChecked(False)
-                        self.verbose_checkBox.setChecked(True) if tokens[15] == 'yes\n' or tokens[15] == 'yes' else self.verbose_checkBox.setChecked(False)
+                        self.verbose_checkBox.setChecked(True) if tokens[15] == 'yes\n' or tokens[15] == 'yes' else self.verbose_checkBox.setChecked(False)                        
+                        self.loop_checkBox.setChecked(True) if tokens[16] == 'yes\n' or tokens[16] == 'yes' else self.replace_checkBox.setChecked(False)
                         self.name_lineEdit.setEnabled(False)
                         self.file_lineEdit.setEnabled(False)
                         self.batch_lineEdit.setEnabled(False)
@@ -220,6 +224,7 @@ class inference_control(QtGui.QMainWindow):
         self.fp16 = 'yes' if self.fp16_checkBox.isChecked() else 'no'
         self.replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
         self.verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
+        self.loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
         self.runningState = True
         self.close()
 
