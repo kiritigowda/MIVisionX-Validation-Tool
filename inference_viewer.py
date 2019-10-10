@@ -46,8 +46,6 @@ class inference_viewer(QtGui.QMainWindow):
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
         self.setStyleSheet("background-color: white")
-        # pixmap = QPixmap (":/EPYC-blue.png");
-        # self.AMD_logo.setPixmap(pixmap);
         self.name_label.setText(self.model_name)
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")

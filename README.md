@@ -4,17 +4,17 @@
 
 [MIVisionX](https://gpuopen-professionalcompute-libraries.github.io/MIVisionX/) ML Model Validation Tool using pre-trained `ONNX`/`NNEF`/`Caffe` models to analyze, summarize, & validate.
 
-<p align="center"><img width="60%" src="data/images/inference_analyzer.gif" /></p>
+<p align="center"><img width="100%" src="data/images/validation-2.png" /></p>
 
 Pre-trained models in [ONNX](https://onnx.ai/), [NNEF](https://www.khronos.org/nnef), & [Caffe](http://caffe.berkeleyvision.org/) formats are supported by MIVisionX. The app first converts the pre-trained models to AMD Neural Net Intermediate Representation (NNIR), once the model has been translated into AMD NNIR (AMD's internal open format), the Optimizer goes through the NNIR and applies various optimizations which would allow the model to be deployed on to target hardware most efficiently. Finally, AMD NNIR is converted into OpenVX C code, which is compiled and wrapped with a python API to run on any targeted hardware.
 
-* MIVisionX Inference Analyzer - Processing Images
+* MIVisionX Validation Tool - Processing Images
 <p align="center"><img width="60%" src="data/images/analyzer-1.png" /></p>
 
-* MIVisionX Inference Analyzer - Processing Images Complete
-<p align="center"><img width="40%" src="data/images/analyzer-2.png" /></p>
+* MIVisionX Validation Tool - Processing Images Complete
+<p align="center"><img width="80%" src="data/images/validation-2.png" /></p>
 
-* MIVisionX Inference Analyzer - Results
+* MIVisionX Validation Tool - Results
 <p align="center"><img width="100%" src="data/images/analyzer-3.png" /></p>
 
 ## Analyzer Index
@@ -48,9 +48,9 @@ MIVisionX provides developers with [docker images](https://hub.docker.com/u/mivi
 
 * Start docker with display
 ````
-% sudo docker pull mivisionx/ubuntu-16.04:latest
+% sudo docker pull mivisionx/ubuntu-18.04:latest
 % xhost +local:root
-% sudo docker run -it --device=/dev/kfd --device=/dev/dri --cap-add=SYS_RAWIO --device=/dev/mem --group-add video --network host --env DISPLAY=unix$DISPLAY --privileged --volume $XAUTH:/root/.Xauthority --volume /tmp/.X11-unix/:/tmp/.X11-unix mivisionx/ubuntu-16.04:latest
+% sudo docker run -it --device=/dev/kfd --device=/dev/dri --cap-add=SYS_RAWIO --device=/dev/mem --group-add video --network host --env DISPLAY=unix$DISPLAY --privileged --volume $XAUTH:/root/.Xauthority --volume /tmp/.X11-unix/:/tmp/.X11-unix mivisionx/ubuntu-18.04:latest
 ````
 * Test display with MIVisionX sample
 ````
@@ -63,12 +63,14 @@ MIVisionX provides developers with [docker images](https://hub.docker.com/u/mivi
 ## Usage
 ### Command Line Interface (CLI)
 ````
-usage: python mivisionx_inference_analyzer.py 	[-h] 
+usage: python mivisionx_validation_tool.py 	[-h] 
                              	       		--model_format MODEL_FORMAT 
                                        		--model_name MODEL_NAME 
                                        		--model MODEL 
                                        		--model_input_dims MODEL_INPUT_DIMS 
-                                       		--model_output_dims MODEL_OUTPUT_DIMS 
+                                       		--model_output_dims MODEL_OUTPUT_DIMS
+						--model_batch_size MODEL_BATCH_SIZE 
+						--rali_mode RALI_MODE
                                        		--label LABEL 
                                        		--output_dir OUTPUT_DIR 
                                        		--image_dir IMAGE_DIR
@@ -90,6 +92,8 @@ usage: python mivisionx_inference_analyzer.py 	[-h]
   --model               pre_trained model file/folder                     [required]
   --model_input_dims    c,h,w - channel,height,width                      [required]
   --model_output_dims   c,h,w - channel,height,width                      [required]
+  --model_batch_size    n - batch size                                    [required]
+  --rali_mode           rali mode (1/2/3)                                 [required]
   --label               labels text file                                  [required]
   --output_dir          output dir to store ADAT results                  [required]
   --image_dir           image directory for analysis                      [required]
@@ -104,9 +108,9 @@ usage: python mivisionx_inference_analyzer.py 	[-h]
 ```
 ### Graphical User Interface (GUI)
 ````
-usage: python mivisionx_inference_analyzer.py
+usage: python mivisionx_validation_tool.py
 ````
-<p align="center"><img width="75%" src="data/images/analyzer-4.png" /></p>
+<p align="center"><img width="75%" src="data/images/validation-1.png" /></p>
 
 ## Supported Pre-Trained Model Formats
 
@@ -124,7 +128,7 @@ usage: python mivisionx_inference_analyzer.py
 
 <p align="center"><img width="40%" src="data/images/sample-1-1.png" /></p>
 
-* **Step 1:** Clone MIVisionX Inference Analyzer Project
+* **Step 1:** Clone MIVisionX Validation Tool Project
 
 	````
 	% cd && mkdir sample-1 && cd sample-1
@@ -145,17 +149,17 @@ usage: python mivisionx_inference_analyzer.py
 	
 <p align="center"><img width="100%" src="data/images/sample-1-3.png" /></p>
 
-* **Step 3:** Use the command below to run the inference analyzer
+* **Step 3:** Use the command below to run the inference validation tool
 
-	* View inference analyzer usage
+	* View inference validation tool usage
 	```
 	% cd ~/sample-1/MIVisionX-validation-tool/
-	% python mivisionx_inference_analyzer.py -h
+	% python mivisionx_validation_tool.py -h
 	```
 	
-	* Run SqueezeNet Inference Analyzer
+	* Run SqueezeNet Inference validation tool
 	```
-	% python mivisionx_inference_analyzer.py --model_format onnx --model_name SqueezeNet --model ~/sample-1/squeezenet/model.onnx --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --label ./sample/labels.txt --output_dir ~/sample-1/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes
+	% python mivisionx_validation_tool.py --model_format onnx --model_name SqueezeNet --model ~/sample-1/squeezenet/model.onnx --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --model_batch_size 16 --rali_mode 1 --label ./sample/labels.txt --output_dir ~/sample-1/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes
 	```
 <p align="center"><img width="100%" src="data/images/sample-1-4.png" /></p>
 
@@ -167,7 +171,7 @@ usage: python mivisionx_inference_analyzer.py
 
 <p align="center"><img width="40%" src="data/images/sample-2-1.png" /></p>
 
-* **Step 1:** Clone MIVisionX Inference Analyzer Project
+* **Step 1:** Clone MIVisionX Inference Validation Tool Project
 
 	````
 	% cd && mkdir sample-2 && cd sample-2
@@ -182,17 +186,17 @@ usage: python mivisionx_inference_analyzer.py
 	````
 	% wget http://www.robots.ox.ac.uk/~vgg/software/very_deep/caffe/VGG_ILSVRC_16_layers.caffemodel
 	````
-* **Step 3:** Use the command below to run the inference analyzer
+* **Step 3:** Use the command below to run the inference validation tool
 
-	* View inference analyzer usage
+	* View inference validation tool usage
 	```
 	% cd ~/sample-2/MIVisionX-validation-tool/
-	% python mivisionx_inference_analyzer.py -h
+	% python mivisionx_validation_tool.py -h
 	```
 	
-	* Run VGGNet-16 Inference Analyzer
+	* Run VGGNet-16 Inference Validation Tool
 	```
-	% python mivisionx_inference_analyzer.py --model_format caffe --model_name VggNet-16-Caffe --model ~/sample-2/VGG_ILSVRC_16_layers.caffemodel --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --label ./sample/labels.txt --output_dir ~/sample-2/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes
+	% python mivisionx_validation_tool.py --model_format caffe --model_name VggNet-16-Caffe --model ~/sample-2/VGG_ILSVRC_16_layers.caffemodel --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --model_batch_size 16 --rali_mode 1 --label ./sample/labels.txt --output_dir ~/sample-2/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes
 	```
 <p align="center"><img width="100%" src="data/images/sample-2-2.png" /></p>
 
@@ -202,7 +206,7 @@ usage: python mivisionx_inference_analyzer.py
 
 <p align="center"><img width="40%" src="data/images/sample-3-1.png" /></p>
 
-* **Step 1:** Clone MIVisionX Inference Analyzer Project
+* **Step 1:** Clone MIVisionX Inference Validation Tool Project
 
 	````
 	% cd && mkdir sample-3 && cd sample-3
@@ -223,16 +227,16 @@ usage: python mivisionx_inference_analyzer.py
 	````
 * **Step 3:** Use the command below to run the inference analyzer
 
-	* View inference analyzer usage
+	* View inference validation tool usage
 	```
 	% cd ~/sample-3/MIVisionX-validation-tool/
-	% python mivisionx_inference_analyzer.py -h
+	% python mivisionx_validation_tool.py -h
 	```
 	
-	* Run VGGNet-16 Inference Analyzer
+	* Run VGGNet-16 Inference Validation Tool
 	```
-	% python mivisionx_inference_analyzer.py --model_format nnef --model_name VggNet-16-NNEF --model ~/sample-3/vgg16/ --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --label ./sample/labels.txt --output_dir ~/sample-3/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes
+	% python mivisionx_validation_tool.py --model_format nnef --model_name VggNet-16-NNEF --model ~/sample-3/vgg16/ --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --model_batch_size 16 --rali_mode 1 --label ./sample/labels.txt --output_dir ~/sample-3/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes
 	```
 * **Preprocessing the model:** Use the --add/--multiply option to preprocess the input images
 
-		% python mivisionx_inference_analyzer.py --model_format nnef --model_name VggNet-16-NNEF --model ~/sample-3/vgg16/ --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --label ./sample/labels.txt --output_dir ~/sample-3/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes --add [-2.1179,-2.0357,-1.8044] --multiply [0.0171,0.0175,0.0174]
+		% python mivisionx_validation_tool.py --model_format nnef --model_name VggNet-16-NNEF --model ~/sample-3/vgg16/ --model_input_dims 3,224,224 --model_output_dims 1000,1,1 --model_batch_size 16 --rali_mode 1 --label ./sample/labels.txt --output_dir ~/sample-3/ --image_dir ./sample/AMD-tinyDataSet --image_val ./sample/AMD-tinyDataSet-val.txt --hierarchy ./sample/hierarchy.csv --replace yes --add [-2.1179,-2.0357,-1.8044] --multiply [0.0171,0.0175,0.0174]
