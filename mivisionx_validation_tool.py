@@ -93,7 +93,7 @@ class DataLoader(RaliGraph):
         self.process_validation(image_validation)
         self.setSeed(0)
         if raliMode == 1:	        
-	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, True, 0)
+	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
 	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 	    	self.rot135_img = self.rotate(self.input, False, 135)
