@@ -254,6 +254,7 @@ if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
 		panel = inference_control()
+		panel.show()
 		app.exec_()
 		modelFormat = (str)(panel.model_format)
 		modelName = (str)(panel.model_name)
@@ -482,7 +483,10 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	while loopFlag == True:
+	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+	viewer.startView()
+
+	while loopFlag == True and viewer.getState():	
 		#setup for Rali
 		batchSize = 1
 		#batchSize = 64
@@ -509,8 +513,7 @@ if __name__ == '__main__':
 			raliList = raliList_mode2
 		elif raliMode == 3:
 			raliList = raliList_mode3
-
-		viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+		
 		avg_benchmark = 0.0
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
@@ -528,15 +531,16 @@ if __name__ == '__main__':
 			frame = image_tensor
 
 			#show original image
-			viewer.showImage(original_image)
-
+			width = original_image.shape[1]
+			height = original_image.shape[0]
+			viewer.showImage(original_image, width, height)
+			
 			# run inference
 			start = time.time()
 			output = classifier.classify(frame)
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
-			
 			for i in range(loader.getOutputImageCount()):
 				#using tensor output of RALI as frame 		
 				
@@ -612,28 +616,26 @@ if __name__ == '__main__':
 					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
 			#split RALI augmented images into a grid
-			""" splits it as 8X8
-			image_batch = np.vsplit(cloned_image, 8)
-			final_image_batch = np.hstack((image_batch))
-			"""
 			#split 16X4
 			image_batch = np.vsplit(cloned_image, 16)
 			final_image_batch = np.hstack((image_batch))
-	    		#show augmented images
-			viewer.showAugImage(final_image_batch)
+	    	#show augmented images
+			aug_width = final_image_batch.shape[1]
+			aug_height = final_image_batch.shape[0]
+			viewer.showAugImage(final_image_batch, aug_width, aug_height)
 			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 
 			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 			key = cv2.waitKey(2)
-			# if key == 27: 
-			#  	break
-			# if key == 32:
-			# 	if cv2.waitKey(0) == 32:
-			# 		continue
-			# if key == 113:
-			# 	exit(0)
-			
+			if not viewer.getState():
+				viewer.stopView()
+				break
+			while viewer.isPaused():
+				cv2.waitKey(0)
+				if not viewer.getState():
+					break
+
 			guiResults[imageFileName] = augmentedResults
 			end_main = time.time()
 			if(verbosePrint):

@@ -825,6 +825,7 @@
   <tabstop>replace_checkBox</tabstop>
   <tabstop>fp16_checkBox</tabstop>
   <tabstop>verbose_checkBox</tabstop>
+  <tabstop>loop_checkBox</tabstop>
   <tabstop>output_lineEdit</tabstop>
   <tabstop>output_pushButton</tabstop>
   <tabstop>label_lineEdit</tabstop>
