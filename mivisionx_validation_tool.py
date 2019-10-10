@@ -528,7 +528,7 @@ if __name__ == '__main__':
 			frame = image_tensor
 
 			#show original image
-			#viewer.showImage(original_image)
+			viewer.showImage(original_image)
 
 			# run inference
 			start = time.time()
@@ -619,7 +619,7 @@ if __name__ == '__main__':
 			#split 16X4
 			image_batch = np.vsplit(cloned_image, 16)
 			final_image_batch = np.hstack((image_batch))
-	    	#show augmented images
+	    		#show augmented images
 			viewer.showAugImage(final_image_batch)
 			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
