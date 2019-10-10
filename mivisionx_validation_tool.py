@@ -639,8 +639,8 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
 			avg_benchmark += (end_main - start_main)*1000
-			if(verbosePrint):
-				print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+		if(verbosePrint):
+			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
 
 		print("\nSUCCESS: Images Inferenced with the Model\n")
 
