@@ -14,7 +14,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.model_name = model_name
         self.total_images = total_images
         self.imgCount = 0
-        self.frameCount = 16
+        self.frameCount = 9
         self.imageList = []
         self.origImageQueue = Queue.Queue()
         self.augImageQueue = Queue.Queue()
@@ -28,15 +28,16 @@ class inference_viewer(QtGui.QMainWindow):
         self.imageList.append(self.image_label7)
         self.imageList.append(self.image_label8)
         self.imageList.append(self.image_label9)
-        self.imageList.append(self.image_label10)
-        self.imageList.append(self.image_label11)
-        self.imageList.append(self.image_label12)
-        self.imageList.append(self.image_label13)
-        self.imageList.append(self.image_label14)
-        self.imageList.append(self.image_label15)
-        self.imageList.append(self.image_label16)
+        # self.imageList.append(self.image_label10)
+        # self.imageList.append(self.image_label11)
+        # self.imageList.append(self.image_label12)
+        # self.imageList.append(self.image_label13)
+        # self.imageList.append(self.image_label14)
+        # self.imageList.append(self.image_label15)
+        # self.imageList.append(self.image_label16)
         self.runState = False
         self.pauseState = False
+        self.show()
         # self.timer = QTimer(self)
         # QtCore.QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("showImage()"))
         # self.timer.timeout.connect(self.showImage)
@@ -115,7 +116,19 @@ class inference_viewer(QtGui.QMainWindow):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
             self.runState = False
-            self.close()
+            #self.close()
             
         if event.key() == QtCore.Qt.Key_Space:
             self.pauseState = not self.pauseState
+
+    def startView(self):
+        self.runState = True
+
+    def stopView(self):
+        self.runState = False
+
+    def getState(self):
+        return self.runState
+
+    def isPaused(self):
+        return self.pauseState

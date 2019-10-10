@@ -8,9 +8,12 @@ __email__       = "Kiriti.NageshGowda@amd.com"
 __status__      = "ALPHA"
 __script_name__ = "MIVisionX Validation Tool"
 
-import argparse
-import os
 import sys
+#setup python path for RALI
+sys.path.append('/opt/rocm/mivisionx/rali/python/')
+
+import os
+import argparse
 import ctypes
 import cv2
 import time
@@ -36,15 +39,52 @@ colors =[
 raliList_mode1 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend']
-raliList_mode2 = ['original', 'warpAffine', 'contrast', 'contrast+rain', 
-			'brightness', 'brightness+colorTemp', 'exposure', 'exposure+vignette', 
-			'fog', 'fog+snow', 'pixelate', 'pixelate+SnPNoise', 
-			'gamma', 'rotate', 'rotate+jitter', 'blend']
-raliList_mode3 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain', 
+			'gamma', 'rotate', 'jitter', 'blend',
+			'rotate45+resize', 'rotate45+warpAffine', 'rotate45+contrast', 'rotate45+rain', 
+			'rotate45+brightness', 'rotate45+colorTemp', 'rotate45+exposure', 'rotate45+vignette', 
+			'rotate45+fog', 'rotate45+snow', 'rotate45+pixelate', 'rotate45+SnPNoise', 
+			'rotate45+gamma', 'rotate45+rotate', 'rotate45+jitter', 'rotate45+blend',
+			'flip+resize', 'flip+warpAffine', 'flip+contrast', 'flip+rain', 
+			'flip+brightness', 'flip+colorTemp', 'flip+exposure', 'flip+vignette', 
+			'flip+fog', 'flip+snow', 'flip+pixelate', 'flip+SnPNoise', 
+			'flip+gamma', 'flip+rotate', 'flip+jitter', 'flip+blend',			
+			'rotate135+resize', 'rotate135+warpAffine', 'rotate135+contrast', 'rotate135+rain', 
+			'rotate135+brightness', 'rotate135+colorTemp', 'rotate135+exposure', 'rotate135+vignette', 
+			'rotate135+fog', 'rotate135+snow', 'rotate135+pixelate', 'rotate135+SnPNoise', 
+			'rotate135+gamma', 'rotate135+rotate', 'rotate135+jitter', 'rotate135+blend']
+raliList_mode2 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'vignette+snow', 'pixelate', 'gamma',
-			'SnPNoise+gamma', 'rotate', 'jitter+pixelate', 'blend']
+			'fog', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'jitter', 'blend',
+			'warpAffine+original', 'warpAffine+warpAffine', 'warpAffine+contrast', 'warpAffine+rain', 
+			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
+			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
+			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend',
+			'fishEye+original', 'fishEye+warpAffine', 'fishEye+contrast', 'fishEye+rain', 
+			'fishEye+brightness', 'fishEye+colorTemp', 'fishEye+exposure', 'fishEye+vignette', 
+			'fishEye+fog', 'fishEye+snow', 'fishEye+pixelate', 'fishEye+SnPNoise', 
+			'fishEye+gamma', 'fishEye+rotate', 'fishEye+jitter', 'fishEye+blend',
+			'lensCorrection+original', 'lensCorrection+warpAffine', 'lensCorrection+contrast', 'lensCorrection+rain', 
+			'lensCorrection+brightness', 'lensCorrection+colorTemp', 'exposure', 'lensCorrection+vignette', 
+			'lensCorrection+fog', 'lensCorrection+snow', 'lensCorrection+pixelate', 'lensCorrection+SnPNoise', 
+			'lensCorrection+gamma', 'lensCorrection+rotate', 'lensCorrection+jitter', 'lensCorrection+blend',]
+raliList_mode3 = ['original', 'warpAffine', 'contrast', 'rain', 
+			'brightness', 'colorTemp', 'exposure', 'vignette', 
+			'fog', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'jitter', 'blend',
+			'original', 'warpAffine', 'contrast', 'rain', 
+			'brightness', 'colorTemp', 'exposure', 'vignette', 
+			'fog', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'jitter', 'blend',
+			'original', 'warpAffine', 'contrast', 'rain', 
+			'brightness', 'colorTemp', 'exposure', 'vignette', 
+			'fog', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'jitter', 'blend',
+			'original', 'warpAffine', 'contrast', 'rain', 
+			'brightness', 'colorTemp', 'exposure', 'vignette', 
+			'fog', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'jitter', 'blend',]
+
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
     def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode):
@@ -52,81 +92,45 @@ class DataLoader(RaliGraph):
         self.validation_dict = {}
         self.process_validation(image_validation)
         self.setSeed(0)
-        if raliMode == 1:
-	        self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-	        self.input = self.resize(self.jpg_img, h_img, w_img, True)
-	        
-	        self.warped = self.warpAffine(self.input,True)
+        if raliMode == 1:	        
+	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
-	        self.contrast_img = self.contrast(self.input,True)
-	        self.rain_img = self.rain(self.input, True)
+	    	self.rot135_img = self.rotate(self.input, False, 135)
+	    	self.flip_img = self.flip(self.input, False)
+	    	self.rot45_img = self.rotate(self.input, False, 45)
 
-	        self.bright_img = self.brightness(self.input,True)
-	        self.temp_img = self.colorTemp(self.input, True)
+	    	self.setof16_mode1(self.input, h_img, w_img)
+	    	self.setof16_mode1(self.rot45_img, h_img, w_img)
+	    	self.setof16_mode1(self.flip_img, h_img, w_img)
+	    	self.setof16_mode1(self.rot135_img , h_img, w_img)
 
-	        self.exposed_img = self.exposure(self.input, True)
-	        self.vignette_img = self.vignette(self.input, True)
-	        self.fog_img = self.fog(self.input, True)
-	        self.snow_img = self.snow(self.input, True)
-
-	        self.pixelate_img = self.pixelate(self.input, True)
-	        self.snp_img = self.SnPNoise(self.input, True, 0.2)
-	        self.gamma_img = self.gamma(self.input, True)
-
-	        self.rotate_img = self.rotate(self.input, True)
-	        self.jitter_img = self.jitter(self.input, True)
-			
-	        self.blend_img = self.blend(self.input, self.contrast_img, True)
         elif raliMode == 2:
 	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-	        self.input = self.resize(self.jpg_img, h_img, w_img, True)
+	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
-	    	self.warped = self.warpAffine(self.input,True)
+	    	#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
+	    	self.warpAffine1_img = self.warpAffine(self.input, False, [[0.5,0],[0,2],[None,None]]) #squeeze
+	    	self.fishEye_img = self.fishEye(self.input, False)
+	    	self.lensCorrection_img = self.lendCorrection(self.input, False, 1.5, 2)
 
-	    	self.contrast_img = self.contrast(self.input,True)
-	    	self.rain_img = self.rain(self.contrast_img, True)
+	    	self.setof16_mode1(self.input, h_img, w_img)
+	    	self.setof16_mode1(self.warpAffine1_img, h_img, w_img)
+	    	self.setof16_mode1(self.fishEye_img, h_img, w_img)
+	    	self.setof16_mode1(self.lensCorrection_img, h_img, w_img)
 
-	    	self.bright_img = self.brightness(self.input,True)
-	    	self.temp_img = self.colorTemp(self.bright_img, True)
-
-	    	self.exposed_img = self.exposure(self.input, True)
-	    	self.vignette_img = self.vignette(self.exposed_img, True)
-	    	self.fog_img = self.fog(self.input, True)
-	    	self.snow_img = self.snow(self.fog_img, True)
-
-	    	self.pixelate_img = self.pixelate(self.input, True)
-	    	self.snp_img = self.SnPNoise(self.pixelate_img, True, 0.2)
-	    	self.gamma_img = self.gamma(self.input, True)
-
-	    	self.rotate_img = self.rotate(self.input, True)
-	    	self.jitter_img = self.jitter(self.rotate_img, True)
-
-	        self.blend_img = self.blend(self.rotate_img, self.warped, True)
         elif raliMode == 3:
 	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-	        self.input = self.resize(self.jpg_img, h_img, w_img, True)
+	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
-	    	self.warped = self.warpAffine(self.input,True)
+	    	self.colorTemp1_img = self.colorTemp(self.input, False, 10)
+	    	self.colorTemp2_img = self.colorTemp(self.input, False, 20)
+	    	self.warpAffine2_img = self.warpAffine(self.input, False, [[2,0],[0,1],[None,None]]) #stretch
 
-	    	self.contrast_img = self.contrast(self.input,True)
-	    	self.rain_img = self.rain(self.warped, True)
-
-	    	self.bright_img = self.brightness(self.input,True)
-	    	self.temp_img = self.colorTemp(self.input, True)
-
-	    	self.exposed_img = self.exposure(self.input, True)
-	    	self.vignette_img = self.vignette(self.input, True)
-	    	self.fog_img = self.fog(self.input, True)
-	    	self.snow_img = self.snow(self.vignette_img, True)
-
-	    	self.pixelate_img = self.pixelate(self.input, True)
-	    	self.gamma_img = self.gamma(self.input, True)
-	    	self.snp_img = self.SnPNoise(self.gamma_img, True, 0.2)
-
-	    	self.rotate_img = self.rotate(self.input, True)
-	    	self.jitter_img = self.jitter(self.pixelate_img, True)
-
-	        self.blend_img = self.blend(self.snow_img, self.bright_img, True)
+	    	self.setof16_mode1(self.input, h_img, w_img)
+	    	self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
+	    	self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
+	    	self.setof16_mode1(self.warpAffine2_img , h_img, w_img)
 
     def get_input_name(self):
         return self.jpg_img.name(0)
@@ -138,6 +142,31 @@ class DataLoader(RaliGraph):
 
     def get_ground_truth(self):
 		return self.validation_dict[self.get_input_name()]
+
+    def setof16_mode1(self, input_image, h_img, w_img):
+		self.resized_image = self.resize(input_image, h_img, w_img, True)
+        
+		self.warped = self.warpAffine(input_image,True)
+
+		self.contrast_img = self.contrast(input_image,True)
+		self.rain_img = self.rain(input_image, True)
+
+		self.bright_img = self.brightness(input_image,True)
+		self.temp_img = self.colorTemp(input_image, True)
+
+		self.exposed_img = self.exposure(input_image, True)
+		self.vignette_img = self.vignette(input_image, True)
+		self.fog_img = self.fog(input_image, True)
+		self.snow_img = self.snow(input_image, True)
+
+		self.pixelate_img = self.pixelate(input_image, True)
+		self.snp_img = self.SnPNoise(input_image, True, 0.2)
+		self.gamma_img = self.gamma(input_image, True)
+
+		self.rotate_img = self.rotate(input_image, True)
+		self.jitter_img = self.jitter(input_image, True)
+		
+		self.blend_img = self.blend(input_image, self.contrast_img, True)
 
 # AMD Neural Net python wrapper
 class AnnAPI:
@@ -221,7 +250,7 @@ def processClassificationOutput(inputImage, modelName, modelOutput, batchSize):
 	return topIndex, topProb
 
 # MIVisionX Classifier
-if __name__ == '__main__':   
+if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
 		panel = inference_control()
@@ -244,6 +273,7 @@ if __name__ == '__main__':
 		fp16 = (str)(panel.fp16)
 		replaceModel = (str)(panel.replace)
 		verbose = (str)(panel.verbose)
+		loop = (str)(panel.loop)
 	else:
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
@@ -263,6 +293,7 @@ if __name__ == '__main__':
 		parser.add_argument('--fp16',				type=str, default='no',		help='quantize to FP16 			[optional - default:no]')
 		parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
 		parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
+		parser.add_argument('--loop',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
 		args = parser.parse_args()
 		
 		# get arguments
@@ -283,6 +314,7 @@ if __name__ == '__main__':
 		fp16 = args.fp16
 		replaceModel = args.replace
 		verbose = args.verbose
+		loop = args.loop
 
 	# set verbose print
 	if(verbose != 'no'):
@@ -310,6 +342,12 @@ if __name__ == '__main__':
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
 	raliMode = 1
+
+	#set ADAT Flag to generate ADAT only once
+	ADATFlag = False
+
+	#set loop Flag based on user input
+	loopFlag = True
 
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
@@ -354,7 +392,7 @@ if __name__ == '__main__':
 	# Setup Text File for Demo
 	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
 		f = open(analyzerDir + "/setupFile.txt", "w")
-		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 		f.close()
 	else:
 		count = len(open(analyzerDir + "/setupFile.txt").readlines())
@@ -367,7 +405,7 @@ if __name__ == '__main__':
 						modelList.append(data[i].split(';')[1])
 				if modelName not in modelList:
 					f = open(analyzerDir + "/setupFile.txt", "a")
-					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 					f.close()
 		else:
 			with open(analyzerDir + "/setupFile.txt", "r") as fin:
@@ -379,7 +417,7 @@ if __name__ == '__main__':
 			with open(analyzerDir + "/setupFile.txt", "w") as fout:
 			    fout.writelines(data[1:])
 			with open(analyzerDir + "/setupFile.txt", "a") as fappend:
-				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose)
+				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 				fappend.close()
 
 	# Compile Model and generate python .so files
@@ -417,7 +455,7 @@ if __name__ == '__main__':
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
 
-	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+	#os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 	# create inference classifier
@@ -447,192 +485,194 @@ if __name__ == '__main__':
 
 	#setup for Rali
 	batchSize = 1
+	start_rali = time.time()
 	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
 	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+	end_rali = time.time()
+	if (verbosePrint):
+		print '%30s' % 'RALI Data Load and Iterator Time ', str((end_rali - start_rali)*1000), 'ms'
+	raliNumberOfImages = imageIterator.imageCount()
 	print ('Pipeline created ...')
-	print 'Image iterator created ... number of images', imageIterator.imageCount()
+	print 'Image iterator created ... number of images', raliNumberOfImages
 	print 'Loader created ...num of images' , loader.getOutputImageCount()
 
-	# process images
-	correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-	
-	#create output dict for all the images
-	guiResults = {}
-
 	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
-	viewer.show()
-	#image_tensor has the input tensor required for inference
-	for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
-		viewer.runState = True
-		start_main = time.time()
-		imageFileName = loader.get_input_name()
-		groundTruthIndex = loader.get_ground_truth()
-		groundTruthIndex = int(groundTruthIndex)
+	viewer.startView()
 
-		#create output list for each image
-		augmentedResults = []
+	while loopFlag == True and viewer.getState():	
+		# process images
+		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
+		
+		#create output dict for all the images
+		guiResults = {}
 
-		#create images for display
-		original_image = image_batch[0:h_i, 0:w_i]
-		cloned_image = np.copy(image_batch)
-		frame = image_tensor
+		#build augmentation list based on RALI mode
+		if raliMode == 1:
+			raliList = raliList_mode1
+		elif raliMode == 2:
+			raliList = raliList_mode2
+		elif raliMode == 3:
+			raliList = raliList_mode3
+		
+		print 'viewer created!'
+		avg_benchmark = 0.0
+		#image_tensor has the input tensor required for inference
+		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+			start_main = time.time()
+			imageFileName = loader.get_input_name()
+			groundTruthIndex = loader.get_ground_truth()
+			groundTruthIndex = int(groundTruthIndex)
 
-		#show original image
-		width = original_image.shape[0]
-		height = original_image.shape[1]
-#		viewer.putImage(original_image, width, height)
-		viewer.showImage(original_image, width, height)
+			#create output list for each image
+			augmentedResults = []
 
-		# run inference
-		start = time.time()
-		output = classifier.classify(frame)
-		end = time.time()
-		if(verbosePrint):
-			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+			#create images for display
+			original_image = image_batch[0:h_i, 0:w_i]
+			cloned_image = np.copy(image_batch)
+			frame = image_tensor
 
-		for i in range(loader.getOutputImageCount()):
-			#using tensor output of RALI as frame 		
+			#show original image
+			width = original_image.shape[1]
+			height = original_image.shape[0]
+			viewer.showImage(original_image, width, height)
 			
-			# process output and display
+			# run inference
 			start = time.time()
-			topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
+			output = classifier.classify(frame)
 			end = time.time()
 			if(verbosePrint):
-				print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
+				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 
-			# write image results to a file
-			start = time.time()
-			sys.stdout = open(finalImageResultsFile,'a')
-			print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
-			','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
-			','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
-			sys.stdout = orig_stdout
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
+			for i in range(loader.getOutputImageCount()):
+				#using tensor output of RALI as frame 		
+				
+				# process output and display
+				start = time.time()
+				topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
+				end = time.time()
+				if(verbosePrint):
+					print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
 
-			# create progress image
-			start = time.time()
+				# write image results to a file
+				start = time.time()
+				sys.stdout = open(finalImageResultsFile,'a')
+				print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
+				','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
+				','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
+				sys.stdout = orig_stdout
+				end = time.time()
+				if(verbosePrint):
+					print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
 
-			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
-			if(groundTruthIndex == topIndex[4 + i*4]):
-				correctTop1 = correctTop1 + 1
-				correctTop5 = correctTop5 + 1
-				augmentedResults.append(1)
-			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
-				correctTop5 = correctTop5 + 1
-				if (groundTruthIndex == topIndex[3 + i*4]):
-					augmentedResults.append(2)
-				elif (groundTruthIndex == topIndex[2 + i*4]):
-					augmentedResults.append(3)
-				elif (groundTruthIndex == topIndex[1 + i*4]):
-					augmentedResults.append(4)
-				elif (groundTruthIndex == topIndex[0 + i*4]):
-					augmentedResults.append(5)
-			elif(groundTruthIndex == -1):
-				noGroundTruth = noGroundTruth + 1
-				augmentedResults.append(-1)
-			else:
-				wrong = wrong + 1
-				augmentedResults.append(0)
+				# create progress image
+				start = time.time()
 
-			# Total progress
-			viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
-			# Top 1 progress
-			viewer.setTop1Progress(correctTop1)
-			# Top 5 progress
-			viewer.setTop5Progress(correctTop5)
-			# Mismatch progress
-			viewer.setMisProgress(wrong)
-			# No ground truth progress
-			viewer.setNoGTProgress(noGroundTruth)
+				# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
+				if(groundTruthIndex == topIndex[4 + i*4]):
+					correctTop1 = correctTop1 + 1
+					correctTop5 = correctTop5 + 1
+					augmentedResults.append(1)
+				elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
+					correctTop5 = correctTop5 + 1
+					if (groundTruthIndex == topIndex[3 + i*4]):
+						augmentedResults.append(2)
+					elif (groundTruthIndex == topIndex[2 + i*4]):
+						augmentedResults.append(3)
+					elif (groundTruthIndex == topIndex[1 + i*4]):
+						augmentedResults.append(4)
+					elif (groundTruthIndex == topIndex[0 + i*4]):
+						augmentedResults.append(5)
+				elif(groundTruthIndex == -1):
+					noGroundTruth = noGroundTruth + 1
+					augmentedResults.append(-1)
+				else:
+					wrong = wrong + 1
+					augmentedResults.append(0)
 
-			end = time.time()
-			if(verbosePrint):
-				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
+				# Total progress
+				viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
+				# Top 1 progress
+				viewer.setTop1Progress(correctTop1)
+				# Top 5 progress
+				viewer.setTop5Progress(correctTop5)
+				# Mismatch progress
+				viewer.setMisProgress(wrong)
+				# No ground truth progress
+				viewer.setNoGTProgress(noGroundTruth)
 
-			#write type of augmentation on image
-			if raliMode == 1:
-				raliList = raliList_mode1
-			elif raliMode == 2:
-				raliList = raliList_mode2
-			elif raliMode == 3:
-				raliList = raliList_mode3
+				end = time.time()
+				if(verbosePrint):
+					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-			text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0]
-			text_off_x = 5
-			text_off_y = (i*h_i)+h_i-7
-			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-			cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
-			cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
+				text_width, text_height = cv2.getTextSize(raliList[i], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
+				text_off_x = 5
+				text_off_y = (i*h_i)+h_i-7
+				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (192,192,192), cv2.FILLED)
+				cv2.putText(cloned_image, raliList[i], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)	
 
-			#show RALI augmented images
-			if augmentedResults[i] == 0:
-				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
-				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+				#show RALI augmented images
+				if augmentedResults[i] == 0:
+					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
+					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-		#split RALI augmented images into a grid
-		image_batch1, image_batch2, image_batch3, image_batch4 = np.vsplit(cloned_image, 4)
-		final_image_batch = np.hstack((image_batch1, image_batch2, image_batch3, image_batch4))
+			#split RALI augmented images into a grid
+			#split 16X4
+			image_batch = np.vsplit(cloned_image, 16)
+			final_image_batch = np.hstack((image_batch))
+	    	#show augmented images
+			aug_width = final_image_batch.shape[1]
+			aug_height = final_image_batch.shape[0]
+			viewer.showAugImage(final_image_batch, aug_width, aug_height)
+			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 
-    	#show augmented images
-		aug_width = final_image_batch.shape[0]
-		aug_height = final_image_batch.shape[1]
-		#viewer.putAugImage(final_image_batch, width, height)
-		viewer.showAugImage(final_image_batch, aug_width, aug_height)
-		#viewer.showImage()
-		#viewer.update()
-		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-		#app.exec_()
-		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
-		key = cv2.waitKey(2)
-		if not viewer.runState:
-			break
-		while viewer.pauseState:
-			cv2.waitKey(0)
-			print 'hi'
-			if not viewer.runState:
-				print 'hi2'
+			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
+			key = cv2.waitKey(2)
+			if not viewer.getState():
+				viewer.stopView()
 				break
+			while viewer.isPaused():
+				cv2.waitKey(0)
+				if not viewer.getState():
+					break
+
+			guiResults[imageFileName] = augmentedResults
+			end_main = time.time()
+			if(verbosePrint):
+				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
+			avg_benchmark += (end_main - start_main)*1000
+		if(verbosePrint):
+			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+		print("\nSUCCESS: Images Inferenced with the Model\n")
+
+		if ADATFlag == False:
+			# Create ADAT folder and file
+			print("\nADAT tool called to create the analysis toolkit\n")
+			if(not os.path.exists(adatOutputDir)):
+				os.system('mkdir ' + adatOutputDir)
 			
-		# if key == 27: 
-		# 	break
-		# if key == 32:
-		# 	if cv2.waitKey(0) == 32:
-		# 		continue
-		# if key == 113:
-		# 	exit(0)
+			if(hierarchy == ''):
+				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+				' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+			else:
+				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+				' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+			print("\nSUCCESS: Image Analysis Toolkit Created\n")
+			print("Press ESC to exit or close progess window\n")
+			ADATFlag = True
 
-		guiResults[imageFileName] = augmentedResults
-		end_main = time.time()
-		#print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
+		if loop == 'no':
+			loopFlag = False
+			# Wait to quit
+			while True:
+				key = cv2.waitKey(2)
+				if key == 27:
+					cv2.destroyAllWindows()
+					break   
+				# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+				# 	break
 
-	print("\nSUCCESS: Images Inferenced with the Model\n")
-
-	# Create ADAT folder and file
-	print("\nADAT tool called to create the analysis toolkit\n")
-	if(not os.path.exists(adatOutputDir)):
-		os.system('mkdir ' + adatOutputDir)
-	
-	if(hierarchy == ''):
-		os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-		' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-	else:
-		os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-		' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-	print("\nSUCCESS: Image Analysis Toolkit Created\n")
-	print("Press ESC to exit or close progess window\n")
-
-	# Wait to quit
-	# while True:
-	# 	key = cv2.waitKey(2)
-	# 	if key == 27:
-	# 		cv2.destroyAllWindows()
-	# 		break   
-	# 	# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-	# 	# 	break
-
-	outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
-	os.system('firefox '+outputHTMLFile)
+		#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
+		#os.system('firefox '+outputHTMLFile)
