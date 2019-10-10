@@ -104,7 +104,7 @@ class DataLoader(RaliGraph):
 	    	self.setof16_mode1(self.rot45_img, h_img, w_img)
 	    	self.setof16_mode1(self.flip_img, h_img, w_img)
 	    	self.setof16_mode1(self.rot135_img , h_img, w_img)
-
+			
         elif raliMode == 2:
 	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
 	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
@@ -455,7 +455,7 @@ if __name__ == '__main__':
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
 
-	#os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 	# create inference classifier
@@ -483,23 +483,23 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	#setup for Rali
-	batchSize = 1
-	start_rali = time.time()
-	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
-	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
-	end_rali = time.time()
-	if (verbosePrint):
-		print '%30s' % 'RALI Data Load and Iterator Time ', str((end_rali - start_rali)*1000), 'ms'
-	raliNumberOfImages = imageIterator.imageCount()
-	print ('Pipeline created ...')
-	print 'Image iterator created ... number of images', raliNumberOfImages
-	print 'Loader created ...num of images' , loader.getOutputImageCount()
-
 	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
 	viewer.startView()
 
 	while loopFlag == True and viewer.getState():	
+		#setup for Rali
+		batchSize = 1
+		#batchSize = 64
+		start_rali = time.time()
+		loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
+		imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+		raliNumberOfImages = imageIterator.imageCount()
+		end_rali = time.time()
+		if (verbosePrint):
+			print '%30s' % 'RALI Data Load Time ', str((end_rali - start_rali)*1000), 'ms'
+		print ('Pipeline created ...')
+		print 'Loader created ...num of images' , loader.getOutputImageCount()
+		print 'Image iterator created ... number of images', raliNumberOfImages
 		# process images
 		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 		
@@ -514,7 +514,6 @@ if __name__ == '__main__':
 		elif raliMode == 3:
 			raliList = raliList_mode3
 		
-		print 'viewer created!'
 		avg_benchmark = 0.0
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
@@ -542,7 +541,6 @@ if __name__ == '__main__':
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
-
 			for i in range(loader.getOutputImageCount()):
 				#using tensor output of RALI as frame 		
 				
@@ -645,6 +643,7 @@ if __name__ == '__main__':
 			avg_benchmark += (end_main - start_main)*1000
 		if(verbosePrint):
 			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+
 		print("\nSUCCESS: Images Inferenced with the Model\n")
 
 		if ADATFlag == False:
@@ -660,7 +659,8 @@ if __name__ == '__main__':
 				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
 				' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
 			print("\nSUCCESS: Image Analysis Toolkit Created\n")
-			print("Press ESC to exit or close progess window\n")
+			if loop == 'no':
+				print("Press ESC to exit or close progess window\n")
 			ADATFlag = True
 
 		if loop == 'no':
