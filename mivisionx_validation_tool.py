@@ -93,7 +93,7 @@ class DataLoader(RaliGraph):
         self.process_validation(image_validation)
         self.setSeed(0)
         if raliMode == 1:	        
-	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, True, 0)
 	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 	    	self.rot135_img = self.rotate(self.input, False, 135)
@@ -104,7 +104,7 @@ class DataLoader(RaliGraph):
 	    	self.setof16_mode1(self.rot45_img, h_img, w_img)
 	    	self.setof16_mode1(self.flip_img, h_img, w_img)
 	    	self.setof16_mode1(self.rot135_img , h_img, w_img)
-
+			
         elif raliMode == 2:
 	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
 	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
@@ -484,6 +484,7 @@ if __name__ == '__main__':
 
 	#setup for Rali
 	batchSize = 1
+	#batchSize = 64
 	start_rali = time.time()
 	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
 	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
@@ -536,7 +537,7 @@ if __name__ == '__main__':
 			end = time.time()
 			if(verbosePrint):
 				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
-
+			
 			for i in range(loader.getOutputImageCount()):
 				#using tensor output of RALI as frame 		
 				
@@ -639,36 +640,36 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
 			avg_benchmark += (end_main - start_main)*1000
-		if(verbosePrint):
-			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
-		print("\nSUCCESS: Images Inferenced with the Model\n")
+			if(verbosePrint):
+				print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+			print("\nSUCCESS: Images Inferenced with the Model\n")
 
-		if ADATFlag == False:
-			# Create ADAT folder and file
-			print("\nADAT tool called to create the analysis toolkit\n")
-			if(not os.path.exists(adatOutputDir)):
-				os.system('mkdir ' + adatOutputDir)
-			
-			if(hierarchy == ''):
-				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-				' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-			else:
-				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-				' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-			print("\nSUCCESS: Image Analysis Toolkit Created\n")
-			print("Press ESC to exit or close progess window\n")
-			ADATFlag = True
+			if ADATFlag == False:
+				# Create ADAT folder and file
+				print("\nADAT tool called to create the analysis toolkit\n")
+				if(not os.path.exists(adatOutputDir)):
+					os.system('mkdir ' + adatOutputDir)
+				
+				if(hierarchy == ''):
+					os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+					' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+				else:
+					os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+					' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+				print("\nSUCCESS: Image Analysis Toolkit Created\n")
+				print("Press ESC to exit or close progess window\n")
+				ADATFlag = True
 
-		if loop == 'no':
-			loopFlag = False
-			# Wait to quit
-			while True:
-				key = cv2.waitKey(2)
-				if key == 27:
-					cv2.destroyAllWindows()
-					break   
-				# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-				# 	break
+			if loop == 'no':
+				loopFlag = False
+				# Wait to quit
+				while True:
+					key = cv2.waitKey(2)
+					if key == 27:
+						cv2.destroyAllWindows()
+						break   
+					# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+					# 	break
 
-		#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
-		#os.system('firefox '+outputHTMLFile)
+			#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
+			#os.system('firefox '+outputHTMLFile)
