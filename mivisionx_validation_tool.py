@@ -482,21 +482,20 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	#setup for Rali
-	batchSize = 1
-	#batchSize = 64
-	start_rali = time.time()
-	loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
-	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
-	end_rali = time.time()
-	if (verbosePrint):
-		print '%30s' % 'RALI Data Load and Iterator Time ', str((end_rali - start_rali)*1000), 'ms'
-	raliNumberOfImages = imageIterator.imageCount()
-	print ('Pipeline created ...')
-	print 'Image iterator created ... number of images', raliNumberOfImages
-	print 'Loader created ...num of images' , loader.getOutputImageCount()
-
-	while loopFlag == True:	
+	while loopFlag == True:
+		#setup for Rali
+		batchSize = 1
+		#batchSize = 64
+		start_rali = time.time()
+		loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
+		imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+		raliNumberOfImages = imageIterator.imageCount()
+		end_rali = time.time()
+		if (verbosePrint):
+			print '%30s' % 'RALI Data Load Time ', str((end_rali - start_rali)*1000), 'ms'
+		print ('Pipeline created ...')
+		print 'Loader created ...num of images' , loader.getOutputImageCount()
+		print 'Image iterator created ... number of images', raliNumberOfImages
 		# process images
 		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 		
@@ -529,7 +528,7 @@ if __name__ == '__main__':
 			frame = image_tensor
 
 			#show original image
-			viewer.showImage(original_image)
+			#viewer.showImage(original_image)
 
 			# run inference
 			start = time.time()
@@ -634,7 +633,7 @@ if __name__ == '__main__':
 			# 		continue
 			# if key == 113:
 			# 	exit(0)
-
+			
 			guiResults[imageFileName] = augmentedResults
 			end_main = time.time()
 			if(verbosePrint):
@@ -642,34 +641,36 @@ if __name__ == '__main__':
 			avg_benchmark += (end_main - start_main)*1000
 			if(verbosePrint):
 				print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
-			print("\nSUCCESS: Images Inferenced with the Model\n")
 
-			if ADATFlag == False:
-				# Create ADAT folder and file
-				print("\nADAT tool called to create the analysis toolkit\n")
-				if(not os.path.exists(adatOutputDir)):
-					os.system('mkdir ' + adatOutputDir)
-				
-				if(hierarchy == ''):
-					os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-					' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-				else:
-					os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
-					' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
-				print("\nSUCCESS: Image Analysis Toolkit Created\n")
-				print("Press ESC to exit or close progess window\n")
-				ADATFlag = True
+		print("\nSUCCESS: Images Inferenced with the Model\n")
 
+		if ADATFlag == False:
+			# Create ADAT folder and file
+			print("\nADAT tool called to create the analysis toolkit\n")
+			if(not os.path.exists(adatOutputDir)):
+				os.system('mkdir ' + adatOutputDir)
+			
+			if(hierarchy == ''):
+				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+				' --image_dir '+inputImageDir+' --label '+labelText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+			else:
+				os.system('python '+ADATPath+'/generate-visualization.py --inference_results '+finalImageResultsFile+
+				' --image_dir '+inputImageDir+' --label '+labelText+' --hierarchy '+hierarchyText+' --model_name '+modelName+' --output_dir '+adatOutputDir+' --output_name '+modelName+'-ADAT')
+			print("\nSUCCESS: Image Analysis Toolkit Created\n")
 			if loop == 'no':
-				loopFlag = False
-				# Wait to quit
-				while True:
-					key = cv2.waitKey(2)
-					if key == 27:
-						cv2.destroyAllWindows()
-						break   
-					# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
-					# 	break
+				print("Press ESC to exit or close progess window\n")
+			ADATFlag = True
 
-			#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
-			#os.system('firefox '+outputHTMLFile)
+		if loop == 'no':
+			loopFlag = False
+			# Wait to quit
+			while True:
+				key = cv2.waitKey(2)
+				if key == 27:
+					cv2.destroyAllWindows()
+					break   
+				# if cv2.getWindowProperty(windowProgress,cv2.WND_PROP_VISIBLE) < 1:        
+				# 	break
+
+		#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
+		#os.system('firefox '+outputHTMLFile)
