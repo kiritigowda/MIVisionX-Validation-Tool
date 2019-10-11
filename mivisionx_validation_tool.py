@@ -73,18 +73,18 @@ raliList_mode3_64 = ['original', 'warpAffine', 'contrast', 'rain',
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
 			'gamma', 'rotate', 'jitter', 'blend',
-			'original', 'warpAffine', 'contrast', 'rain', 
-			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
-			'original', 'warpAffine', 'contrast', 'rain', 
-			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
-			'original', 'warpAffine', 'contrast', 'rain', 
-			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',]
+			'colorTemp+original', 'colorTemp+warpAffine', 'colorTemp+contrast', 'colorTemp+rain', 
+			'colorTemp+brightness', 'colorTemp+colorTemp', 'colorTemp+exposure', 'colorTemp+vignette', 
+			'colorTemp+fog', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
+			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+jitter', 'colorTemp+blend',
+			'colorTemp+original', 'colorTemp+warpAffine', 'colorTemp+contrast', 'colorTemp+rain', 
+			'colorTemp+brightness', 'colorTemp+colorTemp', 'colorTemp+exposure', 'colorTemp+vignette', 
+			'colorTemp+fog', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
+			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+jitter', 'colorTemp+blend',
+			'warpAffine+original', 'warpAffine+warpAffine', 'warpAffine+contrast', 'warpAffine+rain', 
+			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
+			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
+			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend']
 #batch size = 16
 raliList_mode1_16 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
@@ -431,7 +431,6 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
-	raliMode = 1
 
 	#set ADAT Flag to generate ADAT only once
 	ADATFlag = False
