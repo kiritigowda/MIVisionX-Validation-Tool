@@ -626,6 +626,10 @@ if __name__ == '__main__':
 				if(verbosePrint):
 					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
+				# Plot Graph
+				accuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
+				viewer.plotGraph(accuracy)
+
 				start = time.time()
 				augmentationText = raliList[i].split('+')
 				textCount = len(augmentationText)
@@ -648,7 +652,6 @@ if __name__ == '__main__':
 				msFrame += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
-
 			#split RALI augmented images into a grid
 			#split 16X4
 			start = time.time()
