@@ -106,9 +106,7 @@ class DataLoader(RaliGraph):
 		self.validation_dict = {}
 		self.process_validation(image_validation)
 		self.setSeed(0)
-		print model_batch_size , type(model_batch_size)
 		if model_batch_size == 16:
-			print "i'm here!"
 			if raliMode == 1:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
