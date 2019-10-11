@@ -35,6 +35,14 @@ class inference_viewer(QtGui.QMainWindow):
         # self.imageList.append(self.image_label16)
         self.runState = False
         self.pauseState = False
+        
+        self.graph = pg.PlotWidget(title="Accuracy vs Time")
+        self.graph.setLabel('left', 'Accuracy', '%')
+        self.graph.setLabel('bottom', 'Time', 's')
+        x = [1, 2, 3] 
+        y = [4, 5, 6]
+        self.pl = self.graph.plot(x, y, pen='g')
+        self.verticalLayout_2.addWidget(self.graph)
         self.show()
         # self.timer = QTimer(self)
         # QtCore.QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("showImage()"))
@@ -44,39 +52,33 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        self.setStyleSheet("background-color: white")
+        #self.setStyleSheet("background-color: white")
         self.name_label.setText(self.model_name)
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
-        self.noGT_progressBar.setStyleSheet("QProgressBar::chunk { background: yellow; }")
         self.total_progressBar.setMaximum(self.total_images)
-        self.top1_progressBar.setMaximum(self.total_images)
-        self.top5_progressBar.setMaximum(self.total_images)
-        self.mis_progressBar.setMaximum(self.total_images)
-        self.noGT_progressBar.setMaximum(self.total_images)
-        # staticPlt = pg.PlotWidget(self)
-        # x = np.random.normal(size=10)
-        # y = np.random.normal(size=10)
-
-        # staticPlt.plot(x,y,clear=True)
+        #self.noGT_progressBar.setStyleSheet("QProgressBar::chunk { background: yellow; }")
 
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
         self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images))
 
-    def setTop1Progress(self, value):
+    def setTop1Progress(self, value, total):
         self.top1_progressBar.setValue(value)
+        self.top1_progressBar.setMaximum(total)
     
-    def setTop5Progress(self, value):
+    def setTop5Progress(self, value, total):
         self.top5_progressBar.setValue(value)
+        self.top5_progressBar.setMaximum(total)
     
-    def setMisProgress(self, value):
+    def setMisProgress(self, value, total):
         self.mis_progressBar.setValue(value)
+        self.mis_progressBar.setMaximum(total)
     
-    def setNoGTProgress(self, value):
-        self.noGT_progressBar.setValue(value)
+    # def setNoGTProgress(self, value):
+    #     self.noGT_progressBar.setValue(value)
 
     def showImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)

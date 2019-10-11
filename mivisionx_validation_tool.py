@@ -455,7 +455,7 @@ if __name__ == '__main__':
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
 
-	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+	#os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 	# create inference classifier
@@ -588,15 +588,15 @@ if __name__ == '__main__':
 					augmentedResults.append(0)
 
 				# Total progress
-				viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
+				viewer.setTotalProgress(x*63+i+1)
 				# Top 1 progress
-				viewer.setTop1Progress(correctTop1)
+				viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
 				# Top 5 progress
-				viewer.setTop5Progress(correctTop5)
+				viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
 				# Mismatch progress
-				viewer.setMisProgress(wrong)
+				viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
 				# No ground truth progress
-				viewer.setNoGTProgress(noGroundTruth)
+				#viewer.setNoGTProgress(noGroundTruth)
 
 				end = time.time()
 				if(verbosePrint):
