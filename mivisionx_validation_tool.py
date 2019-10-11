@@ -36,7 +36,8 @@ colors =[
         (0,128,255),      # Top4
         (255,102,102),    # Top5
         ];
-raliList_mode1 = ['original', 'warpAffine', 'contrast', 'rain', 
+#batch size = 64
+raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
 			'gamma', 'rotate', 'jitter', 'blend',
@@ -52,7 +53,7 @@ raliList_mode1 = ['original', 'warpAffine', 'contrast', 'rain',
 			'rotate135+brightness', 'rotate135+colorTemp', 'rotate135+exposure', 'rotate135+vignette', 
 			'rotate135+fog', 'rotate135+snow', 'rotate135+pixelate', 'rotate135+SnPNoise', 
 			'rotate135+gamma', 'rotate135+rotate', 'rotate135+jitter', 'rotate135+blend']
-raliList_mode2 = ['original', 'warpAffine', 'contrast', 'rain', 
+raliList_mode2_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
 			'gamma', 'rotate', 'jitter', 'blend',
@@ -68,69 +69,158 @@ raliList_mode2 = ['original', 'warpAffine', 'contrast', 'rain',
 			'lensCorrection+brightness', 'lensCorrection+colorTemp', 'exposure', 'lensCorrection+vignette', 
 			'lensCorrection+fog', 'lensCorrection+snow', 'lensCorrection+pixelate', 'lensCorrection+SnPNoise', 
 			'lensCorrection+gamma', 'lensCorrection+rotate', 'lensCorrection+jitter', 'lensCorrection+blend',]
-raliList_mode3 = ['original', 'warpAffine', 'contrast', 'rain', 
+raliList_mode3_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
 			'gamma', 'rotate', 'jitter', 'blend',
-			'original', 'warpAffine', 'contrast', 'rain', 
+			'colorTemp+original', 'colorTemp+warpAffine', 'colorTemp+contrast', 'colorTemp+rain', 
+			'colorTemp+brightness', 'colorTemp+colorTemp', 'colorTemp+exposure', 'colorTemp+vignette', 
+			'colorTemp+fog', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
+			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+jitter', 'colorTemp+blend',
+			'colorTemp+original', 'colorTemp+warpAffine', 'colorTemp+contrast', 'colorTemp+rain', 
+			'colorTemp+brightness', 'colorTemp+colorTemp', 'colorTemp+exposure', 'colorTemp+vignette', 
+			'colorTemp+fog', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
+			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+jitter', 'colorTemp+blend',
+			'warpAffine+original', 'warpAffine+warpAffine', 'warpAffine+contrast', 'warpAffine+rain', 
+			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
+			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
+			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend']
+#batch size = 16
+raliList_mode1_16 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
-			'original', 'warpAffine', 'contrast', 'rain', 
+			'gamma', 'rotate', 'jitter', 'blend']
+raliList_mode2_16 = ['original', 'warpAffine', 'contrast', 'contrast+rain', 
+			'brightness', 'brightness+colorTemp', 'exposure', 'exposure+vignette', 
+			'fog', 'fog+snow', 'pixelate', 'pixelate+SnPNoise', 
+			'gamma', 'rotate', 'rotate+jitter', 'blend']
+raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
-			'original', 'warpAffine', 'contrast', 'rain', 
-			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',]
+			'fog', 'vignette+snow', 'pixelate', 'gamma',
+			'SnPNoise+gamma', 'rotate', 'jitter+pixelate', 'blend']
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
-    def __init__(self, input_path, batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode):
-        RaliGraph.__init__(self, batch_size, affinity)
-        self.validation_dict = {}
-        self.process_validation(image_validation)
-        self.setSeed(0)
-        if raliMode == 1:	        
-	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
+    def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode):
+		RaliGraph.__init__(self, rali_batch_size, affinity)
+		self.validation_dict = {}
+		self.process_validation(image_validation)
+		self.setSeed(0)
+		if model_batch_size == 16:
+			if raliMode == 1:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+		        
+				self.warped = self.warpAffine(self.input,True)
 
-	    	self.rot135_img = self.rotate(self.input, False, 135)
-	    	self.flip_img = self.flip(self.input, False)
-	    	self.rot45_img = self.rotate(self.input, False, 45)
+				self.contrast_img = self.contrast(self.input,True)
+				self.rain_img = self.rain(self.input, True)
 
-	    	self.setof16_mode1(self.input, h_img, w_img)
-	    	self.setof16_mode1(self.rot45_img, h_img, w_img)
-	    	self.setof16_mode1(self.flip_img, h_img, w_img)
-	    	self.setof16_mode1(self.rot135_img , h_img, w_img)
-			
-        elif raliMode == 2:
-	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
+				self.bright_img = self.brightness(self.input,True)
+				self.temp_img = self.colorTemp(self.input, True)
 
-	    	#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
-	    	self.warpAffine1_img = self.warpAffine(self.input, False, [[0.5,0],[0,2],[None,None]]) #squeeze
-	    	self.fishEye_img = self.fishEye(self.input, False)
-	    	self.lensCorrection_img = self.lendCorrection(self.input, False, 1.5, 2)
+				self.exposed_img = self.exposure(self.input, True)
+				self.vignette_img = self.vignette(self.input, True)
+				self.fog_img = self.fog(self.input, True)
+				self.snow_img = self.snow(self.input, True)
 
-	    	self.setof16_mode1(self.input, h_img, w_img)
-	    	self.setof16_mode1(self.warpAffine1_img, h_img, w_img)
-	    	self.setof16_mode1(self.fishEye_img, h_img, w_img)
-	    	self.setof16_mode1(self.lensCorrection_img, h_img, w_img)
+				self.pixelate_img = self.pixelate(self.input, True)
+				self.snp_img = self.SnPNoise(self.input, True, 0.2)
+				self.gamma_img = self.gamma(self.input, True)
 
-        elif raliMode == 3:
-	    	self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
-	    	self.input = self.resize(self.jpg_img, h_img, w_img, False)
+				self.rotate_img = self.rotate(self.input, True)
+				self.jitter_img = self.jitter(self.input, True)
+				
+				self.blend_img = self.blend(self.input, self.contrast_img, True)
+			elif raliMode == 2:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
-	    	self.colorTemp1_img = self.colorTemp(self.input, False, 10)
-	    	self.colorTemp2_img = self.colorTemp(self.input, False, 20)
-	    	self.warpAffine2_img = self.warpAffine(self.input, False, [[2,0],[0,1],[None,None]]) #stretch
+				self.warped = self.warpAffine(self.input,True)
 
-	    	self.setof16_mode1(self.input, h_img, w_img)
-	    	self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
-	    	self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
-	    	self.setof16_mode1(self.warpAffine2_img , h_img, w_img)
+				self.contrast_img = self.contrast(self.input,True)
+				self.rain_img = self.rain(self.contrast_img, True)
+
+				self.bright_img = self.brightness(self.input,True)
+				self.temp_img = self.colorTemp(self.bright_img, True)
+
+				self.exposed_img = self.exposure(self.input, True)
+				self.vignette_img = self.vignette(self.exposed_img, True)
+				self.fog_img = self.fog(self.input, True)
+				self.snow_img = self.snow(self.fog_img, True)
+
+				self.pixelate_img = self.pixelate(self.input, True)
+				self.snp_img = self.SnPNoise(self.pixelate_img, True, 0.2)
+				self.gamma_img = self.gamma(self.input, True)
+
+				self.rotate_img = self.rotate(self.input, True)
+				self.jitter_img = self.jitter(self.rotate_img, True)
+
+				self.blend_img = self.blend(self.rotate_img, self.warped, True)
+			elif raliMode == 3:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+				self.warped = self.warpAffine(self.input,True)
+
+				self.contrast_img = self.contrast(self.input,True)
+				self.rain_img = self.rain(self.warped, True)
+
+				self.bright_img = self.brightness(self.input,True)
+				self.temp_img = self.colorTemp(self.input, True)
+
+				self.exposed_img = self.exposure(self.input, True)
+				self.vignette_img = self.vignette(self.input, True)
+				self.fog_img = self.fog(self.input, True)
+				self.snow_img = self.snow(self.vignette_img, True)
+
+				self.pixelate_img = self.pixelate(self.input, True)
+				self.gamma_img = self.gamma(self.input, True)
+				self.snp_img = self.SnPNoise(self.gamma_img, True, 0.2)
+
+				self.rotate_img = self.rotate(self.input, True)
+				self.jitter_img = self.jitter(self.pixelate_img, True)
+
+				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
+		elif model_batch_size == 64:
+			if raliMode == 1:	        
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, False)
+
+				self.rot135_img = self.rotate(self.input, False, 135)
+				self.flip_img = self.flip(self.input, False)
+				self.rot45_img = self.rotate(self.input, False, 45)
+
+				self.setof16_mode1(self.input, h_img, w_img)
+				self.setof16_mode1(self.rot45_img, h_img, w_img)
+				self.setof16_mode1(self.flip_img, h_img, w_img)
+				self.setof16_mode1(self.rot135_img , h_img, w_img)
+				
+			elif raliMode == 2:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, False)
+
+				#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
+				self.warpAffine1_img = self.warpAffine(self.input, False, [[0.5,0],[0,2],[None,None]]) #squeeze
+				self.fishEye_img = self.fishEye(self.input, False)
+				self.lensCorrection_img = self.lendCorrection(self.input, False, 1.5, 2)
+
+				self.setof16_mode1(self.input, h_img, w_img)
+				self.setof16_mode1(self.warpAffine1_img, h_img, w_img)
+				self.setof16_mode1(self.fishEye_img, h_img, w_img)
+				self.setof16_mode1(self.lensCorrection_img, h_img, w_img)
+
+			elif raliMode == 3:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, False)
+
+				self.colorTemp1_img = self.colorTemp(self.input, False, 10)
+				self.colorTemp2_img = self.colorTemp(self.input, False, 20)
+				self.warpAffine2_img = self.warpAffine(self.input, False, [[2,0],[0,1],[None,None]]) #stretch
+
+				self.setof16_mode1(self.input, h_img, w_img)
+				self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
+				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
+				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)	
 
     def get_input_name(self):
         return self.jpg_img.name(0)
@@ -341,7 +431,6 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
-	raliMode = 1
 
 	#set ADAT Flag to generate ADAT only once
 	ADATFlag = False
@@ -488,10 +577,9 @@ if __name__ == '__main__':
 
 	while loopFlag == True and viewer.getState():	
 		#setup for Rali
-		batchSize = 1
-		#batchSize = 64
+		rali_batch_size = 1
 		start_rali = time.time()
-		loader = DataLoader(inputImageDir, batchSize, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
+		loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
 		imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
 		raliNumberOfImages = imageIterator.imageCount()
 		end_rali = time.time()
@@ -507,12 +595,20 @@ if __name__ == '__main__':
 		guiResults = {}
 
 		#build augmentation list based on RALI mode
-		if raliMode == 1:
-			raliList = raliList_mode1
-		elif raliMode == 2:
-			raliList = raliList_mode2
-		elif raliMode == 3:
-			raliList = raliList_mode3
+		if modelBatchSizeInt == 16:
+			if raliMode == 1:
+				raliList = raliList_mode1_16
+			elif raliMode == 2:
+				raliList = raliList_mode2_16
+			elif raliMode == 3:
+				raliList = raliList_mode3_16
+		elif modelBatchSizeInt == 64:
+			if raliMode == 1:
+				raliList = raliList_mode1_64
+			elif raliMode == 2:
+				raliList = raliList_mode2_64
+			elif raliMode == 3:
+				raliList = raliList_mode3_64
 		
 		avg_benchmark = 0.0
 		frameMsecs = 0.0
@@ -538,12 +634,12 @@ if __name__ == '__main__':
 				print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
 			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ')
-			text_width, text_height = cv2.getTextSize(groundTruthLabel[1][:-1], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+			text_width, text_height = cv2.getTextSize(groundTruthLabel[1], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 			text_off_x = 5
 			text_off_y = h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-			cv2.putText(original_image, groundTruthLabel[1][:-1], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			cv2.putText(original_image, groundTruthLabel[1], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
 			#show original image
 			start = time.time()
@@ -652,8 +748,12 @@ if __name__ == '__main__':
 			#split RALI augmented images into a grid
 			#split 16X4
 			start = time.time()
-			image_batch = np.vsplit(cloned_image, 16)
-			final_image_batch = np.hstack((image_batch))
+			if modelBatchSizeInt == 64:
+				image_batch = np.vsplit(cloned_image, 16)
+				final_image_batch = np.hstack((image_batch))
+			elif modelBatchSizeInt == 16:
+				image_batch = np.vsplit(cloned_image, 4)
+				final_image_batch = np.hstack((image_batch))
 	    	#show augmented images
 			aug_width = final_image_batch.shape[1]
 			aug_height = final_image_batch.shape[0]
