@@ -27,6 +27,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.graph.plot(self.x, self.y)
         self.verticalLayout_2.addWidget(self.graph)
         self.graph.setMaximumWidth(550)
+        self.graph.setMaximumHeight(400)
         self.graph.setBackground((255,255,255))
         self.time = QTime.currentTime()
         self.lastTime = 0
