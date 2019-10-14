@@ -41,7 +41,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>data/images/AMD Radeon.png</pixmap>
+         <pixmap>data/images/AMD_Radeon.png</pixmap>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>

@@ -3,13 +3,14 @@ import Queue
 #import numpy as np
 import pyqtgraph as pg
 from PyQt4 import QtGui, uic, QtCore
-from PyQt4.QtGui import QImage
+from PyQt4.QtGui import QImage, QPixmap
 from PyQt4.QtCore import QTimer, QObject, QTime
 
 class inference_viewer(QtGui.QMainWindow):
-    def __init__(self, model_name, total_images, parent=None):
+    def __init__(self, model_name, rali_mode, total_images, parent=None):
         super(inference_viewer, self).__init__(parent)
         self.model_name = model_name
+        self.rali_mode = rali_mode
         self.total_images = total_images
         self.imgCount = 0
         self.frameCount = 9
@@ -17,20 +18,24 @@ class inference_viewer(QtGui.QMainWindow):
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
         
-        self.initUI()
-        
         self.graph = pg.PlotWidget(title="Accuracy vs Time")
-        self.graph.setLabel('left', 'Accuracy', '%')
-        self.graph.setLabel('bottom', 'Time', 's')
         self.x = [0] 
         self.y = [0]
-        self.graph.plot(self.x, self.y)
-        self.verticalLayout_2.addWidget(self.graph)
-        self.graph.setMaximumWidth(550)
-        self.graph.setMaximumHeight(400)
-        self.graph.setBackground((255,255,255))
         self.time = QTime.currentTime()
         self.lastTime = 0
+
+        self.runState = False
+        self.pauseState = False
+
+        self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
+        self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
+        self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
+        self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
+        self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
+        self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
+
+        self.initUI()
+        
         self.imageList.append(self.image_label)
         self.imageList.append(self.image_label2)
         self.imageList.append(self.image_label3)
@@ -40,20 +45,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.imageList.append(self.image_label7)
         self.imageList.append(self.image_label8)
         self.imageList.append(self.image_label9)
-        # self.imageList.append(self.image_label10)
-        # self.imageList.append(self.image_label11)
-        # self.imageList.append(self.image_label12)
-        # self.imageList.append(self.image_label13)
-        # self.imageList.append(self.image_label14)
-        # self.imageList.append(self.image_label15)
-        # self.imageList.append(self.image_label16)
 
-        self.pause_pushButton.clicked.connect(self.pauseView)
-        self.stop_pushButton.clicked.connect(self.closeView)
-        self.dark_checkBox.stateChanged.connect(self.setBackground)
-        self.runState = False
-        self.pauseState = False
-        
         self.show()
         # self.timer = QTimer(self)
         # QtCore.QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("showImage()"))
@@ -69,7 +61,23 @@ class inference_viewer(QtGui.QMainWindow):
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
         self.total_progressBar.setMaximum(self.total_images)
-        #self.noGT_progressBar.setStyleSheet("QProgressBar::chunk { background: yellow; }"
+
+        self.graph.setLabel('left', 'Accuracy', '%')
+        self.graph.setLabel('bottom', 'Time', 's')
+        self.graph.plot(self.x, self.y)
+        self.verticalLayout_2.addWidget(self.graph)
+        self.graph.setMaximumWidth(550)
+        self.graph.setMaximumHeight(400)
+        self.graph.setBackground((255,255,255))
+
+        self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
+        self.stop_pushButton.setStyleSheet("color: white; background-color: darkRed")
+        self.pause_pushButton.clicked.connect(self.pauseView)
+        self.stop_pushButton.clicked.connect(self.closeView)
+        self.dark_checkBox.stateChanged.connect(self.setBackground)
+        self.verbose_checkBox.stateChanged.connect(self.showVerbose)
+        self.dark_checkBox.setChecked(True)
+        self.showVerbose()
 
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
@@ -140,9 +148,42 @@ class inference_viewer(QtGui.QMainWindow):
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
-            self.setStyleSheet("background-color: #25232F")
+            self.setStyleSheet("background-color: #25232F;")
+            self.origTitle_label.setStyleSheet("color: #C82327;")
+            self.progTitle_label.setStyleSheet("color: #C82327;")
+            self.graphTitle_label.setStyleSheet("color: #C82327;")
+            self.augTitle_label.setStyleSheet("color: #C82327;")
+            self.name_label.setStyleSheet("color: #C82327;")
+            self.imgProg_label.setStyleSheet("color: #C82327;")
+            self.fps_label.setStyleSheet("color: #C82327;")
+            self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
+            self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
+            self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
         else:
-            self.setStyleSheet("background-color: white")
+            self.setStyleSheet("background-color: white;")
+            self.origTitle_label.setStyleSheet("color: 0;")
+            self.progTitle_label.setStyleSheet("color: 0;")
+            self.graphTitle_label.setStyleSheet("color: 0;")
+            self.augTitle_label.setStyleSheet("color: 0;")
+            self.name_label.setStyleSheet("color: 0;")
+            self.imgProg_label.setStyleSheet("color: 0;")
+            self.fps_label.setStyleSheet("color: 0;")
+            self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
+            self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
+            self.EPYC_logo.setPixmap(self.EPYC_pixmap)
+            
+    def showVerbose(self):
+        if self.verbose_checkBox.isChecked():
+            self.name_label.setText("%s - Augmentation Set %d" % (self.model_name, self.rali_mode))
+            self.fps_label.show()
+            self.fps_lcdNumber.show()
+        else:
+            self.name_label.setText(self.model_name)
+            self.fps_label.hide()
+            self.fps_lcdNumber.hide()
+        
+    def displayFPS(self, fps):
+        self.fps_lcdNumber.display(fps)
 
     def pauseView(self):
         self.pauseState = not self.pauseState

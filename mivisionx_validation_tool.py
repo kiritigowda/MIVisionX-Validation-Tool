@@ -572,7 +572,7 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+	viewer = inference_viewer(modelName, raliMode, totalImages*modelBatchSizeInt)
 	viewer.startView()
 
 	while loopFlag == True and viewer.getState():	
@@ -786,7 +786,7 @@ if __name__ == '__main__':
 
 			frameMsecs += msFrame
 			frameMsecs = 1000/(frameMsecs/64)
-			print '%30s' % 'FPS is ', str(frameMsecs), '\n'
+			viewer.displayFPS(frameMsecs)
 
 		if(verbosePrint):
 			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
