@@ -77,12 +77,9 @@
      </layout>
     </item>
     <item>
-     <widget class="QFrame" name="frame">
-      <property name="frameShape">
-       <enum>QFrame::HLine</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+     <widget class="QCheckBox" name="dark_checkBox">
+      <property name="text">
+       <string>Dark Theme</string>
       </property>
      </widget>
     </item>
@@ -555,7 +552,7 @@
         <item>
          <widget class="QLabel" name="graphTitle_label">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -582,16 +579,6 @@
        </layout>
       </item>
      </layout>
-    </item>
-    <item>
-     <widget class="QFrame" name="frame_2">
-      <property name="frameShape">
-       <enum>QFrame::HLine</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-     </widget>
     </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_3">

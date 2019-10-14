@@ -50,7 +50,7 @@ class inference_viewer(QtGui.QMainWindow):
 
         self.pause_pushButton.clicked.connect(self.pauseView)
         self.stop_pushButton.clicked.connect(self.closeView)
-
+        self.dark_checkBox.stateChanged.connect(self.setBackground)
         self.runState = False
         self.pauseState = False
         
@@ -137,7 +137,13 @@ class inference_viewer(QtGui.QMainWindow):
             
         if event.key() == QtCore.Qt.Key_Space:
             self.pauseView()
-    
+
+    def setBackground(self):
+        if self.dark_checkBox.isChecked():
+            self.setStyleSheet("background-color: #25232F")
+        else:
+            self.setStyleSheet("background-color: white")
+
     def pauseView(self):
         self.pauseState = not self.pauseState
         if self.pauseState:
