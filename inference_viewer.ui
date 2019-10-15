@@ -441,6 +441,9 @@ color: rgb(0, 0, 0);</string>
             <pointsize>15</pointsize>
            </font>
           </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
           <property name="value">
            <number>24</number>
           </property>
@@ -643,6 +646,8 @@ color: rgb(0, 0, 0);</string>
            <font>
             <family>Ubuntu</family>
             <pointsize>25</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
            </font>
           </property>
           <property name="text">

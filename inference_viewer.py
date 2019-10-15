@@ -60,6 +60,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
+        #self.mis_progressBar.setStyleSheet("QProgressBar { background-color: green; color: green;} QProgressBar::chunk { background: red; }")
         self.total_progressBar.setMaximum(self.total_images)
 
         self.graph.setLabel('left', 'Accuracy', '%')
