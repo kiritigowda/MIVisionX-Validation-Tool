@@ -27,6 +27,8 @@ class inference_viewer(QtGui.QMainWindow):
         self.runState = False
         self.pauseState = False
 
+        self.augIntensity = 0.0
+
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
         self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
@@ -65,12 +67,13 @@ class inference_viewer(QtGui.QMainWindow):
 
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
-        self.graph.plot(self.x, self.y)
+        self.graph.plot(self.x, self.y, pen=pg.mkPen('w', width=4))
         self.verticalLayout_2.addWidget(self.graph)
+        self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
-        self.graph.setMaximumHeight(400)
-        self.graph.setBackground((255,255,255))
-
+        self.graph.setMaximumHeight(380)
+        self.level_slider.setMaximum(100)
+        self.level_slider.valueChanged.connect(self.setIntensity)
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
         self.stop_pushButton.setStyleSheet("color: white; background-color: darkRed")
         self.pause_pushButton.clicked.connect(self.pauseView)
@@ -160,9 +163,12 @@ class inference_viewer(QtGui.QMainWindow):
             self.dark_checkBox.setStyleSheet("color: white;")
             self.verbose_checkBox.setStyleSheet("color: white;")
             self.level_label.setStyleSheet("color: white;")
+            self.low_label.setStyleSheet("color: white;")
+            self.high_label.setStyleSheet("color: white;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
             self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
+            self.graph.setBackground(None)
         else:
             self.setStyleSheet("background-color: white;")
             self.origTitle_label.setStyleSheet("color: 0;")
@@ -175,9 +181,12 @@ class inference_viewer(QtGui.QMainWindow):
             self.dark_checkBox.setStyleSheet("color: 0;")
             self.verbose_checkBox.setStyleSheet("color: 0;")
             self.level_label.setStyleSheet("color: 0;")
+            self.low_label.setStyleSheet("color: 0;")
+            self.high_label.setStyleSheet("color: 0;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
             self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
+            self.graph.setBackground(None)
             
     def showVerbose(self):
         if self.verbose_checkBox.isChecked():
@@ -213,3 +222,9 @@ class inference_viewer(QtGui.QMainWindow):
 
     def isPaused(self):
         return self.pauseState
+
+    def setIntensity(self):
+        self.augIntensity = (float)(self.level_slider.value()) / 100.0
+
+    def getIntensity(self):
+        return self.augIntensity
