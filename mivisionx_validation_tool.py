@@ -620,7 +620,7 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	viewer = inference_viewer(modelName, totalImages*modelBatchSizeInt)
+	viewer = inference_viewer(modelName, raliMode, totalImages*modelBatchSizeInt)
 	viewer.startView()
 
 	while loopFlag == True and viewer.getState():	
@@ -755,20 +755,24 @@ if __name__ == '__main__':
 					augmentedResults.append(0)
 
 				# Total progress
-				viewer.setTotalProgress(modelBatchSizeInt*x+i+1)
+				viewer.setTotalProgress(x*63+i+1)
 				# Top 1 progress
-				viewer.setTop1Progress(correctTop1)
+				viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
 				# Top 5 progress
-				viewer.setTop5Progress(correctTop5)
+				viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
 				# Mismatch progress
-				viewer.setMisProgress(wrong)
+				viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
 				# No ground truth progress
-				viewer.setNoGTProgress(noGroundTruth)
+				#viewer.setNoGTProgress(noGroundTruth)
 
 				end = time.time()
 				msFrame += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
+
+				# Plot Graph
+				accuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
+				viewer.plotGraph(accuracy)
 
 				start = time.time()
 				augmentationText = raliList[i].split('+')
@@ -792,7 +796,6 @@ if __name__ == '__main__':
 				msFrame += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
-
 			#split RALI augmented images into a grid
 			#split 16X4
 			start = time.time()
@@ -831,7 +834,7 @@ if __name__ == '__main__':
 
 			frameMsecs += msFrame
 			frameMsecs = 1000/(frameMsecs/64)
-			print '%30s' % 'FPS is ', str(frameMsecs), '\n'
+			viewer.displayFPS(frameMsecs)
 
 		if(verbosePrint):
 			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
