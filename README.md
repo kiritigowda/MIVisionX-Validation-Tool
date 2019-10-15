@@ -37,6 +37,15 @@ Pre-trained models in [ONNX](https://onnx.ai/), [NNEF](https://www.khronos.org/n
 	* AMD Radeon GPU or AMD APU required
 * Latest [ROCm](https://github.com/RadeonOpenCompute/ROCm#installing-from-amd-rocm-repositories)
 * Build & Install [MIVisionX](https://github.com/GPUOpen-ProfessionalCompute-Libraries/MIVisionX#linux-1)
+* Install Python QT graph module
+	````
+	pip install pyqtgraph
+	````
+* Export Path & Libraries required
+	````
+	export PATH=$PATH:/opt/rocm/mivisionx/bin
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/mivisionx/lib:/opt/rocm/rpp/lib
+	````
 
 ### Use MIVisionX Docker
 
