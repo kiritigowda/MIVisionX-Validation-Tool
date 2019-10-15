@@ -155,22 +155,22 @@ class DataLoader(RaliGraph):
 
 				self.warped = self.warpAffine(self.input,True)
 
-				self.contrast_img = self.contrast(self.input,True)
+				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
 				self.rain_img = self.rain(self.contrast_img, True)
 
-				self.bright_img = self.brightness(self.input,True)
-				self.temp_img = self.colorTemp(self.bright_img, True)
+				self.bright_img = self.brightness(self.input,True, self.alpha_param)
+				self.temp_img = self.colorTemp(self.bright_img, True, self.adjustment_param)
 
-				self.exposed_img = self.exposure(self.input, True)
+				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.exposed_img, True)
 				self.fog_img = self.fog(self.input, True)
 				self.snow_img = self.snow(self.fog_img, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
-				self.snp_img = self.SnPNoise(self.pixelate_img, True, 0.2)
-				self.gamma_img = self.gamma(self.input, True)
+				self.snp_img = self.SnPNoise(self.pixelate_img, True, self.sdev_param)
+				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
 
-				self.rotate_img = self.rotate(self.input, True)
+				self.rotate_img = self.rotate(self.input, True, self.degree_param)
 				self.jitter_img = self.jitter(self.rotate_img, True)
 
 				self.blend_img = self.blend(self.rotate_img, self.warped, True)
@@ -179,22 +179,22 @@ class DataLoader(RaliGraph):
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 				self.warped = self.warpAffine(self.input,True)
 
-				self.contrast_img = self.contrast(self.input,True)
+				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
 				self.rain_img = self.rain(self.warped, True)
 
-				self.bright_img = self.brightness(self.input,True)
-				self.temp_img = self.colorTemp(self.input, True)
+				self.bright_img = self.brightness(self.input,True, self.alpha_param)
+				self.temp_img = self.colorTemp(self.input, True, self.adjustment_param)
 
-				self.exposed_img = self.exposure(self.input, True)
+				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.input, True)
 				self.fog_img = self.fog(self.input, True)
 				self.snow_img = self.snow(self.vignette_img, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
-				self.gamma_img = self.gamma(self.input, True)
-				self.snp_img = self.SnPNoise(self.gamma_img, True, 0.2)
+				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
+				self.snp_img = self.SnPNoise(self.gamma_img, True, self.sdev_param)
 
-				self.rotate_img = self.rotate(self.input, True)
+				self.rotate_img = self.rotate(self.input, True, self.degree_param)
 				self.jitter_img = self.jitter(self.pixelate_img, True)
 
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
@@ -287,7 +287,7 @@ class DataLoader(RaliGraph):
 		self.alpha_param.update(alpha)
 
 		#values for colorTemp
-		adjustment = (augmentation*99) if ((augmentation*100) % 2 == 0) else (-1*augmentation*99)
+		adjustment = (augmentation*99) if ((int(augmentation*100)) % 2 == 0) else (-1*augmentation*99)
 		adjustment = int(adjustment)
 		self.adjustment_param.update(adjustment)
 
@@ -629,7 +629,6 @@ if __name__ == '__main__':
 		rali_batch_size = 1
 		start_rali = time.time()
 		loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
-		loader.updateAugmentationParameter(0.35)
 		imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
 		raliNumberOfImages = imageIterator.imageCount()
 		end_rali = time.time()
@@ -662,8 +661,11 @@ if __name__ == '__main__':
 		
 		avg_benchmark = 0.0
 		frameMsecs = 0.0
+		augCount = 0.0
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+			loader.updateAugmentationParameter(augCount)
+			augCount = augCount + 0.01
 			msFrame = 0.0
 			start_main = time.time()
 			imageFileName = loader.get_input_name()
