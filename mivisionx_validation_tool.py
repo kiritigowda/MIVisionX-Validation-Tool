@@ -106,6 +106,23 @@ class DataLoader(RaliGraph):
 		self.validation_dict = {}
 		self.process_validation(image_validation)
 		self.setSeed(0)
+
+		#params for contrast
+		self.min_param = RaliIntParameter(min)
+		self.max_param = RaliIntParameter(max)
+		#param for brightness
+		self.alpha_param = RaliFloatParameter(alpha)
+		#param for colorTemp		
+		self.adjustment_param = RaliFloatParameter(adjustment)
+		#param for exposure
+		self.shift_param = RaliFloatParameter(shift)
+		#param for SnPNoise
+		self.sdev_param = RaliFloatParameter(sdev)
+		#param for gamma
+		self.gamma_shift_param = RaliFloatParameter(gamma_shift)
+		#param for rotate
+		self.degree_param = RaliFloatParameter(degree)
+
 		if model_batch_size == 16:
 			if raliMode == 1:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
@@ -257,6 +274,37 @@ class DataLoader(RaliGraph):
 		self.jitter_img = self.jitter(input_image, True)
 		
 		self.blend_img = self.blend(input_image, self.contrast_img, True)
+
+	def updateAugmentationParameterInt(self, augmentation):
+		#values for contrast
+		min = int(augmentation)
+		max = 150 + (100-int(augmentation))
+		min_param.update(min)
+		max_param.update(max)
+
+		#values for brightness
+		alpha = augmentation*1.95
+		alpha_param.update(alpha, self.brightness)
+
+		#values for colorTemp
+		adjustment = augmentation*0.99 if (augmentation % 2 == 0) else (-1*augmentation*0.99)
+		adjustment_param.update(adjustment, self.colorTemp)
+
+		#values for exposure
+		shift = augmentation*0.95
+		shift_param.update(shift, self.exposure)
+
+		#values for SnPNoise
+		sdev = augmentation*0.7
+		sdev_param.update(sdev, self.SnPNoise)
+
+		#values for gamma
+		gamma_shift = augmentation*5.0
+		gamma_shift_param.update(gamma_shift, self.gamma)
+
+		#values for rotation
+		degree = augmentation * 180.0
+		degree_param.update(degree, self.rotate)
 
 # AMD Neural Net python wrapper
 class AnnAPI:
