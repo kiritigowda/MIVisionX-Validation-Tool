@@ -27,6 +27,8 @@ class inference_viewer(QtGui.QMainWindow):
         self.runState = False
         self.pauseState = False
 
+        self.augIntensity = 0.0
+
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
         self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
@@ -71,6 +73,8 @@ class inference_viewer(QtGui.QMainWindow):
         self.graph.setMaximumHeight(400)
         self.graph.setBackground((255,255,255))
 
+        self.level_slider.setMaximum(100)
+        self.level_slider.valueChanged.connect(self.setIntensity)
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
         self.stop_pushButton.setStyleSheet("color: white; background-color: darkRed")
         self.pause_pushButton.clicked.connect(self.pauseView)
@@ -213,3 +217,9 @@ class inference_viewer(QtGui.QMainWindow):
 
     def isPaused(self):
         return self.pauseState
+
+    def setIntensity(self):
+        self.augIntensity = (float)(self.level_slider.value()) / 100.0
+        
+    def getIntensity(self):
+        return self.augIntensity
