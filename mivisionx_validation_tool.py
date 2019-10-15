@@ -219,7 +219,7 @@ class DataLoader(RaliGraph):
 				#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
 				self.warpAffine1_img = self.warpAffine(self.input, False, [[0.5,0],[0,2],[None,None]]) #squeeze
 				self.fishEye_img = self.fishEye(self.input, False)
-				self.lensCorrection_img = self.lendCorrection(self.input, False, 1.5, 2)
+				self.lensCorrection_img = self.lensCorrection(self.input, False, 1.5, 2)
 
 				self.setof16_mode1(self.input, h_img, w_img)
 				self.setof16_mode1(self.warpAffine1_img, h_img, w_img)
