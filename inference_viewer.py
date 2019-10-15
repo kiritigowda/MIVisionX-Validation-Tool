@@ -17,6 +17,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.imageList = []
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
+        
         self.graph = pg.PlotWidget(title="Accuracy vs Time")
         self.x = [0] 
         self.y = [0]

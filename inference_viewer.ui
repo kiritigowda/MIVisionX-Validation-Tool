@@ -350,7 +350,7 @@ color: rgb(0, 0, 0);</string>
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0">
         <item>
          <widget class="QLabel" name="progTitle_label">
           <property name="sizePolicy">
@@ -548,8 +548,8 @@ color: rgb(0, 0, 0);</string>
           <property name="text">
            <string>Augmentation Level</string>
           </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
           </property>
          </widget>
         </item>
