@@ -661,11 +661,12 @@ if __name__ == '__main__':
 		
 		avg_benchmark = 0.0
 		frameMsecs = 0.0
-		augCount = 0.0
+		#augCount = 0.0
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
-			loader.updateAugmentationParameter(augCount)
-			augCount = augCount + 0.01
+			augmentation = viewer.getIntensity()
+			loader.updateAugmentationParameter(augmentation)
+			#augCount = augCount + 0.01
 			msFrame = 0.0
 			start_main = time.time()
 			imageFileName = loader.get_input_name()
