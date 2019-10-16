@@ -106,6 +106,23 @@ class DataLoader(RaliGraph):
 		self.validation_dict = {}
 		self.process_validation(image_validation)
 		self.setSeed(0)
+
+		#params for contrast
+		self.min_param = RaliIntParameter(0)
+		self.max_param = RaliIntParameter(255)
+		#param for brightness
+		self.alpha_param = RaliFloatParameter(0.0)
+		#param for colorTemp		
+		self.adjustment_param = RaliIntParameter(0)
+		#param for exposure
+		self.shift_param = RaliFloatParameter(0.0)
+		#param for SnPNoise
+		self.sdev_param = RaliFloatParameter(0.0)
+		#param for gamma
+		self.gamma_shift_param = RaliFloatParameter(0.0)
+		#param for rotate
+		self.degree_param = RaliFloatParameter(0.0)
+
 		if model_batch_size == 16:
 			if raliMode == 1:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
@@ -113,22 +130,22 @@ class DataLoader(RaliGraph):
 		        
 				self.warped = self.warpAffine(self.input,True)
 
-				self.contrast_img = self.contrast(self.input,True)
+				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
 				self.rain_img = self.rain(self.input, True)
 
-				self.bright_img = self.brightness(self.input,True)
-				self.temp_img = self.colorTemp(self.input, True)
+				self.bright_img = self.brightness(self.input,True, self.alpha_param)
+				self.temp_img = self.colorTemp(self.input, True, self.adjustment_param)
 
-				self.exposed_img = self.exposure(self.input, True)
+				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.input, True)
 				self.fog_img = self.fog(self.input, True)
 				self.snow_img = self.snow(self.input, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
-				self.snp_img = self.SnPNoise(self.input, True, 0.2)
-				self.gamma_img = self.gamma(self.input, True)
+				self.snp_img = self.SnPNoise(self.input, True, self.sdev_param)
+				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
 
-				self.rotate_img = self.rotate(self.input, True)
+				self.rotate_img = self.rotate(self.input, True, self.degree_param)
 				self.jitter_img = self.jitter(self.input, True)
 				
 				self.blend_img = self.blend(self.input, self.contrast_img, True)
@@ -138,22 +155,22 @@ class DataLoader(RaliGraph):
 
 				self.warped = self.warpAffine(self.input,True)
 
-				self.contrast_img = self.contrast(self.input,True)
+				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
 				self.rain_img = self.rain(self.contrast_img, True)
 
-				self.bright_img = self.brightness(self.input,True)
-				self.temp_img = self.colorTemp(self.bright_img, True)
+				self.bright_img = self.brightness(self.input,True, self.alpha_param)
+				self.temp_img = self.colorTemp(self.bright_img, True, self.adjustment_param)
 
-				self.exposed_img = self.exposure(self.input, True)
+				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.exposed_img, True)
 				self.fog_img = self.fog(self.input, True)
 				self.snow_img = self.snow(self.fog_img, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
-				self.snp_img = self.SnPNoise(self.pixelate_img, True, 0.2)
-				self.gamma_img = self.gamma(self.input, True)
+				self.snp_img = self.SnPNoise(self.pixelate_img, True, self.sdev_param)
+				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
 
-				self.rotate_img = self.rotate(self.input, True)
+				self.rotate_img = self.rotate(self.input, True, self.degree_param)
 				self.jitter_img = self.jitter(self.rotate_img, True)
 
 				self.blend_img = self.blend(self.rotate_img, self.warped, True)
@@ -162,22 +179,22 @@ class DataLoader(RaliGraph):
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 				self.warped = self.warpAffine(self.input,True)
 
-				self.contrast_img = self.contrast(self.input,True)
+				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
 				self.rain_img = self.rain(self.warped, True)
 
-				self.bright_img = self.brightness(self.input,True)
-				self.temp_img = self.colorTemp(self.input, True)
+				self.bright_img = self.brightness(self.input,True, self.alpha_param)
+				self.temp_img = self.colorTemp(self.input, True, self.adjustment_param)
 
-				self.exposed_img = self.exposure(self.input, True)
+				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.input, True)
 				self.fog_img = self.fog(self.input, True)
 				self.snow_img = self.snow(self.vignette_img, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
-				self.gamma_img = self.gamma(self.input, True)
-				self.snp_img = self.SnPNoise(self.gamma_img, True, 0.2)
+				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
+				self.snp_img = self.SnPNoise(self.gamma_img, True, self.sdev_param)
 
-				self.rotate_img = self.rotate(self.input, True)
+				self.rotate_img = self.rotate(self.input, True, self.degree_param)
 				self.jitter_img = self.jitter(self.pixelate_img, True)
 
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
@@ -202,7 +219,7 @@ class DataLoader(RaliGraph):
 				#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
 				self.warpAffine1_img = self.warpAffine(self.input, False, [[0.5,0],[0,2],[None,None]]) #squeeze
 				self.fishEye_img = self.fishEye(self.input, False)
-				self.lensCorrection_img = self.lendCorrection(self.input, False, 1.5, 2)
+				self.lensCorrection_img = self.lensCorrection(self.input, False, 1.5, 2)
 
 				self.setof16_mode1(self.input, h_img, w_img)
 				self.setof16_mode1(self.warpAffine1_img, h_img, w_img)
@@ -238,25 +255,57 @@ class DataLoader(RaliGraph):
         
 		self.warped = self.warpAffine(input_image,True)
 
-		self.contrast_img = self.contrast(input_image,True)
+		self.contrast_img = self.contrast(input_image,True, self.min_param, self.max_param)
 		self.rain_img = self.rain(input_image, True)
 
-		self.bright_img = self.brightness(input_image,True)
-		self.temp_img = self.colorTemp(input_image, True)
+		self.bright_img = self.brightness(input_image,True, self.alpha_param)
+		self.temp_img = self.colorTemp(input_image, True, self.adjustment_param)
 
-		self.exposed_img = self.exposure(input_image, True)
+		self.exposed_img = self.exposure(input_image, True, self.shift_param)
 		self.vignette_img = self.vignette(input_image, True)
 		self.fog_img = self.fog(input_image, True)
 		self.snow_img = self.snow(input_image, True)
 
 		self.pixelate_img = self.pixelate(input_image, True)
-		self.snp_img = self.SnPNoise(input_image, True, 0.2)
-		self.gamma_img = self.gamma(input_image, True)
+		self.snp_img = self.SnPNoise(input_image, True, self.sdev_param)
+		self.gamma_img = self.gamma(input_image, True, self.gamma_shift_param)
 
-		self.rotate_img = self.rotate(input_image, True)
+		self.rotate_img = self.rotate(input_image, True, self.degree_param)
 		self.jitter_img = self.jitter(input_image, True)
 		
 		self.blend_img = self.blend(input_image, self.contrast_img, True)
+
+    def updateAugmentationParameter(self, augmentation):
+		#values for contrast
+		min = int(augmentation*100)
+		max = 150 + int((1-augmentation)*100)
+		self.min_param.update(min)
+		self.max_param.update(max)
+
+		#values for brightness
+		alpha = augmentation*1.95
+		self.alpha_param.update(alpha)
+
+		#values for colorTemp
+		adjustment = (augmentation*99) if ((int(augmentation*100)) % 2 == 0) else (-1*augmentation*99)
+		adjustment = int(adjustment)
+		self.adjustment_param.update(adjustment)
+
+		#values for exposure
+		shift = augmentation*0.95
+		self.shift_param.update(shift)
+
+		#values for SnPNoise
+		sdev = augmentation*0.7
+		self.sdev_param.update(sdev)
+
+		#values for gamma
+		gamma_shift = augmentation*5.0
+		self.gamma_shift_param.update(gamma_shift)
+
+		#values for rotation
+		degree = augmentation * 180.0
+		self.degree_param.update(degree)
 
 # AMD Neural Net python wrapper
 class AnnAPI:
@@ -614,6 +663,8 @@ if __name__ == '__main__':
 		frameMsecs = 0.0
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+			augmentation = viewer.getIntensity()
+			loader.updateAugmentationParameter(augmentation)
 			msFrame = 0.0
 			start_main = time.time()
 			imageFileName = loader.get_input_name()
