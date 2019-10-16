@@ -661,6 +661,9 @@ if __name__ == '__main__':
 		
 		avg_benchmark = 0.0
 		frameMsecs = 0.0
+		resultPerAugmentation = []
+		for iterator in range(modelBatchSizeInt):
+			resultPerAugmentation.append([0,0,0]) # (top1, top5, mismatch)
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
 			augmentation = viewer.getIntensity()
@@ -678,6 +681,7 @@ if __name__ == '__main__':
 			start = time.time()
 			original_image = image_batch[0:h_i, 0:w_i]
 			cloned_image = np.copy(image_batch)
+			#using tensor output of RALI as frame
 			frame = image_tensor
 			end = time.time()
 			msFrame += (end - start)*1000
@@ -710,8 +714,6 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 			for i in range(loader.getOutputImageCount()):
-				#using tensor output of RALI as frame 		
-				
 				# process output and display
 				start = time.time()
 				topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
@@ -735,13 +737,19 @@ if __name__ == '__main__':
 				# create progress image
 				start = time.time()
 
+				#data collection for individual augmentation scores
+				countPerAugmentation = resultPerAugmentation[i]
+
 				# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 				if(groundTruthIndex == topIndex[4 + i*4]):
 					correctTop1 = correctTop1 + 1
 					correctTop5 = correctTop5 + 1
 					augmentedResults.append(1)
+					countPerAugmentation[0] = countPerAugmentation[0] + 1
+					countPerAugmentation[1] = countPerAugmentation[1] + 1
 				elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
 					correctTop5 = correctTop5 + 1
+					countPerAugmentation[1] = countPerAugmentation[1] + 1
 					if (groundTruthIndex == topIndex[3 + i*4]):
 						augmentedResults.append(2)
 					elif (groundTruthIndex == topIndex[2 + i*4]):
@@ -756,6 +764,9 @@ if __name__ == '__main__':
 				else:
 					wrong = wrong + 1
 					augmentedResults.append(0)
+					countPerAugmentation[2] = countPerAugmentation[2] + 1
+
+				resultPerAugmentation[i] = countPerAugmentation
 
 				# Total progress
 				viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
