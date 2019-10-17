@@ -512,7 +512,8 @@ if __name__ == '__main__':
 		quit()
 	else:
 		fp = open(labelText, 'r')
-		labelNames = fp.readlines()
+		#labelNames = fp.readlines()
+		labelNames = [x.strip() for x in fp.readlines()]
 		fp.close()
 
 	# MIVisionX setup
@@ -689,12 +690,12 @@ if __name__ == '__main__':
 				print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
 			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ')
-			text_width, text_height = cv2.getTextSize(groundTruthLabel[1], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 			text_off_x = (w_i/2) - (text_width/2)
 			text_off_y = h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-			cv2.putText(original_image, groundTruthLabel[1], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
 			#show original image
 			start = time.time()
