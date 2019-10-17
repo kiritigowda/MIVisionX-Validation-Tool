@@ -512,7 +512,8 @@ if __name__ == '__main__':
 		quit()
 	else:
 		fp = open(labelText, 'r')
-		labelNames = fp.readlines()
+		#labelNames = fp.readlines()
+		labelNames = [x.strip() for x in fp.readlines()]
 		fp.close()
 
 	# MIVisionX setup
@@ -661,6 +662,9 @@ if __name__ == '__main__':
 		
 		avg_benchmark = 0.0
 		frameMsecs = 0.0
+		resultPerAugmentation = []
+		for iterator in range(modelBatchSizeInt):
+			resultPerAugmentation.append([0,0,0]) # (top1, top5, mismatch)
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
 			augmentation = viewer.getIntensity()
@@ -678,6 +682,7 @@ if __name__ == '__main__':
 			start = time.time()
 			original_image = image_batch[0:h_i, 0:w_i]
 			cloned_image = np.copy(image_batch)
+			#using tensor output of RALI as frame
 			frame = image_tensor
 			end = time.time()
 			msFrame += (end - start)*1000
@@ -685,12 +690,12 @@ if __name__ == '__main__':
 				print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
 			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ')
-			text_width, text_height = cv2.getTextSize(groundTruthLabel[1], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-			text_off_x = 5
+			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+			text_off_x = (w_i/2) - (text_width/2)
 			text_off_y = h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-			cv2.putText(original_image, groundTruthLabel[1], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
 			#show original image
 			start = time.time()
@@ -710,8 +715,6 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
 			for i in range(loader.getOutputImageCount()):
-				#using tensor output of RALI as frame 		
-				
 				# process output and display
 				start = time.time()
 				topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
@@ -735,13 +738,19 @@ if __name__ == '__main__':
 				# create progress image
 				start = time.time()
 
+				#data collection for individual augmentation scores
+				countPerAugmentation = resultPerAugmentation[i]
+
 				# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 				if(groundTruthIndex == topIndex[4 + i*4]):
 					correctTop1 = correctTop1 + 1
 					correctTop5 = correctTop5 + 1
 					augmentedResults.append(1)
+					countPerAugmentation[0] = countPerAugmentation[0] + 1
+					countPerAugmentation[1] = countPerAugmentation[1] + 1
 				elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
 					correctTop5 = correctTop5 + 1
+					countPerAugmentation[1] = countPerAugmentation[1] + 1
 					if (groundTruthIndex == topIndex[3 + i*4]):
 						augmentedResults.append(2)
 					elif (groundTruthIndex == topIndex[2 + i*4]):
@@ -756,6 +765,9 @@ if __name__ == '__main__':
 				else:
 					wrong = wrong + 1
 					augmentedResults.append(0)
+					countPerAugmentation[2] = countPerAugmentation[2] + 1
+
+				resultPerAugmentation[i] = countPerAugmentation
 
 				# Total progress
 				viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
@@ -783,7 +795,7 @@ if __name__ == '__main__':
 				for cnt in range(0,textCount):
 					currentText = augmentationText[cnt]
 					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-					text_off_x = 5
+					text_off_x = (w_i/2) - (text_width/2)
 					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245,147,66), cv2.FILLED)
