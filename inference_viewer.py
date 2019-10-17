@@ -14,7 +14,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.total_images = total_images
         self.imgCount = 0
         self.frameCount = 9
-        self.imageList = []
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
         
@@ -37,16 +36,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
 
         self.initUI()
-        
-        self.imageList.append(self.image_label)
-        self.imageList.append(self.image_label2)
-        self.imageList.append(self.image_label3)
-        self.imageList.append(self.image_label4)
-        self.imageList.append(self.image_label5)
-        self.imageList.append(self.image_label6)
-        self.imageList.append(self.image_label7)
-        self.imageList.append(self.image_label8)
-        self.imageList.append(self.image_label9)
 
         self.show()
         # self.timer = QTimer(self)
@@ -71,7 +60,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.verticalLayout_2.addWidget(self.graph)
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
-        self.graph.setMaximumHeight(380)
+        self.graph.setMaximumHeight(300)
         self.level_slider.setMaximum(100)
         self.level_slider.valueChanged.connect(self.setIntensity)
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
@@ -113,7 +102,7 @@ class inference_viewer(QtGui.QMainWindow):
     def showImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
         qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.KeepAspectRatio)
-        self.imageList[(self.imgCount % self.frameCount)].setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
+        self.origImage_layout.itemAt(self.imgCount % self.frameCount).widget().setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
         self.imgCount += 1
 
 
@@ -154,6 +143,7 @@ class inference_viewer(QtGui.QMainWindow):
         if self.dark_checkBox.isChecked():
             self.setStyleSheet("background-color: #25232F;")
             self.origTitle_label.setStyleSheet("color: #C82327;")
+            self.controlTitle_label.setStyleSheet("color: #C82327;")
             self.progTitle_label.setStyleSheet("color: #C82327;")
             self.graphTitle_label.setStyleSheet("color: #C82327;")
             self.augTitle_label.setStyleSheet("color: #C82327;")
@@ -172,6 +162,7 @@ class inference_viewer(QtGui.QMainWindow):
         else:
             self.setStyleSheet("background-color: white;")
             self.origTitle_label.setStyleSheet("color: 0;")
+            self.controlTitle_label.setStyleSheet("color: 0;")
             self.progTitle_label.setStyleSheet("color: 0;")
             self.graphTitle_label.setStyleSheet("color: 0;")
             self.augTitle_label.setStyleSheet("color: 0;")
