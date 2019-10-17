@@ -690,7 +690,7 @@ if __name__ == '__main__':
 
 			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ')
 			text_width, text_height = cv2.getTextSize(groundTruthLabel[1], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-			text_off_x = 5
+			text_off_x = (w_i/2) - (text_width/2)
 			text_off_y = h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
@@ -794,7 +794,7 @@ if __name__ == '__main__':
 				for cnt in range(0,textCount):
 					currentText = augmentationText[cnt]
 					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-					text_off_x = 5
+					text_off_x = (w_i/2) - (text_width/2)
 					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245,147,66), cv2.FILLED)
