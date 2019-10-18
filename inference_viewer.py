@@ -51,6 +51,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
+        self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
         self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
@@ -160,6 +161,7 @@ class inference_viewer(QtGui.QMainWindow):
             self.graphTitle_label.setStyleSheet("color: #C82327;")
             self.augTitle_label.setStyleSheet("color: #C82327;")
             self.name_label.setStyleSheet("color: white;")
+            self.dataset_label.setStyleSheet("color: white;")
             self.imgProg_label.setStyleSheet("color: white;")
             self.fps_label.setStyleSheet("color: #C82327;")
             self.dark_checkBox.setStyleSheet("color: white;")
@@ -180,6 +182,7 @@ class inference_viewer(QtGui.QMainWindow):
             self.graphTitle_label.setStyleSheet("color: 0;")
             self.augTitle_label.setStyleSheet("color: 0;")
             self.name_label.setStyleSheet("color: 0;")
+            self.dataset_label.setStyleSheet("color: 0;")
             self.imgProg_label.setStyleSheet("color: 0;")
             self.fps_label.setStyleSheet("color: 0;")
             self.dark_checkBox.setStyleSheet("color: 0;")
@@ -193,11 +196,11 @@ class inference_viewer(QtGui.QMainWindow):
             
     def showVerbose(self):
         if self.verbose_checkBox.isChecked():
-            self.name_label.setText("Model: %s - Augmentation Set %d" % (self.model_name, self.rali_mode))
+            self.dataset_label.show()
             self.fps_label.show()
             self.fps_lcdNumber.show()
         else:
-            self.name_label.setText("Model: %s" % (self.model_name))
+            self.dataset_label.hide()
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
         
