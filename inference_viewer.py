@@ -14,7 +14,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.total_images = total_images
         self.imgCount = 0
         self.frameCount = 9
-        self.imageList = []
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
         
@@ -28,6 +27,9 @@ class inference_viewer(QtGui.QMainWindow):
         self.pauseState = False
 
         self.augIntensity = 0.0
+        self.lastIndex = self.frameCount - 1
+
+        self.pen = pg.mkPen('w', width=5)
 
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
@@ -37,16 +39,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
 
         self.initUI()
-        
-        self.imageList.append(self.image_label)
-        self.imageList.append(self.image_label2)
-        self.imageList.append(self.image_label3)
-        self.imageList.append(self.image_label4)
-        self.imageList.append(self.image_label5)
-        self.imageList.append(self.image_label6)
-        self.imageList.append(self.image_label7)
-        self.imageList.append(self.image_label8)
-        self.imageList.append(self.image_label9)
 
         self.show()
         # self.timer = QTimer(self)
@@ -56,8 +48,10 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
+        self.showMaximized()
         self.setStyleSheet("background-color: white")
-        self.name_label.setText(self.model_name)
+        self.name_label.setText("Model: %s" % (self.model_name))
+        self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
@@ -67,11 +61,12 @@ class inference_viewer(QtGui.QMainWindow):
 
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
-        self.graph.plot(self.x, self.y, pen=pg.mkPen('w', width=4))
+        #graph.setXRange(5, 20, padding=0)
+        self.graph.plot(self.x, self.y, pen=self.pen)
         self.verticalLayout_2.addWidget(self.graph)
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
-        self.graph.setMaximumHeight(380)
+        self.graph.setMaximumHeight(300)
         self.level_slider.setMaximum(100)
         self.level_slider.valueChanged.connect(self.setIntensity)
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
@@ -107,14 +102,18 @@ class inference_viewer(QtGui.QMainWindow):
         if (curTime - self.lastTime > 0.1):
             self.x.append(curTime)
             self.y.append(accuracy)
-            self.graph.plot(self.x, self.y)
+            self.graph.plot(self.x, self.y, pen=self.pen)
             self.lastTime = curTime
 
     def showImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.KeepAspectRatio)
-        self.imageList[(self.imgCount % self.frameCount)].setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
+        qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)
+        index = self.imgCount % self.frameCount
+        self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
+        self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 4px solid yellow;");
+        self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
         self.imgCount += 1
+        self.lastIndex = index
 
 
     def showAugImage(self, image, width, height):
@@ -153,7 +152,10 @@ class inference_viewer(QtGui.QMainWindow):
     def setBackground(self):
         if self.dark_checkBox.isChecked():
             self.setStyleSheet("background-color: #25232F;")
+            self.pen = pg.mkPen('w', width=5)
+            self.graph.setBackground(None)
             self.origTitle_label.setStyleSheet("color: #C82327;")
+            self.controlTitle_label.setStyleSheet("color: #C82327;")
             self.progTitle_label.setStyleSheet("color: #C82327;")
             self.graphTitle_label.setStyleSheet("color: #C82327;")
             self.augTitle_label.setStyleSheet("color: #C82327;")
@@ -168,10 +170,12 @@ class inference_viewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
             self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
-            self.graph.setBackground(None)
         else:
             self.setStyleSheet("background-color: white;")
+            self.pen = pg.mkPen('k', width=5)
+            self.graph.setBackground(None)
             self.origTitle_label.setStyleSheet("color: 0;")
+            self.controlTitle_label.setStyleSheet("color: 0;")
             self.progTitle_label.setStyleSheet("color: 0;")
             self.graphTitle_label.setStyleSheet("color: 0;")
             self.augTitle_label.setStyleSheet("color: 0;")
@@ -186,15 +190,14 @@ class inference_viewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
             self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
-            self.graph.setBackground(None)
             
     def showVerbose(self):
         if self.verbose_checkBox.isChecked():
-            self.name_label.setText("%s - Augmentation Set %d" % (self.model_name, self.rali_mode))
+            self.name_label.setText("Model: %s - Augmentation Set %d" % (self.model_name, self.rali_mode))
             self.fps_label.show()
             self.fps_lcdNumber.show()
         else:
-            self.name_label.setText(self.model_name)
+            self.name_label.setText("Model: %s" % (self.model_name))
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
         
