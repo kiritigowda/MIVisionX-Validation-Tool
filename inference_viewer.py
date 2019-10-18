@@ -51,7 +51,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
-        self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/test5.png);}")
+        self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
