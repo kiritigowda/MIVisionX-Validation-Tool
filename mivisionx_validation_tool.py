@@ -841,7 +841,7 @@ if __name__ == '__main__':
 			end = time.time()
 			msFrame += (end - start)*1000
 
-	    	#show augmented images
+	    		#show augmented images
 			start = time.time()
 			aug_width = final_image_batch.shape[1]
 			aug_height = final_image_batch.shape[0]
