@@ -622,7 +622,7 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	viewer = inference_viewer(modelName, raliMode, totalImages*modelBatchSizeInt)
+	viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
 	viewer.startView()
 
 	while loopFlag == True and viewer.getState():	
@@ -638,6 +638,7 @@ if __name__ == '__main__':
 		print ('Pipeline created ...')
 		print 'Loader created ...num of images' , loader.getOutputImageCount()
 		print 'Image iterator created ... number of images', raliNumberOfImages
+
 		# process images
 		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 		
@@ -784,19 +785,34 @@ if __name__ == '__main__':
 				msFrame += (end - start)*1000
 
 				start = time.time()
-				# Total progress
-				viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
-				# Top 1 progress
-				viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
-				# Top 5 progress
-				viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
-				# Mismatch progress
-				viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
-				# No ground truth progress
-				#viewer.setNoGTProgress(noGroundTruth)
+
+				progressIndex = viewer.getIndex()
+				if progressIndex == 0:
+					viewer.setAugName(modelName)
+					# Total progress
+					viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
+					# Top 1 progress
+					viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
+					# Top 5 progress
+					viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
+					# Mismatch progress
+					viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
+					# No ground truth progress
+					#viewer.setNoGTProgress(noGroundTruth)
+				else:
+					viewer.setAugName(raliList[progressIndex-1])
+					# Total progress
+					viewer.setTotalProgress(x)
+					# Top 1 progress
+					viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x+1)
+					# Top 5 progress
+					viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x+1)
+					# Mismatch progress
+					viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x+1)
+
 				end = time.time()
 				msFrameGUI += (end - start)*1000
-				
+
 				if(verbosePrint):
 					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
