@@ -125,7 +125,7 @@ class DataLoader(RaliGraph):
 
 		if model_batch_size == 16:
 			if raliMode == 1:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, True, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 		        
 				self.warped = self.warpAffine(self.input,True)
@@ -150,7 +150,7 @@ class DataLoader(RaliGraph):
 				
 				self.blend_img = self.blend(self.input, self.contrast_img, True)
 			elif raliMode == 2:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, True, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
 				self.warped = self.warpAffine(self.input,True)
@@ -175,7 +175,7 @@ class DataLoader(RaliGraph):
 
 				self.blend_img = self.blend(self.rotate_img, self.warped, True)
 			elif raliMode == 3:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, True, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 				self.warped = self.warpAffine(self.input,True)
 
@@ -200,7 +200,7 @@ class DataLoader(RaliGraph):
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
 		elif model_batch_size == 64:
 			if raliMode == 1:	        
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, True, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 				self.rot135_img = self.rotate(self.input, False, 135)
@@ -213,7 +213,7 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.rot135_img , h_img, w_img)
 				
 			elif raliMode == 2:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, True, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 				#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
@@ -227,7 +227,7 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.lensCorrection_img, h_img, w_img)
 
 			elif raliMode == 3:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, True, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 				self.colorTemp1_img = self.colorTemp(self.input, False, 10)
@@ -625,19 +625,20 @@ if __name__ == '__main__':
 	viewer = inference_viewer(modelName, raliMode, totalImages*modelBatchSizeInt)
 	viewer.startView()
 
+	#setup for Rali
+	rali_batch_size = 1
+	start_rali = time.time()
+	loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
+	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+	raliNumberOfImages = imageIterator.imageCount()
+	end_rali = time.time()
+	if (verbosePrint):
+		print '%30s' % 'RALI Data Load Time ', str((end_rali - start_rali)*1000), 'ms'
+	print ('Pipeline created ...')
+	print 'Loader created ...num of images' , loader.getOutputImageCount()
+	print 'Image iterator created ... number of images', raliNumberOfImages
+
 	while loopFlag == True and viewer.getState():	
-		#setup for Rali
-		rali_batch_size = 1
-		start_rali = time.time()
-		loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
-		imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
-		raliNumberOfImages = imageIterator.imageCount()
-		end_rali = time.time()
-		if (verbosePrint):
-			print '%30s' % 'RALI Data Load Time ', str((end_rali - start_rali)*1000), 'ms'
-		print ('Pipeline created ...')
-		print 'Loader created ...num of images' , loader.getOutputImageCount()
-		print 'Image iterator created ... number of images', raliNumberOfImages
 		# process images
 		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 		
