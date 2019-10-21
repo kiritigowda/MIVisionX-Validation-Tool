@@ -50,7 +50,7 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        self.showMaximized()
+        #self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
@@ -123,7 +123,7 @@ class inference_viewer(QtGui.QMainWindow):
 
     def showAugImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
+        qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
         self.aug_label.setPixmap(pixmap)
 
