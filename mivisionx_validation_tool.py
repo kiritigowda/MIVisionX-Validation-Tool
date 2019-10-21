@@ -719,7 +719,7 @@ if __name__ == '__main__':
 			msFrameGUI += (end - start)*1000
 			if(verbosePrint):
 				print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
-			
+
 			# run inference
 			start = time.time()
 			output = classifier.classify(frame)
@@ -812,12 +812,12 @@ if __name__ == '__main__':
 				textCount = len(augmentationText)
 				for cnt in range(0,textCount):
 					currentText = augmentationText[cnt]
-					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
 					text_off_x = (w_i/2) - (text_width/2)
 					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245,147,66), cv2.FILLED)
-					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)	
+					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
 
 				#show RALI augmented images
 				if augmentedResults[i] == 0:
