@@ -660,20 +660,33 @@ if __name__ == '__main__':
 			elif raliMode == 3:
 				raliList = raliList_mode3_64
 		
+		#to calculate FPS
 		avg_benchmark = 0.0
 		frameMsecs = 0.0
+		frameMsecsGUI = 0.0
+		totalFPS = 0.0
+
+		#result for separate augmentations
 		resultPerAugmentation = []
 		for iterator in range(modelBatchSizeInt):
 			resultPerAugmentation.append([0,0,0]) # (top1, top5, mismatch)
+		
 		#image_tensor has the input tensor required for inference
 		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
+			#live updates for augmentaiton slider
 			augmentation = viewer.getIntensity()
 			loader.updateAugmentationParameter(augmentation)
 			msFrame = 0.0
+			msFrameGUI = 0.0
 			start_main = time.time()
+
+			#get image file name and ground truth
+			start = time.time()
 			imageFileName = loader.get_input_name()
 			groundTruthIndex = loader.get_ground_truth()
 			groundTruthIndex = int(groundTruthIndex)
+			end = time.time()
+			msFrame += (end-start)*1000
 
 			#create output list for each image
 			augmentedResults = []
@@ -689,6 +702,7 @@ if __name__ == '__main__':
 			if(verbosePrint):
 				print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
+			start = time.time()
 			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ')
 			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 			text_off_x = (w_i/2) - (text_width/2)
@@ -698,12 +712,11 @@ if __name__ == '__main__':
 			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
 			#show original image
-			start = time.time()
 			width = original_image.shape[1]
 			height = original_image.shape[0]
 			viewer.showImage(original_image, width, height)
 			end = time.time()
-			msFrame += (end - start)*1000
+			msFrameGUI += (end - start)*1000
 			if(verbosePrint):
 				print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
 			
@@ -735,7 +748,6 @@ if __name__ == '__main__':
 				if(verbosePrint):
 					print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
 
-				# create progress image
 				start = time.time()
 
 				#data collection for individual augmentation scores
@@ -768,7 +780,10 @@ if __name__ == '__main__':
 					countPerAugmentation[2] = countPerAugmentation[2] + 1
 
 				resultPerAugmentation[i] = countPerAugmentation
+				end = time.time()
+				msFrame += (end - start)*1000
 
+				start = time.time()
 				# Total progress
 				viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
 				# Top 1 progress
@@ -779,15 +794,18 @@ if __name__ == '__main__':
 				viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
 				# No ground truth progress
 				#viewer.setNoGTProgress(noGroundTruth)
-
 				end = time.time()
-				msFrame += (end - start)*1000
+				msFrameGUI += (end - start)*1000
+				
 				if(verbosePrint):
 					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
 				# Plot Graph
+				start = time.time()
 				accuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
 				viewer.plotGraph(accuracy)
+				end = time.time()
+				msFrameGUI += (end - start)*1000
 
 				start = time.time()
 				augmentationText = raliList[i].split('+')
@@ -808,7 +826,7 @@ if __name__ == '__main__':
 					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
 				end = time.time()
-				msFrame += (end - start)*1000
+				msFrameGUI += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
 			#split RALI augmented images into a grid
@@ -820,14 +838,18 @@ if __name__ == '__main__':
 			elif modelBatchSizeInt == 16:
 				image_batch = np.vsplit(cloned_image, 4)
 				final_image_batch = np.hstack((image_batch))
+			end = time.time()
+			msFrame += (end - start)*1000
+
 	    	#show augmented images
+			start = time.time()
 			aug_width = final_image_batch.shape[1]
 			aug_height = final_image_batch.shape[0]
 			viewer.showAugImage(final_image_batch, aug_width, aug_height)
 			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
 			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
 			end = time.time()
-			msFrame += (end - start)*1000
+			msFrameGUI += (end - start)*1000
 			if(verbosePrint):
 				print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
 
@@ -847,9 +869,18 @@ if __name__ == '__main__':
 				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
 			avg_benchmark += (end_main - start_main)*1000
 
+			#FPS: Inference & Compute
 			frameMsecs += msFrame
-			frameMsecs = 1000/(frameMsecs/64)
+			frameMsecs = 1000/(frameMsecs/modelBatchSizeInt)
 			viewer.displayFPS(frameMsecs)
+			
+			#FPS: GUI
+			frameMsecsGUI += msFrameGUI
+			frameMsecsGUI = 1000/(frameMsecs/modelBatchSizeInt)
+
+			#FPS: GUI + Inference
+			totalFPS += (msFrame + msFrameGUI)
+			totalFPS = 1000/(totalFPS/modelBatchSizeInt)
 
 		if(verbosePrint):
 			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
