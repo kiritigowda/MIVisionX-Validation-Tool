@@ -49,7 +49,7 @@ class inference_viewer(QtGui.QMainWindow):
         # self.timer.start(40)
 
     def initUI(self):
-        uic.loadUi("inference_viewer.ui", self)        #self.mis_progressBar.setStyleSheet("QProgressBar { background-color: green; color: green;} QProgressBar::chunk { background: red; }")
+        uic.loadUi("inference_viewer.ui", self)
         self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
