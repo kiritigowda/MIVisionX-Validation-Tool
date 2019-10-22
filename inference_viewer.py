@@ -7,11 +7,12 @@ from PyQt4.QtGui import QImage, QPixmap
 from PyQt4.QtCore import QTimer, QObject, QTime
 
 class inference_viewer(QtGui.QMainWindow):
-    def __init__(self, model_name, rali_mode, total_images, parent=None):
+    def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
         super(inference_viewer, self).__init__(parent)
         self.model_name = model_name
         self.rali_mode = rali_mode
         self.total_images = total_images
+        self.batch_size = batch_size
         self.imgCount = 0
         self.frameCount = 9
         # self.origImageQueue = Queue.Queue()
@@ -25,6 +26,7 @@ class inference_viewer(QtGui.QMainWindow):
 
         self.runState = False
         self.pauseState = False
+        self.progIndex = 0
 
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
@@ -48,7 +50,7 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        self.showMaximized()
+        #self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
@@ -57,8 +59,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
-        #self.mis_progressBar.setStyleSheet("QProgressBar { background-color: green; color: green;} QProgressBar::chunk { background: red; }")
-        self.total_progressBar.setMaximum(self.total_images)
+        self.total_progressBar.setMaximum(self.total_images*self.batch_size)
 
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
@@ -81,8 +82,12 @@ class inference_viewer(QtGui.QMainWindow):
 
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
-        self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images))
-
+        if self.getIndex() == 0:
+            self.total_progressBar.setMaximum(self.total_images*self.batch_size)
+            self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images*self.batch_size))
+        else:
+            self.total_progressBar.setMaximum(self.total_images)
+            self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images))
     def setTop1Progress(self, value, total):
         self.top1_progressBar.setValue(value)
         self.top1_progressBar.setMaximum(total)
@@ -116,10 +121,9 @@ class inference_viewer(QtGui.QMainWindow):
         self.imgCount += 1
         self.lastIndex = index
 
-
     def showAugImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
+        qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
         self.aug_label.setPixmap(pixmap)
 
@@ -149,6 +153,19 @@ class inference_viewer(QtGui.QMainWindow):
             
         if event.key() == QtCore.Qt.Key_Space:
             self.pauseView()
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            x = event.pos().x()
+            y = event.pos().y()
+            if self.aug_label.x() <= x and \
+                x < (self.aug_label.x() + self.aug_label.width()) and \
+                self.aug_label.y() <= y and \
+                y < (self.aug_label.y() + self.aug_label.height()):
+                index = self.calculateIndex(x, y)
+                self.progIndex = index
+            else:
+                self.progIndex = 0
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
@@ -234,3 +251,19 @@ class inference_viewer(QtGui.QMainWindow):
 
     def getIntensity(self):
         return self.augIntensity
+
+    def calculateIndex(self, x, y):
+        imgWidth = self.aug_label.width() / 16.0
+        imgHeight = self.aug_label.height() / 4.0
+        x -= self.aug_label.x()
+        y -= self.aug_label.y()
+        column = (int)(x / imgWidth)
+        row = (int)(y / imgHeight)
+        index = 4 * column + row
+        return index + 1
+
+    def getIndex(self):
+        return self.progIndex
+    
+    def setAugName(self, name):
+        self.name_label.setText(name)

@@ -516,7 +516,7 @@ if __name__ == '__main__':
 	else:
 		fp = open(labelText, 'r')
 		#labelNames = fp.readlines()
-		labelNames = [x.strip() for x in fp.readlines()]
+		labelNames = [x.strip('\n') for x in fp.readlines()]
 		fp.close()
 
 	# MIVisionX setup
@@ -625,7 +625,7 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	viewer = inference_viewer(modelName, raliMode, totalImages*modelBatchSizeInt)
+	viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
 	viewer.startView()
 
 	#setup for Rali
@@ -707,7 +707,7 @@ if __name__ == '__main__':
 			print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
 		start = time.time()
-		groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ')
+		groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
 		text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 		text_off_x = (w_i/2) - (text_width/2)
 		text_off_y = h_i-7
@@ -753,7 +753,6 @@ if __name__ == '__main__':
 				print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
 
 			start = time.time()
-
 			#data collection for individual augmentation scores
 			countPerAugmentation = resultPerAugmentation[i]
 
@@ -802,6 +801,7 @@ if __name__ == '__main__':
 			msFrameGUI += (end - start)*1000
 			
 			if(verbosePrint):
+
 				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
 			# Plot Graph
