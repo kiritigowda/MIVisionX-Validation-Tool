@@ -604,7 +604,7 @@ if __name__ == '__main__':
 	classifier = annieObjectWrapper(pythonLib, weightsFile)
 
 	# check for image val text
-	totalImages = 0;
+	#totalImages = 0;
 	if(imageVal != ''):
 		if (not os.path.isfile(imageValText)):
 			print("\nImage Validation Text not found, check argument --image_val\n")
@@ -613,11 +613,12 @@ if __name__ == '__main__':
 			fp = open(imageValText, 'r')
 			imageValidation = fp.readlines()
 			fp.close()
-			totalImages = len(imageValidation)
+			#totalImages = len(imageValidation)
 	else:
 		print("\nFlow without Image Validation Text not implemented, pass argument --image_val\n")
 		quit()
-
+	totalImages = len(os.listdir(inputImageDir))
+	
 	# original std out location 
 	orig_stdout = sys.stdout
 	# setup results output file
