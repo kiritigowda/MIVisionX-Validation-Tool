@@ -1,4 +1,5 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/kiritigowda/MIVisionX-Validation-Tool.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/kiritigowda/MIVisionX-Validation-Tool/context:python)
 
 # MIVisionX Python ML Model Validation Tool
 
