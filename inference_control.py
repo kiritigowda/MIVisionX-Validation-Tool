@@ -1,4 +1,4 @@
-import sys, os
+import os
 from PyQt4 import QtGui, uic
 
 class inference_control(QtGui.QMainWindow):
