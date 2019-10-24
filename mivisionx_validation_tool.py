@@ -594,7 +594,7 @@ if __name__ == '__main__':
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
 
-	#os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 	# create inference classifier
@@ -785,44 +785,8 @@ if __name__ == '__main__':
 				end = time.time()
 				msFrame += (end - start)*1000
 
-				start = time.time()
-
-				progressIndex = viewer.getIndex()
-				if progressIndex == 0:
-					viewer.setAugName(modelName)
-					# Total progress
-					viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
-					# Top 1 progress
-					viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
-					# Top 5 progress
-					viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
-					# Mismatch progress
-					viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
-					# No ground truth progress
-					#viewer.setNoGTProgress(noGroundTruth)
-				else:
-					viewer.setAugName(raliList[progressIndex-1])
-					# Total progress
-					viewer.setTotalProgress(x)
-					# Top 1 progress
-					viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x+1)
-					# Top 5 progress
-					viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x+1)
-					# Mismatch progress
-					viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x+1)
-
-				end = time.time()
-				msFrameGUI += (end - start)*1000
-
-				if(verbosePrint):
-					print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
-
-				# Plot Graph
-				start = time.time()
-				accuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
-				viewer.plotGraph(accuracy)
-				end = time.time()
-				msFrameGUI += (end - start)*1000
+				augAccuracy = (float)(countPerAugmentation[1]) / (x+1) * 100
+				viewer.storeAccuracy(i, augAccuracy)
 
 				start = time.time()
 				augmentationText = raliList[i].split('+')
@@ -846,6 +810,7 @@ if __name__ == '__main__':
 				msFrameGUI += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
+			
 			#split RALI augmented images into a grid
 			#split 16X4
 			start = time.time()
@@ -858,7 +823,7 @@ if __name__ == '__main__':
 			end = time.time()
 			msFrame += (end - start)*1000
 
-	    		#show augmented images
+	    	#show augmented images
 			start = time.time()
 			aug_width = final_image_batch.shape[1]
 			aug_height = final_image_batch.shape[0]
@@ -869,6 +834,45 @@ if __name__ == '__main__':
 			msFrameGUI += (end - start)*1000
 			if(verbosePrint):
 				print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
+
+			start = time.time()
+
+			progressIndex = viewer.getIndex()
+			if progressIndex == 0:
+				viewer.setAugName(modelName)
+				# Total progress
+				viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
+				# Top 1 progress
+				viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
+				# Top 5 progress
+				viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
+				# Mismatch progress
+				viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
+				# No ground truth progress
+				#viewer.setNoGTProgress(noGroundTruth)
+			else:
+				viewer.setAugName(raliList[progressIndex-1])
+				# Total progress
+				viewer.setTotalProgress(x)
+				# Top 1 progress
+				viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x+1)
+				# Top 5 progress
+				viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x+1)
+				# Mismatch progress
+				viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x+1)
+
+			end = time.time()
+			msFrameGUI += (end - start)*1000
+
+			if(verbosePrint):
+				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
+
+			# Plot Graph
+			start = time.time()
+			totalAccuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
+			viewer.plotGraph(totalAccuracy)
+			end = time.time()
+			msFrameGUI += (end - start)*1000
 
 			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 			key = cv2.waitKey(2)
