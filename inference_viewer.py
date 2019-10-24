@@ -51,7 +51,7 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        #self.showMaximized()
+        self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
