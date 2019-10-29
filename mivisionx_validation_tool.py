@@ -419,6 +419,7 @@ if __name__ == '__main__':
 		replaceModel = (str)(panel.replace)
 		verbose = (str)(panel.verbose)
 		loop = (str)(panel.loop)
+		gui = (str)(panel.gui)
 	else:
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
@@ -439,6 +440,7 @@ if __name__ == '__main__':
 		parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
 		parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
 		parser.add_argument('--loop',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
+		parser.add_argument('--gui',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
 		args = parser.parse_args()
 		
 		# get arguments
@@ -460,6 +462,7 @@ if __name__ == '__main__':
 		replaceModel = args.replace
 		verbose = args.verbose
 		loop = args.loop
+		gui = args.gui
 
 	# set verbose print
 	if(verbose != 'no'):
@@ -489,6 +492,11 @@ if __name__ == '__main__':
 
 	#set ADAT Flag to generate ADAT only once
 	ADATFlag = False
+
+	#set GUI Flag
+	guiFlag = False
+	if gui == 'yes':
+		guiFlag = True
 
 	#set loop parameter based on user input
 	if loop == 'yes':
@@ -632,8 +640,9 @@ if __name__ == '__main__':
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
 
-	viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
-	viewer.startView()
+	if guiFlag:
+		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
+		viewer.startView()
 
 	#setup for Rali
 	rali_batch_size = 1
@@ -687,10 +696,14 @@ if __name__ == '__main__':
 			del resultPerAugmentation[:]
 			for iterator in range(modelBatchSizeInt):
 				resultPerAugmentation.append([0,0,0])
-			viewer.resetViewer()
+			if guiFlag:
+				viewer.resetViewer()
 
 		#live updates for augmentaiton slider
-		augmentation = viewer.getIntensity()
+		if guiFlag:
+			augmentation = viewer.getIntensity()
+		else:
+			augmentation = 0
 		loader.updateAugmentationParameter(augmentation)
 		msFrame = 0.0
 		msFrameGUI = 0.0
@@ -730,7 +743,8 @@ if __name__ == '__main__':
 		#show original image
 		width = original_image.shape[1]
 		height = original_image.shape[0]
-		viewer.showImage(original_image, width, height)
+		if guiFlag:
+			viewer.showImage(original_image, width, height)
 		end = time.time()
 		msFrameGUI += (end - start)*1000
 		if(verbosePrint):
@@ -799,7 +813,8 @@ if __name__ == '__main__':
 			msFrame += (end - start)*1000
 
 			augAccuracy = (float)(countPerAugmentation[1]) / (x+1) * 100
-			viewer.storeAccuracy(i, augAccuracy)
+			if guiFlag:
+				viewer.storeAccuracy(i, augAccuracy)
 
 			start = time.time()
 			augmentationText = raliList[i].split('+')
@@ -835,66 +850,67 @@ if __name__ == '__main__':
 		end = time.time()
 		msFrame += (end - start)*1000
 
-    	#show augmented images
-		start = time.time()
-		aug_width = final_image_batch.shape[1]
-		aug_height = final_image_batch.shape[0]
-		viewer.showAugImage(final_image_batch, aug_width, aug_height)
-		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-		end = time.time()
-		msFrameGUI += (end - start)*1000
-		if(verbosePrint):
-			print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
+		if guiFlag:
+    		#show augmented images
+			start = time.time()
+			aug_width = final_image_batch.shape[1]
+			aug_height = final_image_batch.shape[0]
+			viewer.showAugImage(final_image_batch, aug_width, aug_height)
+			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+			end = time.time()
+			msFrameGUI += (end - start)*1000
+			if(verbosePrint):
+				print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
 
-		start = time.time()
+			start = time.time()
 
-		progressIndex = viewer.getIndex()
-		if progressIndex == 0:
-			viewer.setAugName(modelName)
-			# Total progress
-			viewer.setTotalProgress((x)*modelBatchSizeInt)
-			# Top 1 progress
-			viewer.setTop1Progress(correctTop1, x*modelBatchSizeInt)
-			# Top 5 progress
-			viewer.setTop5Progress(correctTop5, x*modelBatchSizeInt)
-			# Mismatch progress
-			viewer.setMisProgress(wrong, x*modelBatchSizeInt)
-			# No ground truth progress
-			#viewer.setNoGTProgress(noGroundTruth)
-		else:
-			viewer.setAugName(raliList[progressIndex-1])
-			# Total progress
-			viewer.setTotalProgress(x)
-			# Top 1 progress
-			viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x)
-			# Top 5 progress
-			viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x)
-			# Mismatch progress
-			viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x)
+			progressIndex = viewer.getIndex()
+			if progressIndex == 0:
+				viewer.setAugName(modelName)
+				# Total progress
+				viewer.setTotalProgress((x)*modelBatchSizeInt)
+				# Top 1 progress
+				viewer.setTop1Progress(correctTop1, x*modelBatchSizeInt)
+				# Top 5 progress
+				viewer.setTop5Progress(correctTop5, x*modelBatchSizeInt)
+				# Mismatch progress
+				viewer.setMisProgress(wrong, x*modelBatchSizeInt)
+				# No ground truth progress
+				#viewer.setNoGTProgress(noGroundTruth)
+			else:
+				viewer.setAugName(raliList[progressIndex-1])
+				# Total progress
+				viewer.setTotalProgress(x)
+				# Top 1 progress
+				viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x)
+				# Top 5 progress
+				viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x)
+				# Mismatch progress
+				viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x)
 
-		end = time.time()
-		msFrameGUI += (end - start)*1000
+			end = time.time()
+			msFrameGUI += (end - start)*1000
 
-		if(verbosePrint):
-			print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
+			if(verbosePrint):
+				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-		# Plot Graph
-		start = time.time()
-		totalAccuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
-		viewer.plotGraph(totalAccuracy)
-		end = time.time()
-		msFrameGUI += (end - start)*1000
+			# Plot Graph
+			start = time.time()
+			totalAccuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
+			viewer.plotGraph(totalAccuracy)
+			end = time.time()
+			msFrameGUI += (end - start)*1000
 
 		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
-		key = cv2.waitKey(2)
-		if not viewer.getState():
-			viewer.stopView()
-			break
-		while viewer.isPaused():
-			cv2.waitKey(0)
+			key = cv2.waitKey(2)
 			if not viewer.getState():
+				viewer.stopView()
 				break
+			while viewer.isPaused():
+				cv2.waitKey(0)
+				if not viewer.getState():
+					break
 
 		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
@@ -914,7 +930,8 @@ if __name__ == '__main__':
 		totalFPS += (msFrame + msFrameGUI)
 		totalFPS = 1000/(totalFPS/modelBatchSizeInt)
 
-		viewer.displayFPS(totalFPS)
+		if guiFlag:
+			viewer.displayFPS(totalFPS)
 
 		iteratorCount += 1
 			
