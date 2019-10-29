@@ -731,24 +731,24 @@ if __name__ == '__main__':
 		if(verbosePrint):
 			print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
 
-		start = time.time()
-		groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-		text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-		text_off_x = (w_i/2) - (text_width/2)
-		text_off_y = h_i-7
-		box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-		cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-		cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
-
-		#show original image
-		width = original_image.shape[1]
-		height = original_image.shape[0]
 		if guiFlag:
+			start = time.time()
+			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+			text_off_x = (w_i/2) - (text_width/2)
+			text_off_y = h_i-7
+			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+
+			#show original image
+			width = original_image.shape[1]
+			height = original_image.shape[0]
 			viewer.showImage(original_image, width, height)
-		end = time.time()
-		msFrameGUI += (end - start)*1000
-		if(verbosePrint):
-			print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
+			end = time.time()
+			msFrameGUI += (end - start)*1000
+			if(verbosePrint):
+				print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
 
 		# run inference
 		start = time.time()
@@ -812,45 +812,44 @@ if __name__ == '__main__':
 			end = time.time()
 			msFrame += (end - start)*1000
 
-			augAccuracy = (float)(countPerAugmentation[1]) / (x+1) * 100
 			if guiFlag:
+				augAccuracy = (float)(countPerAugmentation[1]) / (x+1) * 100
 				viewer.storeAccuracy(i, augAccuracy)
 
+				start = time.time()
+				augmentationText = raliList[i].split('+')
+				textCount = len(augmentationText)
+				for cnt in range(0,textCount):
+					currentText = augmentationText[cnt]
+					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+					text_off_x = (w_i/2) - (text_width/2)
+					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
+					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
+
+				# put augmented image result
+				if augmentedResults[i] == 0:
+					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
+					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
+				end = time.time()
+				msFrameGUI += (end - start)*1000
+				if(verbosePrint):
+					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
+
+			#split RALI augmented images into a grid
 			start = time.time()
-			augmentationText = raliList[i].split('+')
-			textCount = len(augmentationText)
-			for cnt in range(0,textCount):
-				currentText = augmentationText[cnt]
-				text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-				text_off_x = (w_i/2) - (text_width/2)
-				text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
-				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-				cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
-
-			# put augmented image result
-			if augmentedResults[i] == 0:
-				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
-				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-
+			if modelBatchSizeInt == 64:
+				image_batch = np.vsplit(cloned_image, 16)
+				final_image_batch = np.hstack((image_batch))
+			elif modelBatchSizeInt == 16:
+				image_batch = np.vsplit(cloned_image, 4)
+				final_image_batch = np.hstack((image_batch))
 			end = time.time()
-			msFrameGUI += (end - start)*1000
-			if(verbosePrint):
-				print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
-
-		#split RALI augmented images into a grid
-		start = time.time()
-		if modelBatchSizeInt == 64:
-			image_batch = np.vsplit(cloned_image, 16)
-			final_image_batch = np.hstack((image_batch))
-		elif modelBatchSizeInt == 16:
-			image_batch = np.vsplit(cloned_image, 4)
-			final_image_batch = np.hstack((image_batch))
-		end = time.time()
-		msFrame += (end - start)*1000
-
-		if guiFlag:
+			msFrame += (end - start)*1000
+			
     		#show augmented images
 			start = time.time()
 			aug_width = final_image_batch.shape[1]
