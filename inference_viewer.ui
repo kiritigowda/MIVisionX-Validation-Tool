@@ -16,6 +16,22 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
+     <spacer name="verticalSpacer_4">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QLabel" name="AMD_logo">
@@ -75,22 +91,6 @@
        </widget>
       </item>
      </layout>
-    </item>
-    <item>
-     <spacer name="verticalSpacer_5">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item>
      <widget class="QLabel" name="origTitle_label">
@@ -166,13 +166,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -197,13 +197,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -233,13 +233,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -264,13 +264,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -295,13 +295,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -326,13 +326,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -357,13 +357,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -388,13 +388,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -419,13 +419,13 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>110</width>
                  <height>100</height>
                 </size>
                </property>
@@ -550,7 +550,7 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>420</width>
+            <width>550</width>
             <height>16777215</height>
            </size>
           </property>
@@ -761,7 +761,7 @@
            <enum>Qt::Vertical</enum>
           </property>
           <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
+           <enum>QSizePolicy::Expanding</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -829,33 +829,6 @@ color: rgb(0, 0, 0);</string>
             </property>
             <property name="digitCount">
              <number>3</number>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_6">
-          <item>
-           <widget class="QCheckBox" name="dark_checkBox">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Dark Mode</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="verbose_checkBox">
-            <property name="layoutDirection">
-             <enum>Qt::LeftToRight</enum>
-            </property>
-            <property name="text">
-             <string>Verbose</string>
             </property>
            </widget>
           </item>
@@ -963,20 +936,37 @@ color: rgb(0, 0, 0);</string>
          </layout>
         </item>
         <item>
-         <spacer name="verticalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>60</height>
-           </size>
-          </property>
-         </spacer>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QCheckBox" name="dark_checkBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Dark Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="verbose_checkBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
+            <property name="text">
+             <string>Verbose</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
@@ -985,7 +975,7 @@ color: rgb(0, 0, 0);</string>
         <item>
          <widget class="QLabel" name="graphTitle_label">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1017,29 +1007,7 @@ color: rgb(0, 0, 0);</string>
     </item>
    </layout>
   </widget>
-  <widget class="QToolBar" name="toolBar">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QToolBar" name="toolBar">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
  </widget>
  <resources/>
  <connections/>

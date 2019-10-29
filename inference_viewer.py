@@ -18,17 +18,17 @@ class inference_viewer(QtGui.QMainWindow):
         self.graph = pg.PlotWidget(title="Accuracy vs Time")
         self.x = [0] 
         self.y = [0]
+        self.augAccuracy = []
         self.time = QTime.currentTime()
         self.lastTime = 0
 
         self.runState = False
         self.pauseState = False
         self.progIndex = 0
-
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
 
-        self.pen = pg.mkPen('w', width=5)
+        self.pen = pg.mkPen('w', width=4)
 
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
@@ -47,11 +47,12 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        #self.showMaximized()
+        self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
         self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/filmStrip.png);}")
+        #self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/Filmstrip-trans.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
@@ -60,8 +61,9 @@ class inference_viewer(QtGui.QMainWindow):
 
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
-        #graph.setXRange(5, 20, padding=0)
-        self.graph.plot(self.x, self.y, pen=self.pen)
+        self.graph.setYRange(0, 100, padding=0)
+        #self.graph.addLegend()
+        self.graph.plot(self.x, self.y, pen=self.pen, name='Total')
         self.verticalLayout_2.addWidget(self.graph)
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
@@ -75,7 +77,27 @@ class inference_viewer(QtGui.QMainWindow):
         self.dark_checkBox.stateChanged.connect(self.setBackground)
         self.verbose_checkBox.stateChanged.connect(self.showVerbose)
         self.dark_checkBox.setChecked(True)
+
+        for augmentation in range(self.batch_size):
+            self.augAccuracy.append([0])
+
         self.showVerbose()
+
+    def resetViewer(self):
+        self.imgCount = 0
+        del self.x[:]
+        self.x.append(0)
+        del self.y[:]
+        self.y.append(0)
+        del self.augAccuracy[:]
+        for augmentation in range(self.batch_size):
+            self.augAccuracy.append([0])
+
+        self.time = QTime.currentTime()
+        self.lastTime = 0
+        self.progIndex = 0
+        self.lastIndex = self.frameCount - 1
+        self.graph.clear()
 
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
@@ -85,6 +107,7 @@ class inference_viewer(QtGui.QMainWindow):
         else:
             self.total_progressBar.setMaximum(self.total_images)
             self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images))
+    
     def setTop1Progress(self, value, total):
         self.top1_progressBar.setValue(value)
         self.top1_progressBar.setMaximum(total)
@@ -106,6 +129,8 @@ class inference_viewer(QtGui.QMainWindow):
             self.x.append(curTime)
             self.y.append(accuracy)
             self.graph.plot(self.x, self.y, pen=self.pen)
+            if self.progIndex:
+                self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
             self.lastTime = curTime
 
     def showImage(self, image, width, height):
@@ -113,14 +138,17 @@ class inference_viewer(QtGui.QMainWindow):
         qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)
         index = self.imgCount % self.frameCount
         self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
-        self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 4px solid yellow;");
+        self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
         self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
         self.imgCount += 1
         self.lastIndex = index
 
     def showAugImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
+        if self.batch_size == 64:
+            qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
+        elif self.batch_size == 16:
+            qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
         self.aug_label.setPixmap(pixmap)
 
@@ -163,11 +191,13 @@ class inference_viewer(QtGui.QMainWindow):
                 self.progIndex = index
             else:
                 self.progIndex = 0
+            
+            self.graph.clear()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
             self.setStyleSheet("background-color: #25232F;")
-            self.pen = pg.mkPen('w', width=5)
+            self.pen = pg.mkPen('w', width=4)
             self.graph.setBackground(None)
             self.origTitle_label.setStyleSheet("color: #C82327;")
             self.controlTitle_label.setStyleSheet("color: #C82327;")
@@ -188,7 +218,7 @@ class inference_viewer(QtGui.QMainWindow):
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
         else:
             self.setStyleSheet("background-color: white;")
-            self.pen = pg.mkPen('k', width=5)
+            self.pen = pg.mkPen('k', width=4)
             self.graph.setBackground(None)
             self.origTitle_label.setStyleSheet("color: 0;")
             self.controlTitle_label.setStyleSheet("color: 0;")
@@ -250,7 +280,10 @@ class inference_viewer(QtGui.QMainWindow):
         return self.augIntensity
 
     def calculateIndex(self, x, y):
-        imgWidth = self.aug_label.width() / 16.0
+        if self.batch_size == 64:
+            imgWidth = self.aug_label.width() / 16.0
+        else:
+            imgWidth = self.aug_label.width() / 4.0
         imgHeight = self.aug_label.height() / 4.0
         x -= self.aug_label.x()
         y -= self.aug_label.y()
@@ -264,3 +297,8 @@ class inference_viewer(QtGui.QMainWindow):
     
     def setAugName(self, name):
         self.name_label.setText(name)
+
+    def storeAccuracy(self, index, accuracy):
+        curTime = self.time.elapsed()/1000.0
+        if (curTime - self.lastTime > 0.1):
+            self.augAccuracy[index].append(accuracy)
