@@ -307,3 +307,6 @@ class inference_viewer(QtGui.QMainWindow):
         curTime = self.time.elapsed()/1000.0
         if (curTime - self.lastTime > 0.1):
             self.augAccuracy[index].append(accuracy)
+
+    def paintEvent(self, event):
+        
