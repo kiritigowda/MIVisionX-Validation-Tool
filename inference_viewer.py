@@ -1,10 +1,7 @@
-import sys, os
-import Queue
-#import numpy as np
 import pyqtgraph as pg
 from PyQt4 import QtGui, uic, QtCore
-from PyQt4.QtGui import QImage, QPixmap
-from PyQt4.QtCore import QTimer, QObject, QTime
+from PyQt4.QtGui import QPixmap
+from PyQt4.QtCore import QTime
 
 class inference_viewer(QtGui.QMainWindow):
     def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
