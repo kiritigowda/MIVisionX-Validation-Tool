@@ -2,6 +2,8 @@ import pyqtgraph as pg
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime
+from inference_setup import *
+from rali_setup import *
 
 class inference_viewer(QtGui.QMainWindow):
     def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
@@ -284,6 +286,9 @@ class inference_viewer(QtGui.QMainWindow):
             imgWidth = self.aug_label.width() / 16.0
         else:
             imgWidth = self.aug_label.width() / 4.0
+	if(fp16 != 'no'):
+		FP16inference = True
+	# set paths
         imgHeight = self.aug_label.height() / 4.0
         x -= self.aug_label.x()
         y -= self.aug_label.y()

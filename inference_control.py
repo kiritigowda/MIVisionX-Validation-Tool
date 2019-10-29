@@ -1,4 +1,5 @@
 import os
+from inference_viewer import *
 from PyQt4 import QtGui, uic
 
 class inference_control(QtGui.QMainWindow):
@@ -231,6 +232,9 @@ class inference_control(QtGui.QMainWindow):
         self.verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
         self.loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
         self.runningState = True
+
+        viewer = inference_viewer(self.modelName, self.raliMode, self.totalImages, self.modelBatchSizeInt)
+        viewer.show()
         self.close()
 
     def closeEvent(self, event):
