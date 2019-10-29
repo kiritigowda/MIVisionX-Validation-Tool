@@ -28,7 +28,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.runState = False
         self.pauseState = False
         self.progIndex = 0
-        self.showAugGraph = False
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
 
@@ -86,6 +85,22 @@ class inference_viewer(QtGui.QMainWindow):
 
         self.showVerbose()
 
+    def resetViewer(self):
+        self.imgCount = 0
+        del self.x[:]
+        self.x.append(0)
+        del self.y[:]
+        self.y.append(0)
+        del self.augAccuracy[:]
+        for augmentation in range(self.batch_size):
+            self.augAccuracy.append([0])
+
+        self.time = QTime.currentTime()
+        self.lastTime = 0
+        self.progIndex = 0
+        self.lastIndex = self.frameCount - 1
+        self.graph.clear()
+
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
         if self.getIndex() == 0:
@@ -132,7 +147,10 @@ class inference_viewer(QtGui.QMainWindow):
 
     def showAugImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
+        if self.batch_size == 64:
+            qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
+        elif self.batch_size == 16:
+            qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
         self.aug_label.setPixmap(pixmap)
 
@@ -264,7 +282,10 @@ class inference_viewer(QtGui.QMainWindow):
         return self.augIntensity
 
     def calculateIndex(self, x, y):
-        imgWidth = self.aug_label.width() / 16.0
+        if self.batch_size == 64:
+            imgWidth = self.aug_label.width() / 16.0
+        else:
+            imgWidth = self.aug_label.width() / 4.0
         imgHeight = self.aug_label.height() / 4.0
         x -= self.aug_label.x()
         y -= self.aug_label.y()
@@ -280,4 +301,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.name_label.setText(name)
 
     def storeAccuracy(self, index, accuracy):
-        self.augAccuracy[index].append(accuracy)
+        curTime = self.time.elapsed()/1000.0
+        if (curTime - self.lastTime > 0.1):
+            self.augAccuracy[index].append(accuracy)

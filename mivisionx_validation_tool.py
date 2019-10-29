@@ -101,7 +101,7 @@ raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain',
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
-    def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode):
+    def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter):
 		RaliGraph.__init__(self, rali_batch_size, affinity)
 		self.validation_dict = {}
 		self.process_validation(image_validation)
@@ -125,7 +125,7 @@ class DataLoader(RaliGraph):
 
 		if model_batch_size == 16:
 			if raliMode == 1:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 		        
 				self.warped = self.warpAffine(self.input,True)
@@ -150,7 +150,7 @@ class DataLoader(RaliGraph):
 				
 				self.blend_img = self.blend(self.input, self.contrast_img, True)
 			elif raliMode == 2:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
 				self.warped = self.warpAffine(self.input,True)
@@ -175,7 +175,7 @@ class DataLoader(RaliGraph):
 
 				self.blend_img = self.blend(self.rotate_img, self.warped, True)
 			elif raliMode == 3:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 				self.warped = self.warpAffine(self.input,True)
 
@@ -200,7 +200,7 @@ class DataLoader(RaliGraph):
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
 		elif model_batch_size == 64:
 			if raliMode == 1:	        
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 				self.rot135_img = self.rotate(self.input, False, 135)
@@ -213,7 +213,7 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.rot135_img , h_img, w_img)
 				
 			elif raliMode == 2:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 				#self.warpAffine2_img = self.warpAffine(self.input, False, [[1.5,0],[0,1],[None,None]])
@@ -227,7 +227,7 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.lensCorrection_img, h_img, w_img)
 
 			elif raliMode == 3:
-				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, 0)
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
 				self.colorTemp1_img = self.colorTemp(self.input, False, 10)
@@ -354,10 +354,16 @@ class annieObjectWrapper():
 	def runInference(self, img_tensor, out):
 		# copy input f32 to inference input
 		status = self.api.annCopyToInferenceInput(self.hdl, np.ascontiguousarray(img_tensor, dtype=np.float32), img_tensor.nbytes, 0)
+		if(status):
+			print('ERROR: annCopyToInferenceInput Failed')
 		# run inference
 		status = self.api.annRunInference(self.hdl, 1)
+		if(status):
+			print('ERROR: annRunInference Failed')
 		# copy output f32
 		status = self.api.annCopyFromInferenceOutput(self.hdl, np.ascontiguousarray(out, dtype=np.float32), out.nbytes)
+		if(status):
+			print('ERROR: annCopyFromInferenceOutput Failed')
 		return out
 
 	def classify(self, img_tensor):
@@ -484,8 +490,11 @@ if __name__ == '__main__':
 	#set ADAT Flag to generate ADAT only once
 	ADATFlag = False
 
-	#set loop Flag based on user input
-	loopFlag = True
+	#set loop parameter based on user input
+	if loop == 'yes':
+		loop_parameter = True
+	else:
+		loop_parameter = False
 
 	# get input & output dims
 	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
@@ -626,288 +635,289 @@ if __name__ == '__main__':
 	viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
 	viewer.startView()
 
-	while loopFlag == True and viewer.getState():	
-		#setup for Rali
-		rali_batch_size = 1
-		start_rali = time.time()
-		loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode)
-		imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
-		raliNumberOfImages = imageIterator.imageCount()
-		end_rali = time.time()
-		if (verbosePrint):
-			print '%30s' % 'RALI Data Load Time ', str((end_rali - start_rali)*1000), 'ms'
-		print ('Pipeline created ...')
-		print 'Loader created ...num of images' , loader.getOutputImageCount()
-		print 'Image iterator created ... number of images', raliNumberOfImages
+	#setup for Rali
+	rali_batch_size = 1
+	start_rali = time.time()
+	loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode, loop_parameter)
+	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+	raliNumberOfImages = imageIterator.imageCount()
+	end_rali = time.time()
+	if (verbosePrint):
+		print '%30s' % 'RALI Data Load Time ', str((end_rali - start_rali)*1000), 'ms'
+	print ('Pipeline created ...')
+	print 'Loader created ...num of images' , loader.getOutputImageCount()
+	print 'Image iterator created ... number of images', raliNumberOfImages
 
-		# process images
-		correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-		
-		#create output dict for all the images
-		guiResults = {}
+	#build augmentation list based on RALI mode
+	if modelBatchSizeInt == 16:
+		if raliMode == 1:
+			raliList = raliList_mode1_16
+		elif raliMode == 2:
+			raliList = raliList_mode2_16
+		elif raliMode == 3:
+			raliList = raliList_mode3_16
+	elif modelBatchSizeInt == 64:
+		if raliMode == 1:
+			raliList = raliList_mode1_64
+		elif raliMode == 2:
+			raliList = raliList_mode2_64
+		elif raliMode == 3:
+			raliList = raliList_mode3_64
 
-		#build augmentation list based on RALI mode
-		if modelBatchSizeInt == 16:
-			if raliMode == 1:
-				raliList = raliList_mode1_16
-			elif raliMode == 2:
-				raliList = raliList_mode2_16
-			elif raliMode == 3:
-				raliList = raliList_mode3_16
-		elif modelBatchSizeInt == 64:
-			if raliMode == 1:
-				raliList = raliList_mode1_64
-			elif raliMode == 2:
-				raliList = raliList_mode2_64
-			elif raliMode == 3:
-				raliList = raliList_mode3_64
-		
-		#to calculate FPS
-		avg_benchmark = 0.0
-		frameMsecs = 0.0
-		frameMsecsGUI = 0.0
-		totalFPS = 0.0
+	#result for separate augmentations
+	resultPerAugmentation = []
+	for iterator in range(modelBatchSizeInt):
+		resultPerAugmentation.append([0,0,0]) # (top1, top5, mismatch)
+	
+	#image_tensor has the input tensor required for inference
+	iteratorCount = 0
+	for (image_batch, image_tensor) in imageIterator:
+		#initialize values for every loop beginning
+		x = iteratorCount % raliNumberOfImages
+		if x == 0:
+			correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
+	
+			#create output dict for all the images
+			guiResults = {}
+			#to calculate FPS
+			avg_benchmark = 0.0
+			frameMsecs = 0.0
+			frameMsecsGUI = 0.0
+			totalFPS = 0.0
+			del resultPerAugmentation[:]
+			for iterator in range(modelBatchSizeInt):
+				resultPerAugmentation.append([0,0,0])
+			viewer.resetViewer()
 
-		#result for separate augmentations
-		resultPerAugmentation = []
-		for iterator in range(modelBatchSizeInt):
-			resultPerAugmentation.append([0,0,0]) # (top1, top5, mismatch)
-		
-		#image_tensor has the input tensor required for inference
-		for x,(image_batch, image_tensor) in enumerate(imageIterator,0):
-			#live updates for augmentaiton slider
-			augmentation = viewer.getIntensity()
-			loader.updateAugmentationParameter(augmentation)
-			msFrame = 0.0
-			msFrameGUI = 0.0
-			start_main = time.time()
+		#live updates for augmentaiton slider
+		augmentation = viewer.getIntensity()
+		loader.updateAugmentationParameter(augmentation)
+		msFrame = 0.0
+		msFrameGUI = 0.0
+		start_main = time.time()
 
-			#get image file name and ground truth
+		#get image file name and ground truth
+		start = time.time()
+		imageFileName = loader.get_input_name()
+		groundTruthIndex = loader.get_ground_truth()
+		groundTruthIndex = int(groundTruthIndex)
+		end = time.time()
+		msFrame += (end-start)*1000
+
+		#create output list for each image
+		augmentedResults = []
+
+		#create images for display
+		start = time.time()
+		original_image = image_batch[0:h_i, 0:w_i]
+		cloned_image = np.copy(image_batch)
+		#using tensor output of RALI as frame
+		frame = image_tensor
+		end = time.time()
+		msFrame += (end - start)*1000
+		if(verbosePrint):
+			print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
+
+		start = time.time()
+		groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+		text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+		text_off_x = (w_i/2) - (text_width/2)
+		text_off_y = h_i-7
+		box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+		cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+		cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+
+		#show original image
+		width = original_image.shape[1]
+		height = original_image.shape[0]
+		viewer.showImage(original_image, width, height)
+		end = time.time()
+		msFrameGUI += (end - start)*1000
+		if(verbosePrint):
+			print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
+
+		# run inference
+		start = time.time()
+		output = classifier.classify(frame)
+		end = time.time()
+		msFrame += (end - start)*1000
+		if(verbosePrint):
+			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+		for i in range(loader.getOutputImageCount()):
+			# process output and display
 			start = time.time()
-			imageFileName = loader.get_input_name()
-			groundTruthIndex = loader.get_ground_truth()
-			groundTruthIndex = int(groundTruthIndex)
+			topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
 			end = time.time()
-			msFrame += (end-start)*1000
+			msFrame += (end - start)*1000
+			if(verbosePrint):
+				print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
 
-			#create output list for each image
-			augmentedResults = []
-
-			#create images for display
+			# write image results to a file
 			start = time.time()
-			original_image = image_batch[0:h_i, 0:w_i]
-			cloned_image = np.copy(image_batch)
-			#using tensor output of RALI as frame
-			frame = image_tensor
+			sys.stdout = open(finalImageResultsFile,'a')
+			print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
+			','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
+			','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
+			sys.stdout = orig_stdout
 			end = time.time()
 			msFrame += (end - start)*1000
 			if(verbosePrint):
-				print '%30s' % 'Copying tensor from RALI for inference took ', str((end - start)*1000), 'ms'
+				print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
 
 			start = time.time()
-			groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-			text_off_x = (w_i/2) - (text_width/2)
-			text_off_y = h_i-7
-			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			#data collection for individual augmentation scores
+			countPerAugmentation = resultPerAugmentation[i]
 
-			#show original image
-			width = original_image.shape[1]
-			height = original_image.shape[0]
-			viewer.showImage(original_image, width, height)
-			end = time.time()
-			msFrameGUI += (end - start)*1000
-			if(verbosePrint):
-				print '%30s' % 'Displaying Original Images took ', str((end - start)*1000), 'ms'
-
-			# run inference
-			start = time.time()
-			output = classifier.classify(frame)
-			end = time.time()
-			msFrame += (end - start)*1000
-			if(verbosePrint):
-				print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
-			for i in range(loader.getOutputImageCount()):
-				# process output and display
-				start = time.time()
-				topIndex, topProb = processClassificationOutput(frame, modelName, output, modelBatchSizeInt)
-				end = time.time()
-				msFrame += (end - start)*1000
-				if(verbosePrint):
-					print '%30s' % 'Processed display in ', str((end - start)*1000), 'ms\n'
-
-				# write image results to a file
-				start = time.time()
-				sys.stdout = open(finalImageResultsFile,'a')
-				print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
-				','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
-				','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
-				sys.stdout = orig_stdout
-				end = time.time()
-				msFrame += (end - start)*1000
-				if(verbosePrint):
-					print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
-
-				start = time.time()
-
-				#data collection for individual augmentation scores
-				countPerAugmentation = resultPerAugmentation[i]
-
-				# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
-				if(groundTruthIndex == topIndex[4 + i*4]):
-					correctTop1 = correctTop1 + 1
-					correctTop5 = correctTop5 + 1
-					augmentedResults.append(1)
-					countPerAugmentation[0] = countPerAugmentation[0] + 1
-					countPerAugmentation[1] = countPerAugmentation[1] + 1
-				elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
-					correctTop5 = correctTop5 + 1
-					countPerAugmentation[1] = countPerAugmentation[1] + 1
-					if (groundTruthIndex == topIndex[3 + i*4]):
-						augmentedResults.append(2)
-					elif (groundTruthIndex == topIndex[2 + i*4]):
-						augmentedResults.append(3)
-					elif (groundTruthIndex == topIndex[1 + i*4]):
-						augmentedResults.append(4)
-					elif (groundTruthIndex == topIndex[0 + i*4]):
-						augmentedResults.append(5)
-				elif(groundTruthIndex == -1):
-					noGroundTruth = noGroundTruth + 1
-					augmentedResults.append(-1)
-				else:
-					wrong = wrong + 1
-					augmentedResults.append(0)
-					countPerAugmentation[2] = countPerAugmentation[2] + 1
-
-				resultPerAugmentation[i] = countPerAugmentation
-				end = time.time()
-				msFrame += (end - start)*1000
-
-				augAccuracy = (float)(countPerAugmentation[1]) / (x+1) * 100
-				viewer.storeAccuracy(i, augAccuracy)
-
-				start = time.time()
-				augmentationText = raliList[i].split('+')
-				textCount = len(augmentationText)
-				for cnt in range(0,textCount):
-					currentText = augmentationText[cnt]
-					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-					text_off_x = (w_i/2) - (text_width/2)
-					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
-					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
-
-				#show RALI augmented images
-				if augmentedResults[i] == 0:
-					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
-					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-
-				end = time.time()
-				msFrameGUI += (end - start)*1000
-				if(verbosePrint):
-					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
-			
-			#split RALI augmented images into a grid
-			#split 16X4
-			start = time.time()
-			if modelBatchSizeInt == 64:
-				image_batch = np.vsplit(cloned_image, 16)
-				final_image_batch = np.hstack((image_batch))
-			elif modelBatchSizeInt == 16:
-				image_batch = np.vsplit(cloned_image, 4)
-				final_image_batch = np.hstack((image_batch))
-			end = time.time()
-			msFrame += (end - start)*1000
-
-	    	#show augmented images
-			start = time.time()
-			aug_width = final_image_batch.shape[1]
-			aug_height = final_image_batch.shape[0]
-			viewer.showAugImage(final_image_batch, aug_width, aug_height)
-			#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
-			#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
-			end = time.time()
-			msFrameGUI += (end - start)*1000
-			if(verbosePrint):
-				print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
-
-			start = time.time()
-
-			progressIndex = viewer.getIndex()
-			if progressIndex == 0:
-				viewer.setAugName(modelName)
-				# Total progress
-				viewer.setTotalProgress(x*modelBatchSizeInt+i+1)
-				# Top 1 progress
-				viewer.setTop1Progress(correctTop1, modelBatchSizeInt*x+i+1)
-				# Top 5 progress
-				viewer.setTop5Progress(correctTop5, modelBatchSizeInt*x+i+1)
-				# Mismatch progress
-				viewer.setMisProgress(wrong, modelBatchSizeInt*x+i+1)
-				# No ground truth progress
-				#viewer.setNoGTProgress(noGroundTruth)
+			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
+			if(groundTruthIndex == topIndex[4 + i*4]):
+				correctTop1 = correctTop1 + 1
+				correctTop5 = correctTop5 + 1
+				augmentedResults.append(1)
+				countPerAugmentation[0] = countPerAugmentation[0] + 1
+				countPerAugmentation[1] = countPerAugmentation[1] + 1
+			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
+				correctTop5 = correctTop5 + 1
+				countPerAugmentation[1] = countPerAugmentation[1] + 1
+				if (groundTruthIndex == topIndex[3 + i*4]):
+					augmentedResults.append(2)
+				elif (groundTruthIndex == topIndex[2 + i*4]):
+					augmentedResults.append(3)
+				elif (groundTruthIndex == topIndex[1 + i*4]):
+					augmentedResults.append(4)
+				elif (groundTruthIndex == topIndex[0 + i*4]):
+					augmentedResults.append(5)
+			elif(groundTruthIndex == -1):
+				noGroundTruth = noGroundTruth + 1
+				augmentedResults.append(-1)
 			else:
-				viewer.setAugName(raliList[progressIndex-1])
-				# Total progress
-				viewer.setTotalProgress(x)
-				# Top 1 progress
-				viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x+1)
-				# Top 5 progress
-				viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x+1)
-				# Mismatch progress
-				viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x+1)
+				wrong = wrong + 1
+				augmentedResults.append(0)
+				countPerAugmentation[2] = countPerAugmentation[2] + 1
 
+			resultPerAugmentation[i] = countPerAugmentation
 			end = time.time()
-			msFrameGUI += (end - start)*1000
+			msFrame += (end - start)*1000
 
-			if(verbosePrint):
-				print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
+			augAccuracy = (float)(countPerAugmentation[1]) / (x+1) * 100
+			viewer.storeAccuracy(i, augAccuracy)
 
-			# Plot Graph
 			start = time.time()
-			totalAccuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
-			viewer.plotGraph(totalAccuracy)
+			augmentationText = raliList[i].split('+')
+			textCount = len(augmentationText)
+			for cnt in range(0,textCount):
+				currentText = augmentationText[cnt]
+				text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+				text_off_x = (w_i/2) - (text_width/2)
+				text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
+				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+				cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
+
+			# put augmented image result
+			if augmentedResults[i] == 0:
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+			elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
 			end = time.time()
 			msFrameGUI += (end - start)*1000
-
-			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
-			key = cv2.waitKey(2)
-			if not viewer.getState():
-				viewer.stopView()
-				break
-			while viewer.isPaused():
-				cv2.waitKey(0)
-				if not viewer.getState():
-					break
-
-			guiResults[imageFileName] = augmentedResults
-			end_main = time.time()
 			if(verbosePrint):
-				print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
-			avg_benchmark += (end_main - start_main)*1000
+				print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
 
-			#FPS: Inference & Compute
-			frameMsecs += msFrame
-			frameMsecs = 1000/(frameMsecs/modelBatchSizeInt)
-			viewer.displayFPS(frameMsecs)
-			
-			#FPS: GUI
-			frameMsecsGUI += msFrameGUI
-			frameMsecsGUI = 1000/(frameMsecs/modelBatchSizeInt)
+		#split RALI augmented images into a grid
+		start = time.time()
+		if modelBatchSizeInt == 64:
+			image_batch = np.vsplit(cloned_image, 16)
+			final_image_batch = np.hstack((image_batch))
+		elif modelBatchSizeInt == 16:
+			image_batch = np.vsplit(cloned_image, 4)
+			final_image_batch = np.hstack((image_batch))
+		end = time.time()
+		msFrame += (end - start)*1000
 
-			#FPS: GUI + Inference
-			totalFPS += (msFrame + msFrameGUI)
-			totalFPS = 1000/(totalFPS/modelBatchSizeInt)
+    	#show augmented images
+		start = time.time()
+		aug_width = final_image_batch.shape[1]
+		aug_height = final_image_batch.shape[0]
+		viewer.showAugImage(final_image_batch, aug_width, aug_height)
+		#cv2.namedWindow('augmented_images', cv2.WINDOW_GUI_EXPANDED)
+		#cv2.imshow('augmented_images', cv2.cvtColor(final_image_batch, cv2.COLOR_RGB2BGR))
+		end = time.time()
+		msFrameGUI += (end - start)*1000
+		if(verbosePrint):
+			print '%30s' % 'Displaying Augmented Image took ', str((end - start)*1000), 'ms'
+
+		start = time.time()
+
+		progressIndex = viewer.getIndex()
+		if progressIndex == 0:
+			viewer.setAugName(modelName)
+			# Total progress
+			viewer.setTotalProgress((x)*modelBatchSizeInt)
+			# Top 1 progress
+			viewer.setTop1Progress(correctTop1, x*modelBatchSizeInt)
+			# Top 5 progress
+			viewer.setTop5Progress(correctTop5, x*modelBatchSizeInt)
+			# Mismatch progress
+			viewer.setMisProgress(wrong, x*modelBatchSizeInt)
+			# No ground truth progress
+			#viewer.setNoGTProgress(noGroundTruth)
+		else:
+			viewer.setAugName(raliList[progressIndex-1])
+			# Total progress
+			viewer.setTotalProgress(x)
+			# Top 1 progress
+			viewer.setTop1Progress(resultPerAugmentation[progressIndex-1][0], x)
+			# Top 5 progress
+			viewer.setTop5Progress(resultPerAugmentation[progressIndex-1][1], x)
+			# Mismatch progress
+			viewer.setMisProgress(resultPerAugmentation[progressIndex-1][2], x)
+
+		end = time.time()
+		msFrameGUI += (end - start)*1000
 
 		if(verbosePrint):
-			print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+			print '%30s' % 'Progress image created in ', str((end - start)*1000), 'ms'
 
-		print("\nSUCCESS: Images Inferenced with the Model\n")
+		# Plot Graph
+		start = time.time()
+		totalAccuracy = (float)(correctTop5) / (modelBatchSizeInt*x+i+1) * 100
+		viewer.plotGraph(totalAccuracy)
+		end = time.time()
+		msFrameGUI += (end - start)*1000
 
+		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
+		key = cv2.waitKey(2)
+		if not viewer.getState():
+			viewer.stopView()
+			break
+		while viewer.isPaused():
+			cv2.waitKey(0)
+			if not viewer.getState():
+				break
+
+		guiResults[imageFileName] = augmentedResults
+		end_main = time.time()
+		if(verbosePrint):
+			print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
+		avg_benchmark += (end_main - start_main)*1000
+
+		#FPS: Inference & Compute
+		frameMsecs += msFrame
+		frameMsecs = 1000/(frameMsecs/modelBatchSizeInt)
+		
+		#FPS: GUI
+		frameMsecsGUI += msFrameGUI
+		frameMsecsGUI = 1000/(frameMsecs/modelBatchSizeInt)
+
+		#FPS: GUI + Inference
+		totalFPS += (msFrame + msFrameGUI)
+		totalFPS = 1000/(totalFPS/modelBatchSizeInt)
+
+		viewer.displayFPS(totalFPS)
+
+		iteratorCount += 1
+			
 		if ADATFlag == False:
 			# Create ADAT folder and file
 			print("\nADAT tool called to create the analysis toolkit\n")
@@ -926,7 +936,6 @@ if __name__ == '__main__':
 			ADATFlag = True
 
 		if loop == 'no':
-			loopFlag = False
 			# Wait to quit
 			while True:
 				key = cv2.waitKey(2)
@@ -938,3 +947,7 @@ if __name__ == '__main__':
 
 		#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
 		#os.system('firefox '+outputHTMLFile)
+	
+	if(verbosePrint):
+		print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
+		print("\nSUCCESS: Images Inferenced with the Model\n")
