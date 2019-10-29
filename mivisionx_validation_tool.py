@@ -611,14 +611,13 @@ if __name__ == '__main__':
 				print("ERROR: Converting NNIR to OpenVX Failed")
 				quit()
 
-	#os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+	os.system('(cd '+modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 	print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 	# create inference classifier
 	classifier = annieObjectWrapper(pythonLib, weightsFile)
 
 	# check for image val text
-	#totalImages = 0;
 	if(imageVal != ''):
 		if (not os.path.isfile(imageValText)):
 			print("\nImage Validation Text not found, check argument --image_val\n")
@@ -631,6 +630,7 @@ if __name__ == '__main__':
 	else:
 		print("\nFlow without Image Validation Text not implemented, pass argument --image_val\n")
 		quit()
+
 	totalImages = len(os.listdir(inputImageDir))
 	
 	# original std out location 
@@ -639,10 +639,6 @@ if __name__ == '__main__':
 	sys.stdout = open(finalImageResultsFile,'w')	
 	print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 	sys.stdout = orig_stdout
-
-	if guiFlag:
-		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
-		viewer.startView()
 
 	#setup for Rali
 	rali_batch_size = 1
@@ -673,19 +669,24 @@ if __name__ == '__main__':
 		elif raliMode == 3:
 			raliList = raliList_mode3_64
 
-	#result for separate augmentations
-	resultPerAugmentation = []
-	for iterator in range(modelBatchSizeInt):
-		resultPerAugmentation.append([0,0,0]) # (top1, top5, mismatch)
-	
+
+	if guiFlag:
+		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
+		viewer.startView()
+
 	#image_tensor has the input tensor required for inference
 	iteratorCount = 0
+
+	#augmentation intensity
+	augmentation = 0
+
+	resultPerAugmentation = []
+
 	for (image_batch, image_tensor) in imageIterator:
 		#initialize values for every loop beginning
 		x = iteratorCount % raliNumberOfImages
 		if x == 0:
 			correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-	
 			#create output dict for all the images
 			guiResults = {}
 			#to calculate FPS
@@ -702,9 +703,8 @@ if __name__ == '__main__':
 		#live updates for augmentaiton slider
 		if guiFlag:
 			augmentation = viewer.getIntensity()
-		else:
-			augmentation = 0
-		loader.updateAugmentationParameter(augmentation)
+			loader.updateAugmentationParameter(augmentation)
+
 		msFrame = 0.0
 		msFrameGUI = 0.0
 		start_main = time.time()
@@ -757,6 +757,7 @@ if __name__ == '__main__':
 		msFrame += (end - start)*1000
 		if(verbosePrint):
 			print '%30s' % 'Executed Model in ', str((end - start)*1000), 'ms'
+
 		for i in range(loader.getOutputImageCount()):
 			# process output and display
 			start = time.time()
@@ -838,7 +839,8 @@ if __name__ == '__main__':
 				msFrameGUI += (end - start)*1000
 				if(verbosePrint):
 					print '%30s' % 'Augmented image results created in ', str((end - start)*1000), 'ms'
-
+		
+		if guiFlag:
 			#split RALI augmented images into a grid
 			start = time.time()
 			if modelBatchSizeInt == 64:
@@ -850,7 +852,7 @@ if __name__ == '__main__':
 			end = time.time()
 			msFrame += (end - start)*1000
 			
-    		#show augmented images
+			#show augmented images
 			start = time.time()
 			aug_width = final_image_batch.shape[1]
 			aug_height = final_image_batch.shape[0]
@@ -901,7 +903,7 @@ if __name__ == '__main__':
 			end = time.time()
 			msFrameGUI += (end - start)*1000
 
-		# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
+			# exit inference on ESC; pause/play on SPACEBAR; quit program on 'q'
 			key = cv2.waitKey(2)
 			if not viewer.getState():
 				viewer.stopView()
@@ -931,6 +933,8 @@ if __name__ == '__main__':
 
 		if guiFlag:
 			viewer.displayFPS(totalFPS)
+		else:
+			print 'FPS: %d\n' % frameMsecs
 
 		iteratorCount += 1
 			
