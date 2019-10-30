@@ -5,6 +5,7 @@ sys.path.append('/opt/rocm/mivisionx/rali/python/')
 import os
 from rali import *
 from rali_image_iterator import *
+from rali_common import *
 
 
 #batch size = 64
