@@ -1,4 +1,7 @@
 import pyqtgraph as pg
+import cv2
+import numpy
+import numpy as np
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime
@@ -306,14 +309,14 @@ class inference_viewer(QtGui.QMainWindow):
             self.augAccuracy[index].append(accuracy)
 
     def paintEvent(self, event):
-        #Step 1: get all inputs from inference_control
+        #Step 1: TODO: get all inputs from inference_control
+        #get modelName,modelFormat,imageDir,modelLocation,label,hierarchy,imageVal,modelInputDims,modelOutputDims,modelBatchSize,outputDir,inputAdd,inputMultiply,verbose,fp16,replaceModel,loop & raliMode
         raliMode = 1
         loop_parameter = True
         augmentation = 0.3
         adatFlag = False
-        #TODO
-
-        #Step 2:Creating an object for inference
+        
+        #Step 2:Creating an object for inference. Input arguments come from user
         inference_object = modelInference(modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
                                             modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop)
 
@@ -359,7 +362,7 @@ class inference_viewer(QtGui.QMainWindow):
 
         #Step 8: Process output for each of the 64 images
         for i in range(loader.getOutputImageCount()):
-            topIndex, topProb = inference_object.processClassificationOutput(frame, modelName, output, int(modelBatchSize))
+            topIndex, topProb = inference_object.processClassificationOutput(output)
 
 
             correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
@@ -371,7 +374,7 @@ class inference_viewer(QtGui.QMainWindow):
             frameMsecsGUI = 0.0
             totalFPS = 0.0
             resultPerAugmentation = []
-            for iterator in range(modelBatchSizeInt):
+            for iterator in range(int(modelBatchSize)):
                 resultPerAugmentation.append([0,0,0])
             
 
@@ -380,7 +383,7 @@ class inference_viewer(QtGui.QMainWindow):
             augmentedResults = []
 
             #process the output tensor
-            resultPerAugmentation, augmentedResults =inference_object.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
+            resultPerAugmentation, augmentedResults = inference_object.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
                                                                                          topIndex, topProb, wrong, noGroundTruth, i)
 
 
@@ -408,7 +411,7 @@ class inference_viewer(QtGui.QMainWindow):
         elif int(modelBatchSize) == 16:
             image_batch = np.vsplit(cloned_image, 4)
             final_image_batch = np.hstack((image_batch))
-        
+
         #Step 10: adat generation
         if adatFlag == False:
             loader.generateADAT(modelName, hierarchy)
