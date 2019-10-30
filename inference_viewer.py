@@ -286,9 +286,6 @@ class inference_viewer(QtGui.QMainWindow):
             imgWidth = self.aug_label.width() / 16.0
         else:
             imgWidth = self.aug_label.width() / 4.0
-	if(fp16 != 'no'):
-		FP16inference = True
-	# set paths
         imgHeight = self.aug_label.height() / 4.0
         x -= self.aug_label.x()
         y -= self.aug_label.y()

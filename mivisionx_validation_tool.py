@@ -27,68 +27,68 @@ if __name__ == '__main__':
 		panel = inference_control()
 		panel.show()
 		app.exec_()
-		modelFormat = (str)(panel.model_format)
-		modelName = (str)(panel.model_name)
-		modelLocation = (str)(panel.model)
-		modelBatchSize = (str)(panel.batch)
-		raliMode = (int)(panel.mode) + 1
-		modelInputDims = (str)(panel.input_dims)
-		modelOutputDims = (str)(panel.output_dims)
-		label = (str)(panel.label)
-		outputDir = (str)(panel.output)
-		imageDir = (str)(panel.image)
-		imageVal = (str)(panel.val)
-		hierarchy = (str)(panel.hier)
-		inputAdd = (str)(panel.add)
-		inputMultiply = (str)(panel.multiply)
-		fp16 = (str)(panel.fp16)
-		replaceModel = (str)(panel.replace)
-		verbose = (str)(panel.verbose)
-		loop = (str)(panel.loop)
-		gui = (str)(panel.gui)
+		# modelFormat = (str)(panel.model_format)
+		# modelName = (str)(panel.model_name)
+		# modelLocation = (str)(panel.model)
+		# modelBatchSize = (str)(panel.batch)
+		# raliMode = (int)(panel.mode) + 1
+		# modelInputDims = (str)(panel.input_dims)
+		# modelOutputDims = (str)(panel.output_dims)
+		# label = (str)(panel.label)
+		# outputDir = (str)(panel.output)
+		# imageDir = (str)(panel.image)
+		# imageVal = (str)(panel.val)
+		# hierarchy = (str)(panel.hier)
+		# inputAdd = (str)(panel.add)
+		# inputMultiply = (str)(panel.multiply)
+		# fp16 = (str)(panel.fp16)
+		# replaceModel = (str)(panel.replace)
+		# verbose = (str)(panel.verbose)
+		# loop = (str)(panel.loop)
+		# gui = (str)(panel.gui)
 	else:
-		parser = argparse.ArgumentParser()
-		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
-		parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
-		parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file/folder          [required]')
-		parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
-		parser.add_argument('--rali_mode',			type=str, required=True,	help='rali mode (1/2/3)			             [required]')
-		parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
-		parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
-		parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
-		parser.add_argument('--output_dir',			type=str, required=True,	help='output dir to store ADAT results       [required]')
-		parser.add_argument('--image_dir',			type=str, required=True,	help='image directory for analysis           [required]')
-		parser.add_argument('--image_val',			type=str, default='',		help='image list with ground truth           [optional]')
-		parser.add_argument('--hierarchy',			type=str, default='',		help='AMD proprietary hierarchical file      [optional]')
-		parser.add_argument('--add',				type=str, default='', 		help='input preprocessing factor [optional - default:[0,0,0]]')
-		parser.add_argument('--multiply',			type=str, default='',		help='input preprocessing factor [optional - default:[1,1,1]]')
-		parser.add_argument('--fp16',				type=str, default='no',		help='quantize to FP16 			[optional - default:no]')
-		parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
-		parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
-		parser.add_argument('--loop',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
-		parser.add_argument('--gui',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
-		args = parser.parse_args()
+		# parser = argparse.ArgumentParser()
+		# parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
+		# parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
+		# parser.add_argument('--model',				type=str, required=True,	help='pre_trained model file/folder          [required]')
+		# parser.add_argument('--model_batch_size',	type=str, required=True,	help='n - batch size			             [required]')
+		# parser.add_argument('--rali_mode',			type=str, required=True,	help='rali mode (1/2/3)			             [required]')
+		# parser.add_argument('--model_input_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
+		# parser.add_argument('--model_output_dims',	type=str, required=True,	help='c,h,w - channel,height,width           [required]')
+		# parser.add_argument('--label',				type=str, required=True,	help='labels text file                       [required]')
+		# parser.add_argument('--output_dir',			type=str, required=True,	help='output dir to store ADAT results       [required]')
+		# parser.add_argument('--image_dir',			type=str, required=True,	help='image directory for analysis           [required]')
+		# parser.add_argument('--image_val',			type=str, default='',		help='image list with ground truth           [optional]')
+		# parser.add_argument('--hierarchy',			type=str, default='',		help='AMD proprietary hierarchical file      [optional]')
+		# parser.add_argument('--add',				type=str, default='', 		help='input preprocessing factor [optional - default:[0,0,0]]')
+		# parser.add_argument('--multiply',			type=str, default='',		help='input preprocessing factor [optional - default:[1,1,1]]')
+		# parser.add_argument('--fp16',				type=str, default='no',		help='quantize to FP16 			[optional - default:no]')
+		# parser.add_argument('--replace',			type=str, default='no',		help='replace/overwrite model   [optional - default:no]')
+		# parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
+		# parser.add_argument('--loop',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
+		# parser.add_argument('--gui',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
+		# args = parser.parse_args()
 		
-		# get arguments
-		modelFormat = args.model_format
-		modelName = args.model_name
-		modelLocation = args.model
-		modelBatchSize = args.model_batch_size
-		raliMode = (int)(args.rali_mode)
-		modelInputDims = args.model_input_dims
-		modelOutputDims = args.model_output_dims
-		label = args.label
-		outputDir = args.output_dir
-		imageDir = args.image_dir
-		imageVal = args.image_val
-		hierarchy = args.hierarchy
-		inputAdd = args.add
-		inputMultiply = args.multiply
-		fp16 = args.fp16
-		replaceModel = args.replace
-		verbose = args.verbose
-		loop = args.loop
-		gui = args.gui
+		# # get arguments
+		# modelFormat = args.model_format
+		# modelName = args.model_name
+		# modelLocation = args.model
+		# modelBatchSize = args.model_batch_size
+		# raliMode = (int)(args.rali_mode)
+		# modelInputDims = args.model_input_dims
+		# modelOutputDims = args.model_output_dims
+		# label = args.label
+		# outputDir = args.output_dir
+		# imageDir = args.image_dir
+		# imageVal = args.image_val
+		# hierarchy = args.hierarchy
+		# inputAdd = args.add
+		# inputMultiply = args.multiply
+		# fp16 = args.fp16
+		# replaceModel = args.replace
+		# verbose = args.verbose
+		# loop = args.loop
+		# gui = args.gui
 
 	# set verbose print
 	if(verbose != 'no'):

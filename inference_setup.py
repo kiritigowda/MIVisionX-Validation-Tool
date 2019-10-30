@@ -4,7 +4,6 @@ import ctypes
 import numpy
 import numpy as np
 from numpy.ctypeslib import ndpointer
-from rali_setup import *
 
 # AMD Neural Net python wrapper
 class AnnAPI:
