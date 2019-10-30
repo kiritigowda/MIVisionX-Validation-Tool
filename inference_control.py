@@ -1,4 +1,5 @@
 import os
+from inference_viewer import *
 from PyQt4 import QtGui, uic
 
 class inference_control(QtGui.QMainWindow):
@@ -17,6 +18,7 @@ class inference_control(QtGui.QMainWindow):
         self.hier = ''
         self.add = '0,0,0'
         self.multiply = '1,1,1'
+        self.gui = 'yes'
         self.fp16 = 'no'
         self.replace = 'no'
         self.verbose = 'no'
@@ -58,6 +60,7 @@ class inference_control(QtGui.QMainWindow):
         self.val_lineEdit.setPlaceholderText("[optional]")
         self.hier_lineEdit.setPlaceholderText("[optional]")
         self.close_pushButton.setStyleSheet("color: white; background-color: darkRed")
+        self.gui_checkBox.setChecked(True)
         self.readSetupFile()
 
     def browseFile(self):
@@ -107,6 +110,7 @@ class inference_control(QtGui.QMainWindow):
             self.hier_lineEdit.setEnabled(True)
             self.padd_lineEdit.setEnabled(True)
             self.pmul_lineEdit.setEnabled(True)
+            self.gui_checkBox.setEnabled(True)
             self.fp16_checkBox.setEnabled(True)
             self.replace_checkBox.setEnabled(True)
             self.verbose_checkBox.setEnabled(True)
@@ -131,6 +135,7 @@ class inference_control(QtGui.QMainWindow):
             self.hier_lineEdit.clear()
             self.padd_lineEdit.clear()
             self.pmul_lineEdit.clear()
+            self.gui_checkBox.setChecked(True)
             self.fp16_checkBox.setChecked(False)
             self.replace_checkBox.setChecked(False)
             self.verbose_checkBox.setChecked(False)
@@ -221,11 +226,15 @@ class inference_control(QtGui.QMainWindow):
             self.multiply = '[1,1,1]'
         else:
             self.multiply = '[%s]' % (self.pmul_lineEdit.text())
+        self.gui = 'yes' if self.gui_checkBox.isChecked() else 'no'
         self.fp16 = 'yes' if self.fp16_checkBox.isChecked() else 'no'
         self.replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
         self.verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
         self.loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
         self.runningState = True
+
+        viewer = inference_viewer(self.modelName, self.raliMode, self.totalImages, self.modelBatchSizeInt)
+        viewer.show()
         self.close()
 
     def closeEvent(self, event):
