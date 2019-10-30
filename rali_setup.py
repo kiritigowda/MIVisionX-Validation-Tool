@@ -72,7 +72,8 @@ raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain',
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
-    def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter):
+    def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter,
+    			 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0]):
 		RaliGraph.__init__(self, rali_batch_size, affinity)
 		self.validation_dict = {}
 		self.process_validation(image_validation)
@@ -95,6 +96,10 @@ class DataLoader(RaliGraph):
 		self.degree_param = RaliFloatParameter(0.0)
 
 		#rali iterator 
+		self.tensor_format =tensor_layout
+        self.multiplier = multiplier
+        self.offset = offset
+        self.reverse_channels = reverse_channels
         self.w = self.getOutputWidth()
         self.h = self.getOutputHeight()
         self.b = self.getBatchSize()
@@ -289,18 +294,20 @@ class DataLoader(RaliGraph):
 		degree = augmentation * 180.0
 		self.degree_param.update(degree)
 
-	def get_next_augmentation(self, tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0]):
+	def get_next_augmentation(self):
 		if self.getReaminingImageCount() <= 0:
-            raise StopIteration
+            #raise StopIteration
+            return -1
 
         if self.run() != 0:
-            raise StopIteration
+            #raise StopIteration
+            return -1
 
         self.copyToNPArray(self.out_image)
-        if(TensorLayout.NCHW == tensor_layout):
-            self.loader.copyToTensorNCHW(self.out_tensor, multiplier, offset, reverse_channels)
+        if(TensorLayout.NCHW == self.tensor_format):
+            self.loader.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
         else:
-            self.loader.copyToTensorNHWC(self.out_tensor, multiplier, offset, reverse_channels)
+            self.loader.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 
         return self.out_image , self.out_tensor
 
