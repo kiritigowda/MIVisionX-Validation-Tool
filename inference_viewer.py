@@ -7,6 +7,8 @@ from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime
 from inference_setup import *
 from rali_setup import *
+from  rali_common import *
+from rali import *
 
 class inference_viewer(QtGui.QMainWindow):
     def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
