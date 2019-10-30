@@ -124,7 +124,7 @@ if __name__ == '__main__':
 	if gui == 'yes':
 		guiFlag = True
 
-	#set loop parameter based on user input
+	#set loop parameter based on the user input
 	if loop == 'yes':
 		loop_parameter = True
 	else:

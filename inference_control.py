@@ -2,7 +2,7 @@ import os
 from inference_viewer import *
 from PyQt4 import QtGui, uic
 
-class inference_control(QtGui.QMainWindow):
+class InferenceControl(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(inference_control, self).__init__(parent)
         self.model_format = ''

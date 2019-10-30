@@ -5,7 +5,7 @@ from PyQt4.QtCore import QTime
 from inference_setup import *
 from rali_setup import *
 
-class inference_viewer(QtGui.QMainWindow):
+class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
         super(inference_viewer, self).__init__(parent)
         self.model_name = model_name

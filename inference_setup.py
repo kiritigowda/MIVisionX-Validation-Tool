@@ -101,7 +101,7 @@ class modelInference():
 			self.FP16inference = True
 
 		#set loop parameter based on user input
-		"""if loop == 'yes':
+		"""if loop == 'yes':ssifier, l
 			self.loop_parameter = True
 		else:
 			self.loop_parameter = False
@@ -127,7 +127,7 @@ class modelInference():
 			f.close()
 		else:
 			count = len(open(self.analyzerDir + "/setupFile.txt").readlines())
-			if count < 10:
+			if count < 10:ssifier, l
 				with open(self.analyzerDir + "/setupFile.txt", "r") as fin:
 					data = fin.read().splitlines(True)
 					modelList = []
