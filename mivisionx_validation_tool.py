@@ -934,7 +934,11 @@ if __name__ == '__main__':
 		if guiFlag:
 			viewer.displayFPS(totalFPS)
 		else:
-			print 'FPS: %d\n' % frameMsecs
+			if iteratorCount and iteratorCount%5==0:
+				f = open(analyzerDir + "/fps.txt", "w")
+				f.write(str(int(frameMsecs)))
+				f.close()
+				print 'FPS: %d\n' % frameMsecs
 
 		iteratorCount += 1
 			
