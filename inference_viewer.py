@@ -20,7 +20,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.y = [0]
         self.augAccuracy = []
         self.time = QTime.currentTime()
-        self.lastTime = 0
 
         self.runState = False
         self.pauseState = False
@@ -47,12 +46,11 @@ class inference_viewer(QtGui.QMainWindow):
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        self.showMaximized()
+        #self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
-        self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/filmStrip.png);}")
-        #self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/Filmstrip-trans.png);}")
+        self.imagesFrame.setStyleSheet(".QFrame {border-width: 20px; border-image: url(./data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
@@ -125,13 +123,11 @@ class inference_viewer(QtGui.QMainWindow):
 
     def plotGraph(self, accuracy):
         curTime = self.time.elapsed()/1000.0
-        if (curTime - self.lastTime > 0.1):
-            self.x.append(curTime)
-            self.y.append(accuracy)
-            self.graph.plot(self.x, self.y, pen=self.pen)
-            if self.progIndex:
-                self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
-            self.lastTime = curTime
+        self.x.append(curTime)
+        self.y.append(accuracy)
+        self.graph.plot(self.x, self.y, pen=self.pen)
+        if self.progIndex:
+            self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
 
     def showImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
@@ -181,13 +177,9 @@ class inference_viewer(QtGui.QMainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            x = event.pos().x()
-            y = event.pos().y()
-            if self.aug_label.x() <= x and \
-                x < (self.aug_label.x() + self.aug_label.width()) and \
-                self.aug_label.y() <= y and \
-                y < (self.aug_label.y() + self.aug_label.height()):
-                index = self.calculateIndex(x, y)
+            mousePos = event.pos()
+            if self.aug_label.geometry().contains(mousePos):
+                index = self.calculateIndex(mousePos.x(), mousePos.y())
                 self.progIndex = index
             else:
                 self.progIndex = 0
@@ -299,6 +291,4 @@ class inference_viewer(QtGui.QMainWindow):
         self.name_label.setText(name)
 
     def storeAccuracy(self, index, accuracy):
-        curTime = self.time.elapsed()/1000.0
-        if (curTime - self.lastTime > 0.1):
-            self.augAccuracy[index].append(accuracy)
+        self.augAccuracy[index].append(accuracy)
