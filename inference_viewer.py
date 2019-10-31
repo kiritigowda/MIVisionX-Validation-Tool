@@ -7,16 +7,33 @@ from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime
 from inference_setup import *
 from rali_setup import *
-from  rali_common import *
+from rali_common import *
 from rali import *
 
 class InferenceViewer(QtGui.QMainWindow):
-    def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
+    def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, total_images, parent=None):
         super(inference_viewer, self).__init__(parent)
+
         self.model_name = model_name
+        self.model_format = model_format 
+        self.image_dir = image_dir
+        self.model_location = model_location
+        self.label = label
+        self.hierarchy = hierarchy
+        self.image_val = image_val
+        self.input_dims = input_dims
+        self.output_dims = output_dims
+        self.batch_size = batch_size
+        self.output_dir = output_dir
+        self.add = add
+        self.multiply = multiply
+        self.verbose = verbose
+        self.fp16 = fp16
+        self.replace = replace
+        self.loop = loop
         self.rali_mode = rali_mode
         self.total_images = total_images
-        self.batch_size = batch_size
         self.imgCount = 0
         self.frameCount = 9
         # self.origImageQueue = Queue.Queue()
@@ -26,7 +43,11 @@ class InferenceViewer(QtGui.QMainWindow):
         self.x = [0] 
         self.y = [0]
         self.augAccuracy = []
+        
         self.time = QTime.currentTime()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update())
+        self.timer.start(40)
 
         self.runState = False
         self.pauseState = False
@@ -36,6 +57,9 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.pen = pg.mkPen('w', width=4)
 
+        self.raliEngine = None
+        self.inferenceEngine = None
+
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
         self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
@@ -44,11 +68,10 @@ class InferenceViewer(QtGui.QMainWindow):
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
 
         self.initUI()
-
+        self.initializeEngines()
         self.show()
-        # self.timer = QTimer(self)
+
         # QtCore.QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("showImage()"))
-        # self.timer.timeout.connect(self.showImage)
         # self.timer.start(40)
 
     def initUI(self):
@@ -304,6 +327,24 @@ class InferenceViewer(QtGui.QMainWindow):
         if (curTime - self.lastTime > 0.1):
             self.augAccuracy[index].append(accuracy)
 
+    def initializeEngines(self):
+        #Step 2:Creating an object for inference. Input arguments come from user
+        self.inferenceEngine = modelInference(self.model_name, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
+                                            modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop)
+        
+        #Step 3: Does caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
+        #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels, multiplier/adder, input image size
+        inputImageDir, totalImages, imageValidation, classifier, labelNames, Ax, Mx, h_img, w_img = inference_object.setupInference()
+
+        #Step4: Setup Rali Data Loader. 
+        rali_batch_size = 1
+        loader = DataLoader(inputImageDir, rali_batch_size, int(modelBatchSize), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_img, w_img, raliMode, loop_parameter,
+                            TensorLayout.NCHW, False, Ax, Mx)
+
+
+        #Step 5: get correct list for augmentations
+        raliList = loader.get_rali_list(raliMode, int(modelBatchSize))
+
     def paintEvent(self, event):
         #Step 1: TODO: get all inputs from inference_control
         #get modelName,modelFormat,imageDir,modelLocation,label,hierarchy,imageVal,modelInputDims,modelOutputDims,modelBatchSize,outputDir,inputAdd,inputMultiply,verbose,fp16,replaceModel,loop & raliMode
@@ -313,7 +354,7 @@ class InferenceViewer(QtGui.QMainWindow):
         adatFlag = False
         
         #Step 2:Creating an object for inference. Input arguments come from user
-        inference_object = modelInference(modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
+        inference_object = modelInference(self.model_name, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
                                             modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop)
 
         #Step 3: Does caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
