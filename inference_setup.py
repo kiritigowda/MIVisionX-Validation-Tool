@@ -249,7 +249,7 @@ class modelInference():
 		print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 		sys.stdout = orig_stdout
 
-		return totalImages, imageValidation, classifier, labelNames
+		return self.inputImageDir, totalImages, imageValidation, classifier, labelNames, self.Ax, self.Mx, self.h_i, self.w_i
 
 	# process classification output function
 	def processClassificationOutput(modelOutput):#, labelNames):

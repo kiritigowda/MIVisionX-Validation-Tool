@@ -1,9 +1,14 @@
 import pyqtgraph as pg
+import cv2
+import numpy
+import numpy as np
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime
 from inference_setup import *
 from rali_setup import *
+from  rali_common import *
+from rali import *
 
 class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
@@ -300,4 +305,110 @@ class InferenceViewer(QtGui.QMainWindow):
             self.augAccuracy[index].append(accuracy)
 
     def paintEvent(self, event):
+        #Step 1: TODO: get all inputs from inference_control
+        #get modelName,modelFormat,imageDir,modelLocation,label,hierarchy,imageVal,modelInputDims,modelOutputDims,modelBatchSize,outputDir,inputAdd,inputMultiply,verbose,fp16,replaceModel,loop & raliMode
+        raliMode = 1
+        loop_parameter = True
+        augmentation = 0.3
+        adatFlag = False
         
+        #Step 2:Creating an object for inference. Input arguments come from user
+        inference_object = modelInference(modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
+                                            modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop)
+
+        #Step 3: Does caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
+        #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels, multiplier/adder, input image size
+        inputImageDir, totalImages, imageValidation, classifier, labelNames, Ax, Mx, h_img, w_img = inference_object.setupInference()
+
+        #Step4: Setup Rali Data Loader. 
+        rali_batch_size = 1
+        loader = DataLoader(inputImageDir, rali_batch_size, int(modelBatchSize), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_img, w_img, raliMode, loop_parameter,
+                            TensorLayout.NCHW, False, Ax, Mx)
+
+
+        #Step 5: get correct list for augmentations
+        raliList = loader.get_rali_list(raliMode, int(modelBatchSize))
+
+        #Step 6: get 64 augmentations for an image & update parameters for augmentation
+        image_batch, image_tensor = loader.get_next_augmentation()
+        loader.updateAugmentationParameter(augmentation)
+
+        frame = image_tensor
+        original_image = image_batch[0:h_i, 0:w_i]
+        cloned_image = np.copy(image_batch)
+
+        
+        #get image file name and ground truth
+        imageFileName = loader.get_input_name()
+        groundTruthIndex = loader.get_ground_truth()
+        groundTruthIndex = int(groundTruthIndex)
+
+        # draw box for original image and put label
+        groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+        text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+        text_off_x = (w_i/2) - (text_width/2)
+        text_off_y = h_i-7
+        box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+        cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+        cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+
+
+        #Step 7: call python inference. Returns output tensor with 1000 class probabilites
+        output = inference_object.inference(frame, classifier)
+
+        #Step 8: Process output for each of the 64 images
+        for i in range(loader.getOutputImageCount()):
+            topIndex, topProb = inference_object.processClassificationOutput(output)
+
+
+            correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
+            #create output dict for all the images
+            guiResults = {}
+            #to calculate FPS
+            avg_benchmark = 0.0
+            frameMsecs = 0.0
+            frameMsecsGUI = 0.0
+            totalFPS = 0.0
+            resultPerAugmentation = []
+            for iterator in range(int(modelBatchSize)):
+                resultPerAugmentation.append([0,0,0])
+            
+
+
+            #create output list for each image
+            augmentedResults = []
+
+            #process the output tensor
+            resultPerAugmentation, augmentedResults = inference_object.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
+                                                                                         topIndex, topProb, wrong, noGroundTruth, i)
+
+
+            augmentationText = raliList[i].split('+')
+            textCount = len(augmentationText)
+            for cnt in range(0,textCount):
+                currentText = augmentationText[cnt]
+                text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+                text_off_x = (w_i/2) - (text_width/2)
+                text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
+                box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+                cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+                cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
+
+            # put augmented image result
+            if augmentedResults[i] == 0:
+                cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+            elif augmentedResults[i] > 0  and augmentedResults[i] < 6:      
+                    cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
+        #Step 9: split image as needed
+        if int(modelBatchSize) == 64:
+                image_batch = np.vsplit(cloned_image, 16)
+                final_image_batch = np.hstack((image_batch))
+        elif int(modelBatchSize) == 16:
+            image_batch = np.vsplit(cloned_image, 4)
+            final_image_batch = np.hstack((image_batch))
+
+        #Step 10: adat generation
+        if adatFlag == False:
+            loader.generateADAT(modelName, hierarchy)
+            adatFlag = True
