@@ -934,7 +934,12 @@ if __name__ == '__main__':
 		if guiFlag:
 			viewer.displayFPS(totalFPS)
 		else:
-			print 'FPS: %d\n' % frameMsecs
+			if iteratorCount and iteratorCount%5==0:
+				#fps text file
+				fpsText = open(analyzerDir + "/fps.txt", "w")
+				fpsText.write(str(int(frameMsecs)))
+				fpsText.close()
+				print 'FPS: %d\n' % frameMsecs
 
 		iteratorCount += 1
 			
@@ -967,7 +972,7 @@ if __name__ == '__main__':
 
 		#outputHTMLFile = os.path.expanduser(adatOutputDir+'/'+modelName+'-ADAT-toolKit/index.html')
 		#os.system('firefox '+outputHTMLFile)
-	
+
 	if(verbosePrint):
 		print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
 		print("\nSUCCESS: Images Inferenced with the Model\n")
