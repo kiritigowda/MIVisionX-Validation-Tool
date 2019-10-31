@@ -22,7 +22,6 @@ class InferenceViewer(QtGui.QMainWindow):
         self.y = [0]
         self.augAccuracy = []
         self.time = QTime.currentTime()
-        self.lastTime = 0
 
         self.runState = False
         self.pauseState = False
@@ -53,8 +52,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
-        self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/filmStrip.png);}")
-        #self.verticalFrame.setStyleSheet(".QFrame {background-image: url(./data/images/Filmstrip-trans.png);}")
+        self.imagesFrame.setStyleSheet(".QFrame {border-width: 20px; border-image: url(./data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
@@ -183,13 +181,9 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            x = event.pos().x()
-            y = event.pos().y()
-            if self.aug_label.x() <= x and \
-                x < (self.aug_label.x() + self.aug_label.width()) and \
-                self.aug_label.y() <= y and \
-                y < (self.aug_label.y() + self.aug_label.height()):
-                index = self.calculateIndex(x, y)
+            mousePos = event.pos()
+            if self.aug_label.geometry().contains(mousePos):
+                index = self.calculateIndex(mousePos.x(), mousePos.y())
                 self.progIndex = index
             else:
                 self.progIndex = 0
