@@ -4,7 +4,7 @@ from PyQt4 import QtGui, uic
 
 class InferenceControl(QtGui.QMainWindow):
     def __init__(self, parent=None):
-        super(inference_control, self).__init__(parent)
+        super(InferenceControl, self).__init__(parent)
         self.runningState = False
         self.initUI()
 
@@ -188,26 +188,26 @@ class InferenceControl(QtGui.QMainWindow):
             self.run_pushButton.setStyleSheet("background-color: 0")
 
     def runConfig(self):
-        model_format = self.format_comboBox.currentText()
-        model_name = self.name_lineEdit.text()
-        model_location = self.file_lineEdit.text()
-        batch_size = self.batch_lineEdit.text()
+        model_format = (str)(self.format_comboBox.currentText())
+        model_name = (str)(self.name_lineEdit.text())
+        model_location = (str)(self.file_lineEdit.text())
+        batch_size = (str)(self.batch_lineEdit.text())
         rali_mode = self.mode_comboBox.currentIndex()
-        input_dims = '%s' % (self.idims_lineEdit.text())
-        output_dims = '%s' % (self.odims_lineEdit.text())
-        label = self.label_lineEdit.text()
-        output_dir = self.output_lineEdit.text()
-        image_dir = self.image_lineEdit.text()
-        image_val = self.val_lineEdit.text()
-        hierarchy = self.hier_lineEdit.text()
+        input_dims = (str)('%s' % (self.idims_lineEdit.text()))
+        output_dims = (str)('%s' % (self.odims_lineEdit.text()))
+        label = (str)(self.label_lineEdit.text())
+        output_dir = (str)(self.output_lineEdit.text())
+        image_dir = (str)(self.image_lineEdit.text())
+        image_val = (str)(self.val_lineEdit.text())
+        hierarchy = (str)(self.hier_lineEdit.text())
         if len(self.padd_lineEdit.text()) < 1:
             add = '[0,0,0]'
         else:
-            add = '[%s]' % (self.padd_lineEdit.text())
+            add = (str)('[%s]' % (self.padd_lineEdit.text()))
         if len(self.pmul_lineEdit.text()) < 1:
             multiply = '[1,1,1]'
         else:
-            multiply = '[%s]' % (self.pmul_lineEdit.text())
+            multiply = (str)('[%s]' % (self.pmul_lineEdit.text()))
         gui = 'yes' if self.gui_checkBox.isChecked() else 'no'
         fp16 = 'yes' if self.fp16_checkBox.isChecked() else 'no'
         replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
@@ -215,11 +215,10 @@ class InferenceControl(QtGui.QMainWindow):
         loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
 
         self.runningState = True
-        
-        viewer = inference_viewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, total_images)
-        viewer.show()
         self.close()
+
+        viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode)
 
     def closeEvent(self, event):
         if not self.runningState:

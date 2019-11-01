@@ -4,16 +4,16 @@ import numpy
 import numpy as np
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QPixmap
-from PyQt4.QtCore import QTime
+from PyQt4.QtCore import QTime, QTimer
 from inference_setup import *
-from rali_setup import *
+#from rali_setup import *
 from rali_common import *
 from rali import *
 
 class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, total_images, parent=None):
-        super(inference_viewer, self).__init__(parent)
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, parent=None):
+        super(InferenceViewer, self).__init__(parent)
 
         self.model_name = model_name
         self.model_format = model_format 
@@ -25,6 +25,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.input_dims = input_dims
         self.output_dims = output_dims
         self.batch_size = batch_size
+        self.batch_size_int = (int)(batch_size)
         self.output_dir = output_dir
         self.add = add
         self.multiply = multiply
@@ -33,7 +34,8 @@ class InferenceViewer(QtGui.QMainWindow):
         self.replace = replace
         self.loop = loop
         self.rali_mode = rali_mode
-        self.total_images = total_images
+        inputImageDir = os.path.expanduser(image_dir)
+        self.total_images = len(os.listdir(inputImageDir))
         self.imgCount = 0
         self.frameCount = 9
         # self.origImageQueue = Queue.Queue()
@@ -46,7 +48,7 @@ class InferenceViewer(QtGui.QMainWindow):
         
         self.time = QTime.currentTime()
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update())
+        #self.timer.timeout.connect(self.update)
         self.timer.start(40)
 
         self.runState = False
@@ -66,17 +68,16 @@ class InferenceViewer(QtGui.QMainWindow):
         self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
         self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
-
         self.initUI()
-        self.initializeEngines()
-        self.show()
+        self.initEngines()
+        #self.show()
 
         # QtCore.QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("showImage()"))
         # self.timer.start(40)
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        self.showMaximized()
+        #self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
@@ -85,7 +86,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.top1_progressBar.setStyleSheet("QProgressBar::chunk { background: green; }")
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
-        self.total_progressBar.setMaximum(self.total_images*self.batch_size)
+        self.total_progressBar.setMaximum(self.total_images*self.batch_size_int)
 
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
@@ -106,7 +107,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.verbose_checkBox.stateChanged.connect(self.showVerbose)
         self.dark_checkBox.setChecked(True)
 
-        for augmentation in range(self.batch_size):
+        for augmentation in range(self.batch_size_int):
             self.augAccuracy.append([0])
 
         self.showVerbose()
@@ -327,14 +328,14 @@ class InferenceViewer(QtGui.QMainWindow):
         if (curTime - self.lastTime > 0.1):
             self.augAccuracy[index].append(accuracy)
 
-    def initializeEngines(self):
+    def initEngines(self):
         #Step 2:Creating an object for inference. Input arguments come from user
-        self.inferenceEngine = modelInference(self.model_name, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-                                            modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop)
-        
+        self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
+                                                self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
+                                                self.replace, self.loop)
         #Step 3: Does caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
         #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels, multiplier/adder, input image size
-        inputImageDir, totalImages, imageValidation, classifier, labelNames, Ax, Mx, h_img, w_img = inference_object.setupInference()
+        inputImageDir, totalImages, imageValidation, classifier, labelNames, Ax, Mx, h_img, w_img = self.inferenceEngine.setupInference()
 
         #Step4: Setup Rali Data Loader. 
         rali_batch_size = 1

@@ -24,7 +24,7 @@ from inference_control import *
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	if len(sys.argv) == 1:
-		panel = inference_control()
+		panel = InferenceControl()
 		panel.show()
 		app.exec_()
 		# modelFormat = (str)(panel.model_format)
@@ -47,6 +47,7 @@ if __name__ == '__main__':
 		# loop = (str)(panel.loop)
 		# gui = (str)(panel.gui)
 	else:
+		print 'else'
 		# parser = argparse.ArgumentParser()
 		# parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
 		# parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
@@ -90,117 +91,117 @@ if __name__ == '__main__':
 		# loop = args.loop
 		# gui = args.gui
 
-	# set verbose print
-	if(verbose != 'no'):
-		verbosePrint = True
+	# # set verbose print
+	# if(verbose != 'no'):
+	# 	verbosePrint = True
 
-	# set fp16 inference turned on/off
-	if(fp16 != 'no'):
-		FP16inference = True
-	# set paths
-	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
-	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
-	setupDir = '~/.mivisionx-validation-tool'
-	analyzerDir = os.path.expanduser(setupDir)
-	modelDir = analyzerDir+'/'+modelName+'_dir'
-	nnirDir = modelDir+'/nnir-files'
-	openvxDir = modelDir+'/openvx-files'
-	modelBuildDir = modelDir+'/build'
-	adatOutputDir = os.path.expanduser(outputDir)
-	inputImageDir = os.path.expanduser(imageDir)
-	trainedModel = os.path.expanduser(modelLocation)
-	labelText = os.path.expanduser(label)
-	hierarchyText = os.path.expanduser(hierarchy)
-	imageValText = os.path.expanduser(imageVal)
-	pythonLib = modelBuildDir+'/libannpython.so'
-	weightsFile = openvxDir+'/weights.bin'
-	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
+	# # set fp16 inference turned on/off
+	# if(fp16 != 'no'):
+	# 	FP16inference = True
+	# # set paths
+	# modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
+	# ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
+	# setupDir = '~/.mivisionx-validation-tool'
+	# analyzerDir = os.path.expanduser(setupDir)
+	# modelDir = analyzerDir+'/'+modelName+'_dir'
+	# nnirDir = modelDir+'/nnir-files'
+	# openvxDir = modelDir+'/openvx-files'
+	# modelBuildDir = modelDir+'/build'
+	# adatOutputDir = os.path.expanduser(outputDir)
+	# inputImageDir = os.path.expanduser(imageDir)
+	# trainedModel = os.path.expanduser(modelLocation)
+	# labelText = os.path.expanduser(label)
+	# hierarchyText = os.path.expanduser(hierarchy)
+	# imageValText = os.path.expanduser(imageVal)
+	# pythonLib = modelBuildDir+'/libannpython.so'
+	# weightsFile = openvxDir+'/weights.bin'
+	# finalImageResultsFile = modelDir+'/imageResultsFile.csv'
 
-	#set ADAT Flag to generate ADAT only once
-	ADATFlag = False
+	# #set ADAT Flag to generate ADAT only once
+	# ADATFlag = False
 
-	#set GUI Flag
-	guiFlag = False
-	if gui == 'yes':
-		guiFlag = True
+	# #set GUI Flag
+	# guiFlag = False
+	# if gui == 'yes':
+	# 	guiFlag = True
 
-	#set loop parameter based on the user input
-	if loop == 'yes':
-		loop_parameter = True
-	else:
-		loop_parameter = False
+	# #set loop parameter based on the user input
+	# if loop == 'yes':
+	# 	loop_parameter = True
+	# else:
+	# 	loop_parameter = False
 
-	# get input & output dims
-	str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
-	c_i = int(str_c_i); h_i = int(str_h_i); w_i = int(str_w_i)
-	str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
-	c_o = int(str_c_o); h_o = int(str_h_o); w_o = int(str_w_o)
-	modelBatchSizeInt = int(modelBatchSize)
-	# input pre-processing values
-	Ax=[0,0,0]
-	if(inputAdd != ''):
-		Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
-	Mx=[1,1,1]
-	if(inputMultiply != ''):
-		Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
+	# # get input & output dims
+	# str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
+	# c_i = int(str_c_i); h_i = int(str_h_i); w_i = int(str_w_i)
+	# str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
+	# c_o = int(str_c_o); h_o = int(str_h_o); w_o = int(str_w_o)
+	# modelBatchSizeInt = int(modelBatchSize)
+	# # input pre-processing values
+	# Ax=[0,0,0]
+	# if(inputAdd != ''):
+	# 	Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
+	# Mx=[1,1,1]
+	# if(inputMultiply != ''):
+	# 	Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
 
-	# check pre-trained model
-	if(not os.path.isfile(trainedModel) and modelFormat != 'nnef' ):
-		print("\nPre-Trained Model not found, check argument --model\n")
-		quit()
+	# # check pre-trained model
+	# if(not os.path.isfile(trainedModel) and modelFormat != 'nnef' ):
+	# 	print("\nPre-Trained Model not found, check argument --model\n")
+	# 	quit()
 
-	# check for label file
-	if (not os.path.isfile(labelText)):
-		print("\nlabels.txt not found, check argument --label\n")
-		quit()
-	else:
-		fp = open(labelText, 'r')
-		#labelNames = fp.readlines()
-		labelNames = [x.strip('\n') for x in fp.readlines()]
-		fp.close()
+	# # check for label file
+	# if (not os.path.isfile(labelText)):
+	# 	print("\nlabels.txt not found, check argument --label\n")
+	# 	quit()
+	# else:
+	# 	fp = open(labelText, 'r')
+	# 	#labelNames = fp.readlines()
+	# 	labelNames = [x.strip('\n') for x in fp.readlines()]
+	# 	fp.close()
 
-	# MIVisionX setup
-	if(os.path.exists(analyzerDir)):
-		print("\nMIVisionX Validation Tool\n")
-		# replace old model or throw error
-		if(replaceModel == 'yes'):
-			os.system('rm -rf '+modelDir)
-		elif(os.path.exists(modelDir)):
-			print("OK: Model exists")
+	# # MIVisionX setup
+	# if(os.path.exists(analyzerDir)):
+	# 	print("\nMIVisionX Validation Tool\n")
+	# 	# replace old model or throw error
+	# 	if(replaceModel == 'yes'):
+	# 		os.system('rm -rf '+modelDir)
+	# 	elif(os.path.exists(modelDir)):
+	# 		print("OK: Model exists")
 
-	else:
-		print("\nMIVisionX Validation Tool Created\n")
-		os.system('(cd ; mkdir .mivisionx-validation-tool)')
-	# Setup Text File for Demo
-	if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
-		f = open(analyzerDir + "/setupFile.txt", "w")
-		f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
-		f.close()
-	else:
-		count = len(open(analyzerDir + "/setupFile.txt").readlines())
-		if count < 10:
-			with open(analyzerDir + "/setupFile.txt", "r") as fin:
-				data = fin.read().splitlines(True)
-				modelList = []
-				for i in range(len(data)):
-					if data[i] != '\n':
-						modelList.append(data[i].split(';')[1])
-				if modelName not in modelList:
-					f = open(analyzerDir + "/setupFile.txt", "a")
-					f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
-					f.close()
-		else:
-			with open(analyzerDir + "/setupFile.txt", "r") as fin:
-				data = fin.read().splitlines(True)
-				delModelName = data[0].split(';')[1]
-			delmodelPath = analyzerDir + '/' + delModelName + '_dir'
-			if(os.path.exists(delmodelPath)): 
-				os.system('rm -rf ' + delmodelPath)
-			with open(analyzerDir + "/setupFile.txt", "w") as fout:
-			    fout.writelines(data[1:])
-			with open(analyzerDir + "/setupFile.txt", "a") as fappend:
-				fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
-				fappend.close()
+	# else:
+	# 	print("\nMIVisionX Validation Tool Created\n")
+	# 	os.system('(cd ; mkdir .mivisionx-validation-tool)')
+	# # Setup Text File for Demo
+	# if (not os.path.isfile(analyzerDir + "/setupFile.txt")):
+	# 	f = open(analyzerDir + "/setupFile.txt", "w")
+	# 	f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+	# 	f.close()
+	# else:
+	# 	count = len(open(analyzerDir + "/setupFile.txt").readlines())
+	# 	if count < 10:
+	# 		with open(analyzerDir + "/setupFile.txt", "r") as fin:
+	# 			data = fin.read().splitlines(True)
+	# 			modelList = []
+	# 			for i in range(len(data)):
+	# 				if data[i] != '\n':
+	# 					modelList.append(data[i].split(';')[1])
+	# 			if modelName not in modelList:
+	# 				f = open(analyzerDir + "/setupFile.txt", "a")
+	# 				f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+	# 				f.close()
+	# 	else:
+	# 		with open(analyzerDir + "/setupFile.txt", "r") as fin:
+	# 			data = fin.read().splitlines(True)
+	# 			delModelName = data[0].split(';')[1]
+	# 		delmodelPath = analyzerDir + '/' + delModelName + '_dir'
+	# 		if(os.path.exists(delmodelPath)): 
+	# 			os.system('rm -rf ' + delmodelPath)
+	# 		with open(analyzerDir + "/setupFile.txt", "w") as fout:
+	# 		    fout.writelines(data[1:])
+	# 		with open(analyzerDir + "/setupFile.txt", "a") as fappend:
+	# 			fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+	# 			fappend.close()
 
 	# Compile Model and generate python .so files
 	if (replaceModel == 'yes' or not os.path.exists(modelDir)):

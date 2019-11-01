@@ -98,18 +98,18 @@ class DataLoader(RaliGraph):
 
 		#rali iterator 
 		self.tensor_format =tensor_layout
-        self.multiplier = multiplier
-        self.offset = offset
-        self.reverse_channels = reverse_channels
-        self.w = self.getOutputWidth()
-        self.h = self.getOutputHeight()
-        self.b = self.getBatchSize()
-        self.n = self.getOutputImageCount()
-        color_format = self.getOutputColorFormat()
-        self.p = (1 if color_format is ColorFormat.IMAGE_U8 else 3)
-        height = self.h*self.n
+		self.multiplier = multiplier
+		self.offset = offset
+		self.reverse_channels = reverse_channels
+		self.w = self.getOutputWidth()
+		self.h = self.getOutputHeight()
+		self.b = self.getBatchSize()
+		self.n = self.getOutputImageCount()
+		color_format = self.getOutputColorFormat()
+		self.p = (1 if color_format is ColorFormat.IMAGE_U8 else 3)
+		height = self.h*self.n
 		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
-        self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
+		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
 
 		if model_batch_size == 16:
 			if raliMode == 1:

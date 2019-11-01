@@ -74,10 +74,10 @@ class modelInference():
 		self.ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
 		self.setupDir = '~/.mivisionx-validation-tool'
 
-		self.analyzerDir = os.path.expanduser(setupDir)
-		self.modelDir = analyzerDir+'/'+modelName+'_dir'
-		self.inputImageDir = os.path.expanduser(imageDir)
-		self.trainedModel = os.path.expanduser(modelLocation)
+		self.analyzerDir = os.path.expanduser(self.setupDir)
+		self.modelDir = self.analyzerDir+'/'+modelName+'_dir'
+		self.inputImageDir = os.path.expanduser((str)(imageDir))
+		self.trainedModel = os.path.expanduser((str)(modelLocation))
 		self.labelText = os.path.expanduser(label)
 		self.hierarchyText = os.path.expanduser(hierarchy)
 		self.imageValtext = os.path.expanduser(imageVal)
@@ -101,16 +101,12 @@ class modelInference():
 			self.FP16inference = True
 
 		#set loop parameter based on user input
-		"""if loop == 'yes':ssifier, l
+		"""if loop == 'yes':
 			self.loop_parameter = True
 		else:
 			self.loop_parameter = False
 		"""
 		# get input & output dims
-		self.str_c_i, self.str_h_i, self.str_w_i = modelInputDims.split(',')
-		self.c_i = int(self.str_c_i); self.h_i = int(str_h_i); w_i = int(str_w_i)
-		self.str_c_o, self.str_h_o, self.str_w_o = modelOutputDims.split(',')
-		self.c_o = int(self.str_c_o); self.h_o = int(str_h_o); w_o = int(str_w_o)
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
 		self.Ax=[0,0,0]
@@ -127,7 +123,7 @@ class modelInference():
 			f.close()
 		else:
 			count = len(open(self.analyzerDir + "/setupFile.txt").readlines())
-			if count < 10:ssifier, l
+			if count < 10:
 				with open(self.analyzerDir + "/setupFile.txt", "r") as fin:
 					data = fin.read().splitlines(True)
 					modelList = []
