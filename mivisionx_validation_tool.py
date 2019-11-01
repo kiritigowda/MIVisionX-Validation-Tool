@@ -420,6 +420,7 @@ if __name__ == '__main__':
 		verbose = (str)(panel.verbose)
 		loop = (str)(panel.loop)
 		gui = (str)(panel.gui)
+		fps_file = ''
 	else:
 		parser = argparse.ArgumentParser()
 		parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
@@ -441,6 +442,7 @@ if __name__ == '__main__':
 		parser.add_argument('--verbose',			type=str, default='no',		help='verbose                   [optional - default:no]')
 		parser.add_argument('--loop',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
 		parser.add_argument('--gui',				type=str, default='yes',	help='verbose                   [optional - default:yes]')
+		parser.add_argument('--fps_file',			type=str, default='',		help='verbose                   			[optional]')
 		args = parser.parse_args()
 		
 		# get arguments
@@ -463,6 +465,7 @@ if __name__ == '__main__':
 		verbose = args.verbose
 		loop = args.loop
 		gui = args.gui
+		fps_file = args.fps_file
 
 	# set verbose print
 	if(verbose != 'no'):
@@ -489,6 +492,10 @@ if __name__ == '__main__':
 	pythonLib = modelBuildDir+'/libannpython.so'
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
+	if(fps_file != ''):
+		fps_fileName = str(analyzerDir +"/"+ fps_file + '.txt')
+	else:
+		fps_fileName = str(analyzerDir+"/fps.txt")
 
 	#set ADAT Flag to generate ADAT only once
 	ADATFlag = False
@@ -936,7 +943,7 @@ if __name__ == '__main__':
 		else:
 			if iteratorCount and iteratorCount%5==0:
 				#fps text file
-				fpsText = open(analyzerDir + "/fps.txt", "w")
+				fpsText = open(fps_fileName, "w")
 				fpsText.write(str(int(frameMsecs)))
 				fpsText.close()
 				print 'FPS: %d\n' % frameMsecs
