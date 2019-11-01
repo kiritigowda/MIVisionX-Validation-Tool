@@ -493,7 +493,7 @@ if __name__ == '__main__':
 	weightsFile = openvxDir+'/weights.bin'
 	finalImageResultsFile = modelDir+'/imageResultsFile.csv'
 	if(fps_file != ''):
-			fps_fileName = str(analyzerDir +"/"+ fps_file + '.txt')
+		fps_fileName = str(analyzerDir +"/"+ fps_file + '.txt')
 	else:
 		fps_fileName = str(analyzerDir+"/fps.txt")
 
