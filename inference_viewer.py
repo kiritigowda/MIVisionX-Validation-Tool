@@ -347,12 +347,11 @@ class InferenceViewer(QtGui.QMainWindow):
         # caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
         inputImageDir, totalImages, imageValidation, classifier, labelNames, Ax, Mx, h_img, w_img = self.inferenceEngine.setupInference()
 
-        print self.rali_mode
-
         # Setup Rali Data Loader. 
         rali_batch_size = 1
         self.raliEngine = DataLoader(inputImageDir, rali_batch_size, int(self.batch_size), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_img, w_img, self.rali_mode, self.loop, 
                                         TensorLayout.NCHW, False, Ax, Mx)
+        
         # get correct list for augmentations
         self.raliList = self.raliEngine.get_rali_list(self.rali_mode, int(self.batch_size))
         
@@ -360,32 +359,31 @@ class InferenceViewer(QtGui.QMainWindow):
 
         # update parameters for the augmentation & get 64 augmentations for an image
         augmentation = self.getIntensity()
-        image_batch, image_tensor = self.raliEngine.get_next_augmentation()
         self.raliEngine.updateAugmentationParameter(augmentation)
-    
 
-        frame = image_tensor
-        original_image = image_batch[0:h_i, 0:w_i]
-        cloned_image = np.copy(image_batch)
+        # image_batch, image_tensor = self.raliEngine.get_next_augmentation()
+        # frame = image_tensor
+        # original_image = image_batch[0:h_i, 0:w_i]
+        # cloned_image = np.copy(image_batch)
         
-        #get image file name and ground truth
-        imageFileName = self.raliEngine.get_input_name()
-        groundTruthIndex = self.raliEngine.get_ground_truth()
-        groundTruthIndex = int(groundTruthIndex)
+        # #get image file name and ground truth
+        # imageFileName = self.raliEngine.get_input_name()
+        # groundTruthIndex = self.raliEngine.get_ground_truth()
+        # groundTruthIndex = int(groundTruthIndex)
 
-        # draw box for original image and put label
-        groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-        text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-        text_off_x = (w_i/2) - (text_width/2)
-        text_off_y = h_i-7
-        box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-        cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-        cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+        # # draw box for original image and put label
+        # groundTruthLabel = labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+        # text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+        # text_off_x = (w_i/2) - (text_width/2)
+        # text_off_y = h_i-7
+        # box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+        # cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+        # cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
-        exit(1)
+        frame = []
         #Step 7: call python inference. Returns output tensor with 1000 class probabilites
         output = self.inferenceEngine.inference(frame, classifier)
-
+        exit(1)
         #Step 8: Process output for each of the 64 images
         for i in range(self.raliEngine.getOutputImageCount()):
             topIndex, topProb = self.inferenceEngine.processClassificationOutput(output)

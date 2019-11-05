@@ -221,7 +221,5 @@ class InferenceControl(QtGui.QMainWindow):
                                     batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo)
 
     def closeEvent(self, event):
-        print 'hi'
-    #     if not self.runningState:
-    #         print 'hi'
-    #         exit(0)
+        if not self.runningState:
+            exit(0)

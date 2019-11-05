@@ -202,7 +202,7 @@ class modelInference():
 					print("ERROR: Neural Network Format Not supported, use caffe/onnx/nnef in arugment --model_format")
 					quit()
 				# convert the model to FP16
-				if(FP16inference):
+				if(self.FP16inference):
 					os.system('(cd '+self.modelDir+'; python '+self.modelCompilerPath+'/nnir_update.py --convert-fp16 1 --fuse-ops 1 nnir-files nnir-files)')
 					print("\nModel Quantized to FP16\n")
 				# convert to openvx
