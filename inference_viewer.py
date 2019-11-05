@@ -56,6 +56,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.raliEngine = None
         self.inferenceEngine = None
+        self.raliList = []
 
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
@@ -68,14 +69,14 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.initUI()
         #self.show()
-
         self.initEngines()
+        self.run()
         
-        timer = QTimer()
+        updateTimer = QTimer()
         #QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("update()"))
 
-        timer.timeout.connect(self.update)
-        timer.start(40)
+        #updateTimer.timeout.connect(self.update)
+        updateTimer.start(40)
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
@@ -346,29 +347,30 @@ class InferenceViewer(QtGui.QMainWindow):
         # caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
         inputImageDir, totalImages, imageValidation, classifier, labelNames, Ax, Mx, h_img, w_img = self.inferenceEngine.setupInference()
 
+        print self.rali_mode
+
         # Setup Rali Data Loader. 
         rali_batch_size = 1
-        loader = DataLoader(inputImageDir, rali_batch_size, int(self.batch_size), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_img, w_img, self.rali_mode, self.loop,
-                            TensorLayout.NCHW, False, Ax, Mx)
-
+        self.raliEngine = DataLoader(inputImageDir, rali_batch_size, int(self.batch_size), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_img, w_img, self.rali_mode, self.loop, 
+                                        TensorLayout.NCHW, False, Ax, Mx)
         # get correct list for augmentations
-        raliList = loader.get_rali_list(self.rali_mode, int(self.batch_size))
+        self.raliList = self.raliEngine.get_rali_list(self.rali_mode, int(self.batch_size))
+        
+    def run(self):
 
-    def paintEvent(self, event):
-        print 'paintevent'
-        self.show()
-        #Step 6: get 64 augmentations for an image & update parameters for augmentation
-        image_batch, image_tensor = loader.get_next_augmentation()
-        loader.updateAugmentationParameter(augmentation)
+        # update parameters for the augmentation & get 64 augmentations for an image
+        augmentation = self.getIntensity()
+        image_batch, image_tensor = self.raliEngine.get_next_augmentation()
+        self.raliEngine.updateAugmentationParameter(augmentation)
+    
 
         frame = image_tensor
         original_image = image_batch[0:h_i, 0:w_i]
         cloned_image = np.copy(image_batch)
-
         
         #get image file name and ground truth
-        imageFileName = loader.get_input_name()
-        groundTruthIndex = loader.get_ground_truth()
+        imageFileName = self.raliEngine.get_input_name()
+        groundTruthIndex = self.raliEngine.get_ground_truth()
         groundTruthIndex = int(groundTruthIndex)
 
         # draw box for original image and put label
@@ -380,13 +382,13 @@ class InferenceViewer(QtGui.QMainWindow):
         cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
         cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
-
+        exit(1)
         #Step 7: call python inference. Returns output tensor with 1000 class probabilites
-        output = inference_object.inference(frame, classifier)
+        output = self.inferenceEngine.inference(frame, classifier)
 
         #Step 8: Process output for each of the 64 images
-        for i in range(loader.getOutputImageCount()):
-            topIndex, topProb = inference_object.processClassificationOutput(output)
+        for i in range(self.raliEngine.getOutputImageCount()):
+            topIndex, topProb = self.inferenceEngine.processClassificationOutput(output)
 
 
             correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
@@ -407,11 +409,11 @@ class InferenceViewer(QtGui.QMainWindow):
             augmentedResults = []
 
             #process the output tensor
-            resultPerAugmentation, augmentedResults = inference_object.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
+            resultPerAugmentation, augmentedResults = self.inferenceEngine.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
                                                                                          topIndex, topProb, wrong, noGroundTruth, i)
 
 
-            augmentationText = raliList[i].split('+')
+            augmentationText = self.raliList[i].split('+')
             textCount = len(augmentationText)
             for cnt in range(0,textCount):
                 currentText = augmentationText[cnt]
@@ -438,5 +440,5 @@ class InferenceViewer(QtGui.QMainWindow):
 
         #Step 10: adat generation
         if adatFlag == False:
-            loader.generateADAT(modelName, hierarchy)
+            self.raliEngine.generateADAT(modelName, hierarchy)
             adatFlag = True

@@ -18,15 +18,16 @@ import ctypes
 import cv2
 import time
 import numpy as np
+from PyQt4 import QtGui
 from inference_control import *
 
 # MIVisionX Classifier
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
-	if len(sys.argv) == 1:
-		panel = InferenceControl()
-		panel.show()
-		app.exec_()
+	panel = InferenceControl()
+	panel.show()
+	app.exec_()
+	#if len(sys.argv) == 1:
 		# modelFormat = (str)(panel.model_format)
 		# modelName = (str)(panel.model_name)
 		# modelLocation = (str)(panel.model)
@@ -46,8 +47,7 @@ if __name__ == '__main__':
 		# verbose = (str)(panel.verbose)
 		# loop = (str)(panel.loop)
 		# gui = (str)(panel.gui)
-	else:
-		print 'else'
+	#else:
 		# parser = argparse.ArgumentParser()
 		# parser.add_argument('--model_format',		type=str, required=True,	help='pre-trained model format, options:caffe/onnx/nnef [required]')
 		# parser.add_argument('--model_name',			type=str, required=True,	help='model name                             [required]')
@@ -603,4 +603,3 @@ if __name__ == '__main__':
 	# if(verbosePrint):
 	# 	print '%30s' % 'Average time for one image is ', str(avg_benchmark/raliNumberOfImages), 'ms\n'
 	# 	print("\nSUCCESS: Images Inferenced with the Model\n")
-

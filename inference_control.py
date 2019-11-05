@@ -192,7 +192,7 @@ class InferenceControl(QtGui.QMainWindow):
         model_name = (str)(self.name_lineEdit.text())
         model_location = (str)(self.file_lineEdit.text())
         batch_size = (str)(self.batch_lineEdit.text())
-        rali_mode = self.mode_comboBox.currentIndex()
+        rali_mode = self.mode_comboBox.currentIndex() + 1 
         input_dims = (str)('%s' % (self.idims_lineEdit.text()))
         output_dims = (str)('%s' % (self.odims_lineEdit.text()))
         label = (str)(self.label_lineEdit.text())
@@ -221,5 +221,7 @@ class InferenceControl(QtGui.QMainWindow):
                                     batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo)
 
     def closeEvent(self, event):
-        if not self.runningState:
-            exit(0)
+        print 'hi'
+    #     if not self.runningState:
+    #         print 'hi'
+    #         exit(0)

@@ -228,6 +228,9 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
 				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
 				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)	
+		
+		if self.build() != 0:
+			raise Exception('Failed to build the augmentation graph')
 
 	def get_input_name(self):
 		return self.jpg_img.name(0)
@@ -298,20 +301,19 @@ class DataLoader(RaliGraph):
 		self.degree_param.update(degree)
 		
 	def get_next_augmentation(self):
-
 		if self.getReaminingImageCount() <= 0:
 			#raise StopIteration
 			return -1
-
 		if self.run() != 0:
 			#raise StopIteration
 			return -1
-
 		self.copyToNPArray(self.out_image)
+		print '3- get next augmentation'
 		if(TensorLayout.NCHW == self.tensor_format):
 			self.loader.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 		else:
 			self.loader.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+		print '4- get next augmentation'			
 		return self.out_image , self.out_tensor
 
 	def get_rali_list(self, raliMode, model_batch_size):
