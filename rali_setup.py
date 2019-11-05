@@ -95,21 +95,6 @@ class DataLoader(RaliGraph):
 		#param for rotate
 		self.degree_param = RaliFloatParameter(0.0)
 
-		#rali iterator 
-		self.tensor_format =tensor_layout
-		self.multiplier = multiplier
-		self.offset = offset
-		self.reverse_channels = reverse_channels
-		self.w = self.getOutputWidth()
-		self.h = self.getOutputHeight()
-		self.b = self.getBatchSize()
-		self.n = self.getOutputImageCount()
-		color_format = self.getOutputColorFormat()
-		self.p = (1 if color_format is ColorFormat.IMAGE_U8 else 3)
-		height = self.h*self.n
-		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
-		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
-
 		#rali list of augmentation
 		self.rali_list = None
 
@@ -228,9 +213,23 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
 				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
 				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)	
-		
+		#rali iterator
 		if self.build() != 0:
 			raise Exception('Failed to build the augmentation graph')
+		self.tensor_format =tensor_layout
+		self.multiplier = multiplier
+		self.offset = offset
+		self.reverse_channels = reverse_channels
+		self.w = self.getOutputWidth()
+		self.h = self.getOutputHeight()
+		self.b = self.getBatchSize()
+		self.n = self.getOutputImageCount()
+		color_format = self.getOutputColorFormat()
+		self.p = (1 if color_format is ColorFormat.IMAGE_U8 else 3)
+		height = self.h*self.n
+		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
+		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
+
 
 	def get_input_name(self):
 		return self.jpg_img.name(0)
@@ -307,10 +306,10 @@ class DataLoader(RaliGraph):
 		if self.run() != 0:
 			#raise StopIteration
 			return -1
-		self.copyToNPArray(self.out_image)
 		print '3- get next augmentation'
+		self.copyToNPArray(self.out_image)
 		if(TensorLayout.NCHW == self.tensor_format):
-			self.loader.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+			self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 		else:
 			self.loader.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 		print '4- get next augmentation'			
