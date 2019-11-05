@@ -311,7 +311,7 @@ class DataLoader(RaliGraph):
 		if(TensorLayout.NCHW == self.tensor_format):
 			self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 		else:
-			self.loader.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 		print '4- get next augmentation'			
 		return self.out_image , self.out_tensor
 
