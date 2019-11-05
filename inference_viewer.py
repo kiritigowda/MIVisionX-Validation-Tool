@@ -9,7 +9,7 @@ from rali_setup import *
 
 class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, parent=None):
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo, parent=None):
         super(InferenceViewer, self).__init__(parent)
 
         self.model_name = model_name
@@ -35,6 +35,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.total_images = len(os.listdir(inputImageDir))
         self.imgCount = 0
         self.frameCount = 9
+        self.container_index = (int)(container_logo)
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
         
@@ -62,6 +63,9 @@ class InferenceViewer(QtGui.QMainWindow):
         self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
         self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
+        self.docker_pixmap = QPixmap("./data/images/Docker.png")
+        self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
+
         self.initUI()
         #self.show()
 
@@ -105,6 +109,13 @@ class InferenceViewer(QtGui.QMainWindow):
         self.verbose_checkBox.stateChanged.connect(self.showVerbose)
         self.dark_checkBox.setChecked(True)
 
+        if self.container_index == 1:
+            self.container_logo.setPixmap(self.docker_pixmap)
+        elif self.container_index == 2:
+            self.container_logo.setPixmap(self.singularity_pixmap)
+        else:
+            self.container_logo.hide()
+
         for augmentation in range(self.batch_size_int):
             self.augAccuracy.append([0])
 
@@ -117,7 +128,7 @@ class InferenceViewer(QtGui.QMainWindow):
         del self.y[:]
         self.y.append(0)
         del self.augAccuracy[:]
-        for augmentation in range(self.batch_size):
+        for augmentation in range(self.batch_size_int):
             self.augAccuracy.append([0])
 
         self.time = QTime.currentTime()

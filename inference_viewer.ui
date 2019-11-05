@@ -53,6 +53,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="container_logo">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="MIVisionX_logo">
         <property name="enabled">
          <bool>true</bool>

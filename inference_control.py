@@ -213,12 +213,12 @@ class InferenceControl(QtGui.QMainWindow):
         replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
         verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
         loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
-
+        container_logo = self.container_comboBox.currentIndex()
         self.runningState = True
         self.close()
 
         viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode)
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo)
 
     def closeEvent(self, event):
         if not self.runningState:
