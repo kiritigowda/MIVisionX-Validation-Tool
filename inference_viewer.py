@@ -345,7 +345,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def paintEvent(self, event):
         print 'paintevent'
-        
+        self.show()
         #Step 6: get 64 augmentations for an image & update parameters for augmentation
         image_batch, image_tensor = loader.get_next_augmentation()
         loader.updateAugmentationParameter(augmentation)
