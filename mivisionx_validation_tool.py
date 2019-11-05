@@ -244,14 +244,14 @@ class DataLoader(RaliGraph):
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
 				for i in range(15):
-					self.copy = self.copy(self.input, True)
+					self.copy_img = self.copy(self.input, True)
 
 			elif raliMode == 5:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
 				for i in range(15):
-					self.nop = self.nop(self.input, True)
+					self.nop_img = self.nop(self.input, True)
 
 		elif model_batch_size == 64:
 			if raliMode == 1:	        
@@ -299,14 +299,14 @@ class DataLoader(RaliGraph):
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
 				for i in range(63):
-					self.copy = self.copy(self.input, True)
+					self.copy_img = self.copy(self.input, True)
 
 			elif raliMode == 5:	
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
 
 				for i in range(63):
-					self.nop = self.nop(self.input, True)
+					self.nop_img = self.nop(self.input, True)
 
     def get_input_name(self):
         return self.jpg_img.name(0)
