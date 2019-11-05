@@ -135,7 +135,7 @@ raliList_mode4_16 = ['original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original']
-raliList_mode5_16 = ['nop', 'nop', 'nop', 'nop',
+raliList_mode5_16 = ['original', 'nop', 'nop', 'nop',
 					'nop', 'nop', 'nop', 'nop',
 					'nop', 'nop', 'nop', 'nop',
 					'nop', 'nop', 'nop', 'nop']
