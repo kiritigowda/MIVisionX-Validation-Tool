@@ -7,7 +7,6 @@ from rali import *
 from rali_image_iterator import *
 from rali_common import *
 
-
 #batch size = 64
 raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
@@ -73,8 +72,8 @@ raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain',
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
-    def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter,
-    			 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0]):
+	def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter,
+				 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0]):
 		RaliGraph.__init__(self, rali_batch_size, affinity)
 		self.validation_dict = {}
 		self.process_validation(image_validation)
@@ -111,11 +110,14 @@ class DataLoader(RaliGraph):
 		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
 		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
 
+		#rali list of augmentation
+		self.rali_list = None
+
 		if model_batch_size == 16:
 			if raliMode == 1:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, True)
-		        
+
 				self.warped = self.warpAffine(self.input,True)
 
 				self.contrast_img = self.contrast(self.input,True, self.min_param, self.max_param)
@@ -187,7 +189,7 @@ class DataLoader(RaliGraph):
 
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
 		elif model_batch_size == 64:
-			if raliMode == 1:	        
+			if raliMode == 1:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
@@ -227,20 +229,20 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
 				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)	
 
-    def get_input_name(self):
-        return self.jpg_img.name(0)
+	def get_input_name(self):
+		return self.jpg_img.name(0)
 
-    def process_validation(self, validation_list):
+	def process_validation(self, validation_list):
 		for i in range(len(validation_list)):
 			name, groundTruthIndex = validation_list[i].decode("utf-8").split(' ')
 			self.validation_dict[name] = groundTruthIndex
 
-    def get_ground_truth(self):
+	def get_ground_truth(self):
 		return self.validation_dict[self.get_input_name()]
 
-    def setof16_mode1(self, input_image, h_img, w_img):
+	def setof16_mode1(self, input_image, h_img, w_img):
 		self.resized_image = self.resize(input_image, h_img, w_img, True)
-        
+
 		self.warped = self.warpAffine(input_image,True)
 
 		self.contrast_img = self.contrast(input_image,True, self.min_param, self.max_param)
@@ -263,7 +265,7 @@ class DataLoader(RaliGraph):
 		
 		self.blend_img = self.blend(input_image, self.contrast_img, True)
 
-    def updateAugmentationParameter(self, augmentation):
+	def updateAugmentationParameter(self, augmentation):
 		#values for contrast
 		min = int(augmentation*100)
 		max = 150 + int((1-augmentation)*100)
@@ -294,39 +296,38 @@ class DataLoader(RaliGraph):
 		#values for rotation
 		degree = augmentation * 180.0
 		self.degree_param.update(degree)
-
+		
 	def get_next_augmentation(self):
+
 		if self.getReaminingImageCount() <= 0:
-            #raise StopIteration
-            return -1
+			#raise StopIteration
+			return -1
 
-        if self.run() != 0:
-            #raise StopIteration
-            return -1
+		if self.run() != 0:
+			#raise StopIteration
+			return -1
 
-        self.copyToNPArray(self.out_image)
-        if(TensorLayout.NCHW == self.tensor_format):
-            self.loader.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
-        else:
-            self.loader.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+		self.copyToNPArray(self.out_image)
+		if(TensorLayout.NCHW == self.tensor_format):
+			self.loader.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+		else:
+			self.loader.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+		return self.out_image , self.out_tensor
 
-        return self.out_image , self.out_tensor
-
-
-    def get_rali_list(self, raliMode, model_batch_size):
-    	if model_batch_size == 16:
+	def get_rali_list(self, raliMode, model_batch_size):
+		if model_batch_size == 16:
 			if raliMode == 1:
-				raliList = raliList_mode1_16
+				self.rali_list = raliList_mode1_16
 			elif raliMode == 2:
-				raliList = raliList_mode2_16
+				self.rali_list = raliList_mode2_16
 			elif raliMode == 3:
-				raliList = raliList_mode3_16
+				self.rali_list = raliList_mode3_16
 		elif model_batch_size == 64:
 			if raliMode == 1:
-				raliList = raliList_mode1_64
+				self.rali_list = raliList_mode1_64
 			elif raliMode == 2:
-				raliList = raliList_mode2_64
+				self.rali_list = raliList_mode2_64
 			elif raliMode == 3:
-				raliList = raliList_mode3_64
+				self.rali_list = raliList_mode3_64
 				
-		return raliList
+		return self.rali_list

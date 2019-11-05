@@ -1,6 +1,6 @@
 import os
-from inference_viewer import *
 from PyQt4 import QtGui, uic
+from inference_viewer import *
 
 class InferenceControl(QtGui.QMainWindow):
     def __init__(self, parent=None):

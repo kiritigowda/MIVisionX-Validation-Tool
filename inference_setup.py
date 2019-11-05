@@ -1,7 +1,6 @@
 import sys
 import os
 import ctypes
-import numpy
 import numpy as np
 from numpy.ctypeslib import ndpointer
 
@@ -61,7 +60,7 @@ class annieObjectWrapper():
 	def classify(self, img_tensor):
 		# create output.f32 buffer
 		out_buf = bytearray(self.outputDim[0]*self.outputDim[1]*self.outputDim[2]*self.outputDim[3]*4)
-		out = np.frombuffer(out_buf, dtype=numpy.float32)
+		out = np.frombuffer(out_buf, dtype=np.float32)
 		# run inference & receive output
 		output = self.runInference(img_tensor, out)
 		return output
@@ -80,18 +79,22 @@ class modelInference():
 		self.trainedModel = os.path.expanduser((str)(modelLocation))
 		self.labelText = os.path.expanduser(label)
 		self.hierarchyText = os.path.expanduser(hierarchy)
-		self.imageValtext = os.path.expanduser(imageVal)
+		self.imageValText = os.path.expanduser(imageVal)
 		self.adatOutputDir = os.path.expanduser(outputDir)
-
 		self.nnirDir = self.modelDir+'/nnir-files'
 		self.openvxDir = self.modelDir+'/openvx-files'
 		self.modelBuildDir = self.modelDir+'/build'
 		self.pythonLib = self.modelBuildDir+'/libannpython.so'
 		self.weightsFile = self.openvxDir+'/weights.bin'
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
-
+		
+		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
+		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
+		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
+		self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
 		self.verbosePrint = False
 		self.FP16inference = False
+ 
 		# set verbose print
 		if(verbose != 'no'):
 			self.verbosePrint = True
@@ -153,7 +156,7 @@ class modelInference():
 		self.modelOutputDims = modelOutputDims
 		self.imageVal = imageVal
 
-	def setupInference():
+	def setupInference(self): #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels, multiplier/adder, input image size
 		# check pre-trained model
 		if(not os.path.isfile(self.trainedModel) and self.modelFormat != 'nnef' ):
 			print("\nPre-Trained Model not found, check argument --model\n")
@@ -216,14 +219,13 @@ class modelInference():
 					print("ERROR: Converting NNIR to OpenVX Failed")
 					quit()
 
-		os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+		#os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 		print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 		# create inference classifier
 		classifier = annieObjectWrapper(self.pythonLib, self.weightsFile)
 
 		# check for image val text
-		#totalImages = 0;
 		if(self.imageVal != ''):
 			if (not os.path.isfile(self.imageValText)):
 				print("\nImage Validation Text not found, check argument --image_val\n")
@@ -232,7 +234,6 @@ class modelInference():
 				fp = open(self.imageValText, 'r')
 				imageValidation = fp.readlines()
 				fp.close()
-				#totalImages = len(imageValidation)
 		else:
 			print("\nFlow without Image Validation Text not implemented, pass argument --image_val\n")
 			quit()
@@ -244,7 +245,6 @@ class modelInference():
 		sys.stdout = open(self.finalImageResultsFile,'w')	
 		print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 		sys.stdout = orig_stdout
-
 		return self.inputImageDir, totalImages, imageValidation, classifier, labelNames, self.Ax, self.Mx, self.h_i, self.w_i
 
 	# process classification output function
