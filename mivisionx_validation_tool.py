@@ -420,6 +420,7 @@ if __name__ == '__main__':
 		verbose = (str)(panel.verbose)
 		loop = (str)(panel.loop)
 		gui = (str)(panel.gui)
+		container_logo = panel.container_logo
 		fps_file = ''
 	else:
 		parser = argparse.ArgumentParser()
@@ -678,7 +679,7 @@ if __name__ == '__main__':
 
 
 	if guiFlag:
-		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
+		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt, container_logo)
 		viewer.startView()
 
 	#image_tensor has the input tensor required for inference
