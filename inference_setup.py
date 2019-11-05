@@ -87,7 +87,7 @@ class modelInference():
 		self.pythonLib = self.modelBuildDir+'/libannpython.so'
 		self.weightsFile = self.openvxDir+'/weights.bin'
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
-		
+		self.modelBatchSize = modelBatchSize
 		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
@@ -206,7 +206,7 @@ class modelInference():
 					os.system('(cd '+self.modelDir+'; python '+self.modelCompilerPath+'/nnir_update.py --convert-fp16 1 --fuse-ops 1 nnir-files nnir-files)')
 					print("\nModel Quantized to FP16\n")
 				# convert to openvx
-				if(os.path.exists(nnirDir)):
+				if(os.path.exists(self.nnirDir)):
 					os.system('(cd '+self.modelDir+'; python '+self.modelCompilerPath+'/nnir_to_openvx.py nnir-files openvx-files)')
 				else:
 					print("ERROR: Converting Pre-Trained model to NNIR Failed")
@@ -219,7 +219,7 @@ class modelInference():
 					print("ERROR: Converting NNIR to OpenVX Failed")
 					quit()
 
-		#os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+		os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 		print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 		# create inference classifier
