@@ -85,6 +85,39 @@ raliList_mode3_64 = ['original', 'warpAffine', 'contrast', 'rain',
 			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
 			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
 			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend']
+raliList_mode4_64 = ['original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original']
+raliList_mode5_64 = ['nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop']
+
 #batch size = 16
 raliList_mode1_16 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
@@ -98,6 +131,14 @@ raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain',
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'vignette+snow', 'pixelate', 'gamma',
 			'SnPNoise+gamma', 'rotate', 'jitter+pixelate', 'blend']
+raliList_mode4_16 = ['original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original']
+raliList_mode5_16 = ['nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop']
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
@@ -198,6 +239,20 @@ class DataLoader(RaliGraph):
 				self.jitter_img = self.jitter(self.pixelate_img, True)
 
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
+			elif raliMode == 4:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(15):
+					self.copy = self.copy(self.input, True)
+
+			elif raliMode == 5:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(15):
+					self.nop = self.nop(self.input, True)
+
 		elif model_batch_size == 64:
 			if raliMode == 1:	        
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
@@ -237,7 +292,21 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.input, h_img, w_img)
 				self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
 				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
-				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)	
+				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)
+
+			elif raliMode == 4:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(63):
+					self.copy = self.copy(self.input, True)
+
+			elif raliMode == 5:	
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(63):
+					self.nop = self.nop(self.input, True)
 
     def get_input_name(self):
         return self.jpg_img.name(0)
@@ -668,6 +737,10 @@ if __name__ == '__main__':
 			raliList = raliList_mode2_16
 		elif raliMode == 3:
 			raliList = raliList_mode3_16
+		elif raliMode == 4:
+			raliList = raliList_mode4_16
+		elif raliMode == 5:
+			raliList = raliList_mode5_16
 	elif modelBatchSizeInt == 64:
 		if raliMode == 1:
 			raliList = raliList_mode1_64
@@ -675,6 +748,11 @@ if __name__ == '__main__':
 			raliList = raliList_mode2_64
 		elif raliMode == 3:
 			raliList = raliList_mode3_64
+		elif raliMode == 4:
+			raliList = raliList_mode4_64
+		elif raliMode == 5:
+			raliList = raliList_mode5_64
+
 
 
 	if guiFlag:
