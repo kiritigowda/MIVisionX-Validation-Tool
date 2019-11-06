@@ -306,13 +306,11 @@ class DataLoader(RaliGraph):
 		if self.run() != 0:
 			#raise StopIteration
 			return -1
-		print '3- get next augmentation'
 		self.copyToNPArray(self.out_image)
 		if(TensorLayout.NCHW == self.tensor_format):
 			self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
 		else:
 			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
-		print '4- get next augmentation'			
 		return self.out_image , self.out_tensor
 
 	def get_rali_list(self, raliMode, model_batch_size):

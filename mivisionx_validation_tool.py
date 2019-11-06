@@ -15,8 +15,6 @@ sys.path.append('/opt/rocm/mivisionx/rali/python/')
 import os
 import argparse
 import ctypes
-import cv2
-import time
 import numpy as np
 from PyQt4 import QtGui
 from inference_control import *

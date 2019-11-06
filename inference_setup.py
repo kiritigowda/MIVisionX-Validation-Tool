@@ -1,6 +1,7 @@
 import sys
 import os
 import ctypes
+import time
 import numpy as np
 from numpy.ctypeslib import ndpointer
 
@@ -88,13 +89,9 @@ class modelInference():
 		self.weightsFile = self.openvxDir+'/weights.bin'
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
 		self.modelBatchSize = modelBatchSize
-		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
-		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
-		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
-		self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
 		self.verbosePrint = False
 		self.FP16inference = False
- 
+		self.classifier = None
 		# set verbose print
 		if(verbose != 'no'):
 			self.verbosePrint = True
@@ -112,17 +109,17 @@ class modelInference():
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
-		self.Ax=[0,0,0]
+		Ax=[0,0,0]
 		if(inputAdd != ''):
-			self.Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
-		self.Mx=[1,1,1]
+			Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
+		Mx=[1,1,1]
 		if(inputMultiply != ''):
-			self.Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
+			Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
 
 		# Setup Text File for Demo
 		if (not os.path.isfile(self.analyzerDir + "/setupFile.txt")):
 			f = open(self.analyzerDir + "/setupFile.txt", "w")
-			f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+			f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 			f.close()
 		else:
 			count = len(open(self.analyzerDir + "/setupFile.txt").readlines())
@@ -135,7 +132,7 @@ class modelInference():
 							modelList.append(data[i].split(';')[1])
 					if modelName not in modelList:
 						f = open(self.analyzerDir + "/setupFile.txt", "a")
-						f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+						f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 						f.close()
 			else:
 				with open(self.analyzerDir + "/setupFile.txt", "r") as fin:
@@ -147,7 +144,7 @@ class modelInference():
 				with open(self.analyzerDir + "/setupFile.txt", "w") as fout:
 				    fout.writelines(data[1:])
 				with open(self.analyzerDir + "/setupFile.txt", "a") as fappend:
-					fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+					fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 					fappend.close()
 
 		self.replaceModel = replaceModel
@@ -156,7 +153,7 @@ class modelInference():
 		self.modelOutputDims = modelOutputDims
 		self.imageVal = imageVal
 
-	def setupInference(self): #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels, multiplier/adder, input image size
+	def setupInference(self): #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels
 		# check pre-trained model
 		if(not os.path.isfile(self.trainedModel) and self.modelFormat != 'nnef' ):
 			print("\nPre-Trained Model not found, check argument --model\n")
@@ -223,7 +220,7 @@ class modelInference():
 		print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 		# create inference classifier
-		classifier = annieObjectWrapper(self.pythonLib, self.weightsFile)
+		self.classifier = annieObjectWrapper(self.pythonLib, self.weightsFile)
 
 		# check for image val text
 		if(self.imageVal != ''):
@@ -245,10 +242,10 @@ class modelInference():
 		sys.stdout = open(self.finalImageResultsFile,'w')	
 		print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
 		sys.stdout = orig_stdout
-		return self.inputImageDir, totalImages, imageValidation, classifier, labelNames, self.Ax, self.Mx, self.h_i, self.w_i
+		return self.inputImageDir, totalImages, imageValidation, labelNames
 
 	# process classification output function
-	def processClassificationOutput(modelOutput):#, labelNames):
+	def processClassificationOutput(self, modelOutput):#, labelNames):
 		# post process output file
 		start = time.time()
 		softmaxOutput = np.float32(modelOutput)
@@ -267,11 +264,11 @@ class modelInference():
 
 		return topIndex, topProb
 
-	def inference(frame, classifier):
-		output = classifier.classify(frame)
+	def inference(self, frame):
+		output = self.classifier.classify(frame)
 		return output
 
-	def processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex, topIndex, topProb, wrong, noGroundTruth, i):
+	def processOutput(self, correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex, topIndex, topProb, wrong, noGroundTruth, i):
 		start = time.time()
 		sys.stdout = open(self.finalImageResultsFile,'a')
 		print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
