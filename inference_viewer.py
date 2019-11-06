@@ -4,7 +4,7 @@ from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime
 
 class inference_viewer(QtGui.QMainWindow):
-    def __init__(self, model_name, rali_mode, total_images, batch_size, parent=None):
+    def __init__(self, model_name, rali_mode, total_images, batch_size, container_logo, parent=None):
         super(inference_viewer, self).__init__(parent)
         self.model_name = model_name
         self.rali_mode = rali_mode
@@ -12,6 +12,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.batch_size = batch_size
         self.imgCount = 0
         self.frameCount = 9
+        self.container_index = (int)(container_logo)
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
         
@@ -35,6 +36,8 @@ class inference_viewer(QtGui.QMainWindow):
         self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
         self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
+        self.docker_pixmap = QPixmap("./data/images/Docker.png")
+        self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
 
         self.initUI()
 
@@ -75,6 +78,13 @@ class inference_viewer(QtGui.QMainWindow):
         self.dark_checkBox.stateChanged.connect(self.setBackground)
         self.verbose_checkBox.stateChanged.connect(self.showVerbose)
         self.dark_checkBox.setChecked(True)
+
+        if self.container_index == 1:
+            self.container_logo.setPixmap(self.docker_pixmap)
+        elif self.container_index == 2:
+            self.container_logo.setPixmap(self.singularity_pixmap)
+        else:
+            self.container_logo.hide()
 
         for augmentation in range(self.batch_size):
             self.augAccuracy.append([0])

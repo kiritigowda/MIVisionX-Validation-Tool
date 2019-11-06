@@ -230,6 +230,7 @@ class inference_control(QtGui.QMainWindow):
         self.replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
         self.verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
         self.loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
+        self.container_logo = self.container_comboBox.currentIndex()
         self.runningState = True
         self.close()
 
