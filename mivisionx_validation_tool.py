@@ -467,6 +467,7 @@ if __name__ == '__main__':
 		loop = args.loop
 		gui = args.gui
 		fps_file = args.fps_file
+		container_logo = 0
 
 	# set verbose print
 	if(verbose != 'no'):
