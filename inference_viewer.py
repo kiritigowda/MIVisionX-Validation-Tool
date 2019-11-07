@@ -79,14 +79,16 @@ class InferenceViewer(QtGui.QMainWindow):
         self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
 
         self.initUI()
-        #self.show()
+        self.show()
         self.initEngines()
-        self.run()
+        self.paintFrame()
+        #self.run()
         
         updateTimer = QTimer()
         #QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("update()"))
-
         #updateTimer.timeout.connect(self.update)
+        QTimer.connect(updateTimer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("paintFrame()"))
+        #updateTimer.timeout.connect(self.paintFrame)
         updateTimer.start(40)
 
     def initUI(self):
@@ -365,7 +367,11 @@ class InferenceViewer(QtGui.QMainWindow):
         
         # get correct list for augmentations
         self.raliList = self.raliEngine.get_rali_list(self.rali_mode, int(self.batch_size))
-        
+    
+    def paintFrame(self):
+        image = cv2.imread('/home/hansel/Hansel/demoDataSet/resized/resized-9506-224x224/image_0000.JPEG')
+        self.showImage(image, 224, 224)
+    
     def run(self):
 
         # update parameters for the augmentation & get 64 augmentations for an image
@@ -393,7 +399,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
         #Step 7: call python inference. Returns output tensor with 1000 class probabilites
         output = self.inferenceEngine.inference(frame)
-        
+
         #Step 8: Process output for each of the 64 images
         for i in range(self.raliEngine.getOutputImageCount()):
             topIndex, topProb = self.inferenceEngine.processClassificationOutput(output)
@@ -444,5 +450,5 @@ class InferenceViewer(QtGui.QMainWindow):
 
         #Step 10: adat generation
         if adatFlag == False:
-            self.raliEngine.generateADAT(modelName, hierarchy)
+            self.inferenceEngine.generateADAT(modelName, hierarchy)
             adatFlag = True
