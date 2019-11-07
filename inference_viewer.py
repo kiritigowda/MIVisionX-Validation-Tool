@@ -65,10 +65,10 @@ class inference_viewer(QtGui.QMainWindow):
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
         self.graph.setYRange(0, 100, padding=0)
-        self.graph.addLegend()
+        self.graph.addLegend(size=(0.5,0.5), offset=(320,10))
         pg.setConfigOptions(antialias=True)
-        self.totalCurve = self.graph.plot(pen=self.pen, name='Total Accuracy')
-        self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4), name = "Accuracy for augmented image")
+        self.totalCurve = self.graph.plot(pen=self.pen, name='Total')
+        self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4), name = "Augmented Image")
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
         self.graph.setMaximumHeight(300)
@@ -201,6 +201,7 @@ class inference_viewer(QtGui.QMainWindow):
             
             self.totalCurve.clear()
             self.augCurve.clear()
+            self.graph.removeLegend()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
