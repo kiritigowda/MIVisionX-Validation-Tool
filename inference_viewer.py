@@ -252,10 +252,12 @@ class inference_viewer(QtGui.QMainWindow):
             self.dataset_label.show()
             self.fps_label.show()
             self.fps_lcdNumber.show()
+            self.graph.plotItem.legend.show()
         else:
             self.dataset_label.hide()
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
+            self.graph.plotItem.legend.hide()
         
     def displayFPS(self, fps):
         self.fps_lcdNumber.display(fps)

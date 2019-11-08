@@ -475,7 +475,9 @@ if __name__ == '__main__':
 
 	# set fp16 inference turned on/off
 	if(fp16 != 'no'):
-		FP16inference = True
+		#FP16inference = True
+		print 'FP16 not supported in current version'
+
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
 	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
