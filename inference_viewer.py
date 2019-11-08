@@ -201,7 +201,6 @@ class inference_viewer(QtGui.QMainWindow):
             
             self.totalCurve.clear()
             self.augCurve.clear()
-            self.graph.removeLegend()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
