@@ -22,6 +22,7 @@ import numpy as np
 from numpy.ctypeslib import ndpointer
 from rali import *
 from rali_image_iterator import *
+from  rali_common import *
 from inference_control import *
 from inference_viewer import *
 
@@ -420,7 +421,7 @@ class annieObjectWrapper():
 	def __del__(self):
 		self.api.annReleaseInference(self.hdl)
 
-	def runInference(self, img_tensor, out):
+	def runInference(self, img_tensor, out, FP16inference):
 		# copy input f32 to inference input
 		status = self.api.annCopyToInferenceInput(self.hdl, np.ascontiguousarray(img_tensor, dtype=np.float32), img_tensor.nbytes, 0)
 		if(status):
@@ -433,14 +434,18 @@ class annieObjectWrapper():
 		status = self.api.annCopyFromInferenceOutput(self.hdl, np.ascontiguousarray(out, dtype=np.float32), out.nbytes)
 		if(status):
 			print('ERROR: annCopyFromInferenceOutput Failed')
-		return out
 
-	def classify(self, img_tensor):
+		if FP16inference:
+			return out.astype(np.float16)
+		else:
+			return out
+	
+	def classify(self, img_tensor, FP16inference):
 		# create output.f32 buffer
 		out_buf = bytearray(self.outputDim[0]*self.outputDim[1]*self.outputDim[2]*self.outputDim[3]*4)
 		out = np.frombuffer(out_buf, dtype=numpy.float32)
 		# run inference & receive output
-		output = self.runInference(img_tensor, out)
+		output = self.runInference(img_tensor, out, FP16inference)
 		return output
 
 # process classification output function
@@ -541,8 +546,11 @@ if __name__ == '__main__':
 		verbosePrint = True
 
 	# set fp16 inference turned on/off
+	tensor_dtype = TensorDataType.FLOAT32
 	if(fp16 != 'no'):
 		FP16inference = True
+		tensor_dtype = TensorDataType.FLOAT16
+
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
 	ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
@@ -671,7 +679,7 @@ if __name__ == '__main__':
 				quit()
 			# convert the model to FP16
 			if(FP16inference):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --convert-fp16 1 --fuse-ops 1 nnir-files nnir-files)')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --convert-fp16 1 nnir-files nnir-files)')
 				print("\nModel Quantized to FP16\n")
 			# convert to openvx
 			if(os.path.exists(nnirDir)):
@@ -720,7 +728,7 @@ if __name__ == '__main__':
 	rali_batch_size = 1
 	start_rali = time.time()
 	loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode, loop_parameter)
-	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax, tensor_dtype=tensor_dtype)
 	raliNumberOfImages = imageIterator.imageCount()
 	end_rali = time.time()
 	if (verbosePrint):
@@ -837,7 +845,7 @@ if __name__ == '__main__':
 
 		# run inference
 		start = time.time()
-		output = classifier.classify(frame)
+		output = classifier.classify(frame, FP16inference)
 		end = time.time()
 		msFrame += (end - start)*1000
 		if(verbosePrint):
