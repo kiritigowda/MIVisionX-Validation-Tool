@@ -4,6 +4,7 @@ import ctypes
 import time
 import numpy as np
 import cv2
+import Queue
 from numpy.ctypeslib import ndpointer
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtCore import pyqtSignal
@@ -73,7 +74,7 @@ class annieObjectWrapper():
 
 class modelInference(QtCore.QObject):
 	def __init__(self, modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, parent=None):
+				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, parent=None):
 
 		super(modelInference, self).__init__(parent)
 		self.modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
@@ -102,6 +103,8 @@ class modelInference(QtCore.QObject):
 		self.labelNames = []
 		self.raliEngine = None
 		self.rali_mode = rali_mode
+		self.origQueue = origQueue
+		self.augQueue = augQueue
 		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
@@ -295,83 +298,88 @@ class modelInference(QtCore.QObject):
 		return output
 
 	def runInference(self):
-		image_batch, image_tensor = self.raliEngine.get_next_augmentation()
-		frame = image_tensor
-		original_image = image_batch[0:self.h_i, 0:self.w_i]
-		cloned_image = np.copy(image_batch)
+		while True:
+			image_batch, image_tensor = self.raliEngine.get_next_augmentation()
+			frame = image_tensor
+			original_image = image_batch[0:self.h_i, 0:self.w_i]
+			cloned_image = np.copy(image_batch)
 
-		#get image file name and ground truth
-		
-		imageFileName = self.raliEngine.get_input_name()
-		groundTruthIndex = self.raliEngine.get_ground_truth()
-		groundTruthIndex = int(groundTruthIndex)
-		groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-		frame = image_tensor
-		original_image = image_batch[0:self.h_i, 0:self.w_i]
-		cloned_image = np.copy(image_batch)
-		text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-		text_off_x = (self.w_i/2) - (text_width/2)
-		text_off_y = self.h_i-7
-		box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-		cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-		cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
-
-        #Step 7: call python inference. Returns output tensor with 1000 class probabilites
-		output = self.inference(frame)
-        #Step 8: Process output for each of the 64 images
-		for i in range(self.modelBatchSizeInt):
-			topIndex, topProb = self.processClassificationOutput(output)
-
-			correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-			#create output dict for all the images
-			guiResults = {}
-			#to calculate FPS
-			avg_benchmark = 0.0
-			frameMsecs = 0.0
-			frameMsecsGUI = 0.0
-			totalFPS = 0.0
-			resultPerAugmentation = []
-			for iterator in range(self.modelBatchSizeInt):
-				resultPerAugmentation.append([0,0,0])
-
-			#create output list for each image
-			augmentedResults = []
-
-			#process the output tensor
-			resultPerAugmentation, augmentedResults = self.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
-																							topIndex, topProb, wrong, noGroundTruth, i, imageFileName)
-
-			augmentationText = self.raliList[i].split('+')
-			textCount = len(augmentationText)
-			for cnt in range(0,textCount):
-				currentText = augmentationText[cnt]
-				text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-				text_off_x = (self.w_i/2) - (text_width/2)
-				text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
-				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-				cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
-
-			# put augmented image result
-			# if augmentedResults[i] == 0:
-			# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-			# elif augmentedResults[i] > 0  and augmentedResults[i] < 6:      
-			# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-
-		#Step 9: split image as needed
-		if self.modelBatchSizeInt == 64:
-				image_batch = np.vsplit(cloned_image, 16)
-				final_image_batch = np.hstack((image_batch))
-		elif self.modelBatchSizeInt == 16:
-			image_batch = np.vsplit(cloned_image, 4)
-			final_image_batch = np.hstack((image_batch))
+			#get image file name and ground truth
 			
-		return original_image, final_image_batch
-		#Step 10: adat generation
-		# if adatFlag == False:
-		# 	self.inferenceEngine.generateADAT(modelName, hierarchy)
-		# 	adatFlag = True
+			imageFileName = self.raliEngine.get_input_name()
+			groundTruthIndex = self.raliEngine.get_ground_truth()
+			groundTruthIndex = int(groundTruthIndex)
+			groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+			frame = image_tensor
+			original_image = image_batch[0:self.h_i, 0:self.w_i]
+			cloned_image = np.copy(image_batch)
+			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+			text_off_x = (self.w_i/2) - (text_width/2)
+			text_off_y = self.h_i-7
+			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
 
+			#Step 7: call python inference. Returns output tensor with 1000 class probabilites
+			output = self.inference(frame)
+			#Step 8: Process output for each of the 64 images
+			for i in range(self.modelBatchSizeInt):
+				topIndex, topProb = self.processClassificationOutput(output)
+
+				correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
+				#create output dict for all the images
+				guiResults = {}
+				#to calculate FPS
+				avg_benchmark = 0.0
+				frameMsecs = 0.0
+				frameMsecsGUI = 0.0
+				totalFPS = 0.0
+				resultPerAugmentation = []
+				for iterator in range(self.modelBatchSizeInt):
+					resultPerAugmentation.append([0,0,0])
+
+				#create output list for each image
+				augmentedResults = []
+
+				#process the output tensor
+				resultPerAugmentation, augmentedResults = self.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
+																								topIndex, topProb, wrong, noGroundTruth, i, imageFileName)
+
+				augmentationText = self.raliList[i].split('+')
+				textCount = len(augmentationText)
+				for cnt in range(0,textCount):
+					currentText = augmentationText[cnt]
+					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+					text_off_x = (self.w_i/2) - (text_width/2)
+					text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
+					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
+
+				# put augmented image result
+				# if augmentedResults[i] == 0:
+				# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				# elif augmentedResults[i] > 0  and augmentedResults[i] < 6:      
+				# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
+			#Step 9: split image as needed
+			if self.modelBatchSizeInt == 64:
+					image_batch = np.vsplit(cloned_image, 16)
+					final_image_batch = np.hstack((image_batch))
+			elif self.modelBatchSizeInt == 16:
+				image_batch = np.vsplit(cloned_image, 4)
+				final_image_batch = np.hstack((image_batch))
+			
+			self.origQueue.put(original_image)
+			self.augQueue.put(final_image_batch)
+			
+			#return original_image, final_image_batch
+			#Step 10: adat generation
+			# if adatFlag == False:
+			# 	self.inferenceEngine.generateADAT(modelName, hierarchy)
+			# 	adatFlag = True
+	def setStatistics(self):
+		
 	def processOutput(self, correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex, topIndex, topProb, wrong, noGroundTruth, i, imageFileName):
 		msFrame = 0.0
 		msFrameGUI = 0.0

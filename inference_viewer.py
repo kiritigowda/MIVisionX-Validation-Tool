@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 import cv2
 import numpy as np
+import Queue
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QPixmap
 from PyQt4.QtCore import QTime, QTimer, QThread
@@ -36,8 +37,8 @@ class InferenceViewer(QtGui.QMainWindow):
         self.imgCount = 0
         self.frameCount = 9
         self.container_index = (int)(container_logo)
-        # self.origImageQueue = Queue.Queue()
-        # self.augImageQueue = Queue.Queue()
+        self.origImageQueue = Queue.Queue()
+        self.augImageQueue = Queue.Queue()
 
         self.graph = pg.PlotWidget(title="Accuracy vs Time")
         self.x = [0] 
@@ -64,7 +65,6 @@ class InferenceViewer(QtGui.QMainWindow):
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
         self.docker_pixmap = QPixmap("./data/images/Docker.png")
         self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
-        
         self.initUI()
         self.initEngines()
         self.show()
@@ -122,7 +122,7 @@ class InferenceViewer(QtGui.QMainWindow):
         # Creating an object for inference.
         self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
                                                 self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
-                                                self.replace, self.loop, self.rali_mode)
+                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue)
         
         self.inferenceEngine.moveToThread(self.receiver_thread)
         self.receiver_thread.started.connect(self.inferenceEngine.runInference)
@@ -133,21 +133,18 @@ class InferenceViewer(QtGui.QMainWindow):
         self.receiver_thread.terminate()
 
     def paintEvent(self, event):
-
+        print 'paintEvent'
         #painter = QtGui.QPainter(self)
         #painter.setRenderHint()
         # update parameters for the augmentation & get 64 augmentations for an image
         augmentation = self.getIntensity()
         #self.raliEngine.updateAugmentationParameter(augmentation)
 
-        original_image, aug_image = self.inferenceEngine.runInference()
-        width = original_image.shape[1]
-        height = original_image.shape[0]
-        self.showImage(original_image, width, height)
-        width = aug_image.shape[1]
-        height = aug_image.shape[0]
-        self.showAugImage(aug_image, width, height)
-
+        # original_image, aug_image = self.inferenceEngine.runInference()
+        print self.origImageQueue.qsize()
+        print self.augImageQueue.qsize()
+        if not self.origImageQueue.empty() and not self.augImageQueue.empty():
+            self.showImage()
     
     def resetViewer(self):
         self.imgCount = 0
@@ -199,46 +196,45 @@ class InferenceViewer(QtGui.QMainWindow):
                 self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
             self.lastTime = curTime
 
-    def showImage(self, image, width, height):
-        qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)
+    # def showImage(self, image, width, height):
+    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
+    #     qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)
+    #     index = self.imgCount % self.frameCount
+    #     self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
+    #     self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
+    #     self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
+    #     self.imgCount += 1
+    #     self.lastIndex = index
+
+    # def showAugImage(self, image, width, height):
+    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
+    #     if self.batch_size == 64:
+    #         qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
+    #         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+    #         self.aug_label.setPixmap(pixmap)
+    #     elif self.batch_size == 16:
+    #         qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
+    #         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+    #         self.aug_label.setPixmap(pixmap)
+
+    def showImage(self):
+        origImage = self.origImageQueue.get()
+        augImage = self.augImageQueue.get()
+        origWidth = origImage.shape[1]
+        origHeight = origImage.shape[0]
+        augWidth = augImage.shape[1]
+        augHeight = augImage.shape[0]
+        qOrigImage = QtGui.QImage(origImage, origWidth, origHeight, origWidth*3, QtGui.QImage.Format_RGB888)
+        qOrigImageResized = qOrigImage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)  
+        qAugImage = QtGui.QImage(augImage, augWidth, augHeight, augWidth*3, QtGui.QImage.Format_RGB888)
+        qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)              
         index = self.imgCount % self.frameCount
-        self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
+        self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qOrigImageResized))
         self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
         self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
+        self.aug_label.setPixmap(QtGui.QPixmap.fromImage(qAugImageResized))
         self.imgCount += 1
         self.lastIndex = index
-
-    def showAugImage(self, image, width, height):
-        qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-        if self.batch_size == 64:
-            qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
-            pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-            self.aug_label.setPixmap(pixmap)
-        elif self.batch_size == 16:
-            qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
-            pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-            self.aug_label.setPixmap(pixmap)
-
-    # def putAugImage(self, image, width, height):
-    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-    #     qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
-    #     pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-    #     self.augImageQueue.put(pixmap)
-
-    # def putImage(self, image, width, height):
-    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-    #     qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.KeepAspectRatio)
-    #     pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-    #     self.origImageQueue.put(pixmap)
-
-    # def showImage(self):
-    #     if not self.origImageQueue.empty():
-    #         origImage = self.origImageQueue.get()
-    #         augImage = self.augImageQueue.get()
-    #         self.imageList[(self.imgCount % self.frameCount)].setPixmap(origImage)
-    #         self.aug_label.setPixmap(augImage)
-    #         self.imgCount += 1
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
