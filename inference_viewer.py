@@ -16,10 +16,13 @@ class inference_viewer(QtGui.QMainWindow):
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
         
-        self.graph = pg.PlotWidget(title="Accuracy vs Time")
+        self.graph = None
+        self.totalCurve = None
+        self.augCurve = None
         self.x = [0] 
         self.y = [0]
         self.augAccuracy = []
+        self.pen = pg.mkPen('w', width=4)
         self.time = QTime.currentTime()
 
         self.runState = False
@@ -27,8 +30,6 @@ class inference_viewer(QtGui.QMainWindow):
         self.progIndex = 0
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
-
-        self.pen = pg.mkPen('w', width=4)
 
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
@@ -60,15 +61,18 @@ class inference_viewer(QtGui.QMainWindow):
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
         self.total_progressBar.setMaximum(self.total_images*self.batch_size)
 
+        self.graph = pg.PlotWidget(title="Accuracy vs Time")
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
         self.graph.setYRange(0, 100, padding=0)
-        #self.graph.addLegend()
-        self.graph.plot(self.x, self.y, pen=self.pen, name='Total')
-        self.verticalLayout_2.addWidget(self.graph)
+        self.graph.addLegend(size=(0.5,0.5), offset=(320,10))
+        pg.setConfigOptions(antialias=True)
+        self.totalCurve = self.graph.plot(pen=self.pen, name='Total')
+        self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4), name = "Augmented Image")
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
         self.graph.setMaximumHeight(300)
+        self.verticalLayout_2.addWidget(self.graph)
         self.level_slider.setMaximum(100)
         self.level_slider.valueChanged.connect(self.setIntensity)
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
@@ -105,7 +109,8 @@ class inference_viewer(QtGui.QMainWindow):
         self.lastTime = 0
         self.progIndex = 0
         self.lastIndex = self.frameCount - 1
-        self.graph.clear()
+        self.totalCurve.clear()
+        self.augCurve.clear()
 
     def setTotalProgress(self, value):
         self.total_progressBar.setValue(value)
@@ -135,9 +140,9 @@ class inference_viewer(QtGui.QMainWindow):
         curTime = self.time.elapsed()/1000.0
         self.x.append(curTime)
         self.y.append(accuracy)
-        self.graph.plot(self.x, self.y, pen=self.pen)
+        self.totalCurve.setData(x= self.x, y=self.y, pen=self.pen)
         if self.progIndex:
-            self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
+            self.augCurve.setData(x= self.x, y=self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
 
     def showImage(self, image, width, height):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
@@ -194,7 +199,9 @@ class inference_viewer(QtGui.QMainWindow):
             else:
                 self.progIndex = 0
             
-            self.graph.clear()
+            self.totalCurve.clear()
+            self.augCurve.clear()
+            self.graph.removeLegend()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
@@ -245,10 +252,12 @@ class inference_viewer(QtGui.QMainWindow):
             self.dataset_label.show()
             self.fps_label.show()
             self.fps_lcdNumber.show()
+            self.graph.plotItem.legend.show()
         else:
             self.dataset_label.hide()
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
+            self.graph.plotItem.legend.hide()
         
     def displayFPS(self, fps):
         self.fps_lcdNumber.display(fps)
