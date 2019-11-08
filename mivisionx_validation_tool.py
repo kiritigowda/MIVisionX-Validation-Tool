@@ -10,7 +10,7 @@ __script_name__ = "MIVisionX Validation Tool"
 
 import sys
 #setup python path for RALI
-sys.path.append('/opt/rocm/mivisionx/rali/python/')
+#sys.path.append('/opt/rocm/mivisionx/rali/python/')
 
 import os
 import argparse
@@ -22,6 +22,8 @@ from inference_control import *
 # MIVisionX Classifier
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
+	#app.setQuitOnLastWindowClosed(False)
+
 	panel = InferenceControl()
 	panel.show()
 	app.exec_()

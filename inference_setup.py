@@ -3,7 +3,12 @@ import os
 import ctypes
 import time
 import numpy as np
+import cv2
 from numpy.ctypeslib import ndpointer
+from PyQt4 import QtGui, uic, QtCore
+from PyQt4.QtCore import pyqtSignal
+
+from rali_setup import *
 
 # AMD Neural Net python wrapper
 class AnnAPI:
@@ -66,10 +71,11 @@ class annieObjectWrapper():
 		output = self.runInference(img_tensor, out)
 		return output
 
-class modelInference():
+class modelInference(QtCore.QObject):
 	def __init__(self, modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop):
+				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, parent=None):
 
+		super(modelInference, self).__init__(parent)
 		self.modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
 		self.ADATPath= '/opt/rocm/mivisionx/toolkit/analysis_and_visualization/classification'
 		self.setupDir = '~/.mivisionx-validation-tool'
@@ -91,7 +97,18 @@ class modelInference():
 		self.modelBatchSize = modelBatchSize
 		self.verbosePrint = False
 		self.FP16inference = False
+		self.loop = False
 		self.classifier = None
+		self.labelNames = []
+		self.raliEngine = None
+		self.rali_mode = rali_mode
+		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
+		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
+		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
+		self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
+
+		finished = pyqtSignal()
+
 		# set verbose print
 		if(verbose != 'no'):
 			self.verbosePrint = True
@@ -101,20 +118,20 @@ class modelInference():
 			self.FP16inference = True
 
 		#set loop parameter based on user input
-		"""if loop == 'yes':
-			self.loop_parameter = True
+		if loop == 'yes':
+			self.loop = True
 		else:
-			self.loop_parameter = False
-		"""
+			self.loop = False
+		
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
 		Ax=[0,0,0]
 		if(inputAdd != ''):
-			Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
+			self.Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
 		Mx=[1,1,1]
 		if(inputMultiply != ''):
-			Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
+			self.Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
 
 		# Setup Text File for Demo
 		if (not os.path.isfile(self.analyzerDir + "/setupFile.txt")):
@@ -152,8 +169,12 @@ class modelInference():
 		self.modelInputDims = modelInputDims
 		self.modelOutputDims = modelOutputDims
 		self.imageVal = imageVal
+		self.stdout = None
+		# get correct list for augmentations
+		self.raliList = []
+		self.setupInference()
 
-	def setupInference(self): #Returns total number of images(in directory that rali reads), validation text, classifier(object to run python anntest), labels
+	def setupInference(self):
 		# check pre-trained model
 		if(not os.path.isfile(self.trainedModel) and self.modelFormat != 'nnef' ):
 			print("\nPre-Trained Model not found, check argument --model\n")
@@ -166,7 +187,7 @@ class modelInference():
 		else:
 			fp = open(self.labelText, 'r')
 			#labelNames = fp.readlines()
-			labelNames = [x.strip('\n') for x in fp.readlines()]
+			self.labelNames = [x.strip('\n') for x in fp.readlines()]
 			fp.close()
 
 		# MIVisionX setup
@@ -216,7 +237,7 @@ class modelInference():
 					print("ERROR: Converting NNIR to OpenVX Failed")
 					quit()
 
-		os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+		#os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 		print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 		# create inference classifier
@@ -237,12 +258,17 @@ class modelInference():
 		totalImages = len(os.listdir(self.inputImageDir))
 
 		# original std out location 
-		orig_stdout = sys.stdout
+		self.orig_stdout = sys.stdout
 		# setup results output file
 		sys.stdout = open(self.finalImageResultsFile,'w')	
 		print('Image File Name,Ground Truth Label,Output Label 1,Output Label 2,Output Label 3,Output Label 4,Output Label 5,Prob 1,Prob 2,Prob 3,Prob 4,Prob 5')
-		sys.stdout = orig_stdout
-		return self.inputImageDir, totalImages, imageValidation, labelNames
+		sys.stdout = self.orig_stdout
+
+		# Setup Rali Data Loader. 
+		rali_batch_size = 1
+		self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, int(self.modelBatchSizeInt), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
+										TensorLayout.NCHW, False, self.Ax, self.Mx)
+		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, int(self.modelBatchSizeInt))
 
 	# process classification output function
 	def processClassificationOutput(self, modelOutput):#, labelNames):
@@ -268,13 +294,93 @@ class modelInference():
 		output = self.classifier.classify(frame)
 		return output
 
-	def processOutput(self, correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex, topIndex, topProb, wrong, noGroundTruth, i):
+	def runInference(self):
+		image_batch, image_tensor = self.raliEngine.get_next_augmentation()
+		frame = image_tensor
+		original_image = image_batch[0:self.h_i, 0:self.w_i]
+		cloned_image = np.copy(image_batch)
+
+		#get image file name and ground truth
+		
+		imageFileName = self.raliEngine.get_input_name()
+		groundTruthIndex = self.raliEngine.get_ground_truth()
+		groundTruthIndex = int(groundTruthIndex)
+		groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+		frame = image_tensor
+		original_image = image_batch[0:self.h_i, 0:self.w_i]
+		cloned_image = np.copy(image_batch)
+		text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+		text_off_x = (self.w_i/2) - (text_width/2)
+		text_off_y = self.h_i-7
+		box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+		cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+		cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+
+        #Step 7: call python inference. Returns output tensor with 1000 class probabilites
+		output = self.inference(frame)
+        #Step 8: Process output for each of the 64 images
+		for i in range(self.modelBatchSizeInt):
+			topIndex, topProb = self.processClassificationOutput(output)
+
+			correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
+			#create output dict for all the images
+			guiResults = {}
+			#to calculate FPS
+			avg_benchmark = 0.0
+			frameMsecs = 0.0
+			frameMsecsGUI = 0.0
+			totalFPS = 0.0
+			resultPerAugmentation = []
+			for iterator in range(self.modelBatchSizeInt):
+				resultPerAugmentation.append([0,0,0])
+
+			#create output list for each image
+			augmentedResults = []
+
+			#process the output tensor
+			resultPerAugmentation, augmentedResults = self.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
+																							topIndex, topProb, wrong, noGroundTruth, i, imageFileName)
+
+			augmentationText = self.raliList[i].split('+')
+			textCount = len(augmentationText)
+			for cnt in range(0,textCount):
+				currentText = augmentationText[cnt]
+				text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+				text_off_x = (self.w_i/2) - (text_width/2)
+				text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
+				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+				cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+				cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
+
+			# put augmented image result
+			# if augmentedResults[i] == 0:
+			# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+			# elif augmentedResults[i] > 0  and augmentedResults[i] < 6:      
+			# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+
+		#Step 9: split image as needed
+		if self.modelBatchSizeInt == 64:
+				image_batch = np.vsplit(cloned_image, 16)
+				final_image_batch = np.hstack((image_batch))
+		elif self.modelBatchSizeInt == 16:
+			image_batch = np.vsplit(cloned_image, 4)
+			final_image_batch = np.hstack((image_batch))
+			
+		return original_image, final_image_batch
+		#Step 10: adat generation
+		# if adatFlag == False:
+		# 	self.inferenceEngine.generateADAT(modelName, hierarchy)
+		# 	adatFlag = True
+
+	def processOutput(self, correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex, topIndex, topProb, wrong, noGroundTruth, i, imageFileName):
+		msFrame = 0.0
+		msFrameGUI = 0.0
 		start = time.time()
 		sys.stdout = open(self.finalImageResultsFile,'a')
 		print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
 		','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
 		','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
-		sys.stdout = orig_stdout
+		sys.stdout = self.orig_stdout
 		end = time.time()
 		msFrame += (end - start)*1000
 		if(self.verbosePrint):

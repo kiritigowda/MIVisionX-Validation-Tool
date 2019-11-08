@@ -19,10 +19,3 @@ class ImageQueue:
 
     def getSize(self):
         return self.queue.qsize()
-
-if __name__ == '__main__':
-    queue = ImageQueue()
-    queue.enqueue(1)
-    print queue.getSize()
-    print queue.dequeue()
-    print queue.isEmpty()

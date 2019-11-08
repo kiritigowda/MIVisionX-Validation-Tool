@@ -1,16 +1,16 @@
 import pyqtgraph as pg
 import cv2
 import numpy as np
-from PyQt4 import QtGui, uic, QtCore
+from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QPixmap
-from PyQt4.QtCore import QTime, QTimer
+from PyQt4.QtCore import QTime, QTimer, QThread
 from inference_setup import *
-from rali_setup import *
 
 class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo, parent=None):
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo, parent):
         super(InferenceViewer, self).__init__(parent)
+        self.parent = parent
 
         self.model_name = model_name
         self.model_format = model_format 
@@ -38,16 +38,6 @@ class InferenceViewer(QtGui.QMainWindow):
         self.container_index = (int)(container_logo)
         # self.origImageQueue = Queue.Queue()
         # self.augImageQueue = Queue.Queue()
-        str_c_i, str_h_i, str_w_i = input_dims.split(',')
-        self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
-        str_c_o, str_h_o, str_w_o = output_dims.split(',')
-        self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
-        self.Ax=[0,0,0]
-        if(add != ''):
-			self.Ax = [float(item) for item in add.strip("[]").split(',')]
-        self.Mx=[1,1,1]
-        if(multiply != ''):
-			self.Mx = [float(item) for item in multiply.strip("[]").split(',')]
 
         self.graph = pg.PlotWidget(title="Accuracy vs Time")
         self.x = [0] 
@@ -64,11 +54,8 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.pen = pg.mkPen('w', width=4)
 
-        self.raliEngine = None
         self.inferenceEngine = None
-        self.raliList = []
-        self.labelNames = []
-
+        self.receiver_thread = None
         self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
         self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
         self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
@@ -77,19 +64,13 @@ class InferenceViewer(QtGui.QMainWindow):
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
         self.docker_pixmap = QPixmap("./data/images/Docker.png")
         self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
-
-        self.initUI()
-        self.show()
-        self.initEngines()
-        self.paintFrame()
-        #self.run()
         
-        updateTimer = QTimer()
-        #QTimer.connect(self.timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("update()"))
-        #updateTimer.timeout.connect(self.update)
-        QTimer.connect(updateTimer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("paintFrame()"))
-        #updateTimer.timeout.connect(self.paintFrame)
-        updateTimer.start(40)
+        self.initUI()
+        self.initEngines()
+        self.show()
+        self.updateTimer = QTimer()
+        self.updateTimer.timeout.connect(self.update)
+        self.updateTimer.start(40)
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
@@ -135,6 +116,39 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.showVerbose()
 
+    def initEngines(self):
+        
+        self.receiver_thread = QThread()
+        # Creating an object for inference.
+        self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
+                                                self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
+                                                self.replace, self.loop, self.rali_mode)
+        
+        self.inferenceEngine.moveToThread(self.receiver_thread)
+        self.receiver_thread.started.connect(self.inferenceEngine.runInference)
+        #self.inferenceEngine.finished.connect(self.inferenceEngine.quit)
+        #self.inferenceEngine.finished.connect(self.inferenceEngine.deleteLater)
+        self.receiver_thread.finished.connect(self.inferenceEngine.deleteLater)
+        self.receiver_thread.start()
+        self.receiver_thread.terminate()
+
+    def paintEvent(self, event):
+
+        #painter = QtGui.QPainter(self)
+        #painter.setRenderHint()
+        # update parameters for the augmentation & get 64 augmentations for an image
+        augmentation = self.getIntensity()
+        #self.raliEngine.updateAugmentationParameter(augmentation)
+
+        original_image, aug_image = self.inferenceEngine.runInference()
+        width = original_image.shape[1]
+        height = original_image.shape[0]
+        self.showImage(original_image, width, height)
+        width = aug_image.shape[1]
+        height = aug_image.shape[0]
+        self.showAugImage(aug_image, width, height)
+
+    
     def resetViewer(self):
         self.imgCount = 0
         del self.x[:]
@@ -199,10 +213,12 @@ class InferenceViewer(QtGui.QMainWindow):
         qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
         if self.batch_size == 64:
             qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
+            pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+            self.aug_label.setPixmap(pixmap)
         elif self.batch_size == 16:
             qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
-        pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-        self.aug_label.setPixmap(pixmap)
+            pixmap = QtGui.QPixmap.fromImage(qimage_resized)
+            self.aug_label.setPixmap(pixmap)
 
     # def putAugImage(self, image, width, height):
     #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
@@ -350,105 +366,3 @@ class InferenceViewer(QtGui.QMainWindow):
         curTime = self.time.elapsed()/1000.0
         if (curTime - self.lastTime > 0.1):
             self.augAccuracy[index].append(accuracy)
-
-    def initEngines(self):
-        # Creating an object for inference. Input arguments come from the user
-        self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
-                                                self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
-                                                self.replace, self.loop)
-        
-        # caffe/onnx to openvx and runs anntest. Also creates empty file for ADAT
-        inputImageDir, totalImages, imageValidation, self.labelNames = self.inferenceEngine.setupInference()
-
-        # Setup Rali Data Loader. 
-        rali_batch_size = 1
-        self.raliEngine = DataLoader(inputImageDir, rali_batch_size, int(self.batch_size), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
-                                        TensorLayout.NCHW, False, self.Ax, self.Mx)
-        
-        # get correct list for augmentations
-        self.raliList = self.raliEngine.get_rali_list(self.rali_mode, int(self.batch_size))
-    
-    def paintFrame(self):
-        image = cv2.imread('/home/hansel/Hansel/demoDataSet/resized/resized-9506-224x224/image_0000.JPEG')
-        self.showImage(image, 224, 224)
-    
-    def run(self):
-
-        # update parameters for the augmentation & get 64 augmentations for an image
-        augmentation = self.getIntensity()
-        self.raliEngine.updateAugmentationParameter(augmentation)
-
-        image_batch, image_tensor = self.raliEngine.get_next_augmentation()
-        frame = image_tensor
-        original_image = image_batch[0:self.h_i, 0:self.w_i]
-        cloned_image = np.copy(image_batch)
-        
-        #get image file name and ground truth
-        imageFileName = self.raliEngine.get_input_name()
-        groundTruthIndex = self.raliEngine.get_ground_truth()
-        groundTruthIndex = int(groundTruthIndex)
-
-        # draw box for original image and put label
-        groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-        text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-        text_off_x = (self.w_i/2) - (text_width/2)
-        text_off_y = self.h_i-7
-        box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-        cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-        cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
-
-        #Step 7: call python inference. Returns output tensor with 1000 class probabilites
-        output = self.inferenceEngine.inference(frame)
-
-        #Step 8: Process output for each of the 64 images
-        for i in range(self.raliEngine.getOutputImageCount()):
-            topIndex, topProb = self.inferenceEngine.processClassificationOutput(output)
-
-            correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
-            #create output dict for all the images
-            guiResults = {}
-            #to calculate FPS
-            avg_benchmark = 0.0
-            frameMsecs = 0.0
-            frameMsecsGUI = 0.0
-            totalFPS = 0.0
-            resultPerAugmentation = []
-            for iterator in range(self.batch_size_int):
-                resultPerAugmentation.append([0,0,0])
-
-            #create output list for each image
-            augmentedResults = []
-
-            #process the output tensor
-            resultPerAugmentation, augmentedResults = self.inferenceEngine.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
-                                                                                         topIndex, topProb, wrong, noGroundTruth, i)
-
-            augmentationText = self.raliList[i].split('+')
-            textCount = len(augmentationText)
-            for cnt in range(0,textCount):
-                currentText = augmentationText[cnt]
-                text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-                text_off_x = (w_i/2) - (text_width/2)
-                text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
-                box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-                cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-                cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
-
-            # put augmented image result
-            if augmentedResults[i] == 0:
-                cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-            elif augmentedResults[i] > 0  and augmentedResults[i] < 6:      
-                    cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-
-        #Step 9: split image as needed
-        if int(modelBatchSize) == 64:
-                image_batch = np.vsplit(cloned_image, 16)
-                final_image_batch = np.hstack((image_batch))
-        elif int(modelBatchSize) == 16:
-            image_batch = np.vsplit(cloned_image, 4)
-            final_image_batch = np.hstack((image_batch))
-
-        #Step 10: adat generation
-        if adatFlag == False:
-            self.inferenceEngine.generateADAT(modelName, hierarchy)
-            adatFlag = True
