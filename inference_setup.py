@@ -110,7 +110,11 @@ class modelInference(QtCore.QObject):
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
 		self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
 
+		self.totalStats = [0,0,0]
+		self.augStats = []
+		self.setupDone = False
 		finished = pyqtSignal()
+		self.abortRequested = False
 
 		# set verbose print
 		if(verbose != 'no'):
@@ -269,9 +273,12 @@ class modelInference(QtCore.QObject):
 
 		# Setup Rali Data Loader. 
 		rali_batch_size = 1
-		self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, int(self.modelBatchSizeInt), ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
+		self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
 										TensorLayout.NCHW, False, self.Ax, self.Mx)
-		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, int(self.modelBatchSizeInt))
+		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, self.modelBatchSizeInt)
+		for i in range(self.modelBatchSizeInt):
+			self.augStats.append([0,0,0])
+		self.setupDone = True
 
 	# process classification output function
 	def processClassificationOutput(self, modelOutput):#, labelNames):
@@ -293,19 +300,20 @@ class modelInference(QtCore.QObject):
 
 		return topIndex, topProb
 
-	def inference(self, frame):
-		output = self.classifier.classify(frame)
-		return output
+	def setIntensity(self, intensity):
+		self.raliEngine.updateAugmentationParameter(intensity)
+	
+	def terminate(self):
+		self.abortRequested = True
 
 	def runInference(self):
-		while True:
+		while True and self.setupDone and not self.abortRequested:
 			image_batch, image_tensor = self.raliEngine.get_next_augmentation()
 			frame = image_tensor
 			original_image = image_batch[0:self.h_i, 0:self.w_i]
 			cloned_image = np.copy(image_batch)
 
 			#get image file name and ground truth
-			
 			imageFileName = self.raliEngine.get_input_name()
 			groundTruthIndex = self.raliEngine.get_ground_truth()
 			groundTruthIndex = int(groundTruthIndex)
@@ -319,14 +327,13 @@ class modelInference(QtCore.QObject):
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
-
 			#Step 7: call python inference. Returns output tensor with 1000 class probabilites
-			output = self.inference(frame)
+			output = self.classifier.classify(frame)
+
 			#Step 8: Process output for each of the 64 images
 			for i in range(self.modelBatchSizeInt):
 				topIndex, topProb = self.processClassificationOutput(output)
 
-				correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 				#create output dict for all the images
 				guiResults = {}
 				#to calculate FPS
@@ -334,16 +341,9 @@ class modelInference(QtCore.QObject):
 				frameMsecs = 0.0
 				frameMsecsGUI = 0.0
 				totalFPS = 0.0
-				resultPerAugmentation = []
-				for iterator in range(self.modelBatchSizeInt):
-					resultPerAugmentation.append([0,0,0])
-
-				#create output list for each image
-				augmentedResults = []
-
+				
 				#process the output tensor
-				resultPerAugmentation, augmentedResults = self.processOutput(correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex,
-																								topIndex, topProb, wrong, noGroundTruth, i, imageFileName)
+				correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
 
 				augmentationText = self.raliList[i].split('+')
 				textCount = len(augmentationText)
@@ -355,12 +355,11 @@ class modelInference(QtCore.QObject):
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
-
 				# put augmented image result
-				# if augmentedResults[i] == 0:
-				# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-				# elif augmentedResults[i] > 0  and augmentedResults[i] < 6:      
-				# 	cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+				if not correctResult:
+					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+				else:      
+					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
 			#Step 9: split image as needed
 			if self.modelBatchSizeInt == 64:
@@ -378,9 +377,17 @@ class modelInference(QtCore.QObject):
 			# if adatFlag == False:
 			# 	self.inferenceEngine.generateADAT(modelName, hierarchy)
 			# 	adatFlag = True
-	def setStatistics(self):
-		
-	def processOutput(self, correctTop1, correctTop5, augmentedResults, resultPerAugmentation, groundTruthIndex, topIndex, topProb, wrong, noGroundTruth, i, imageFileName):
+
+	def getTotalStats(self):
+		return self.totalStats
+
+	def getAugStats(self, augmentation):
+		return self.augStats[augmentation]
+
+	def getAugName(self, index):
+		return self.raliList[index]
+
+	def processOutput(self, groundTruthIndex, topIndex, topProb, i, imageFileName):
 		msFrame = 0.0
 		msFrameGUI = 0.0
 		start = time.time()
@@ -395,37 +402,27 @@ class modelInference(QtCore.QObject):
 			print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
 
 		#data collection for individual augmentation scores
-		countPerAugmentation = resultPerAugmentation[i]
+		countPerAugmentation = self.augStats[i]
 
+		correctResult = False
 		# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 		if(groundTruthIndex == topIndex[4 + i*4]):
-			correctTop1 = correctTop1 + 1
-			correctTop5 = correctTop5 + 1
-			augmentedResults.append(1)
-			countPerAugmentation[0] = countPerAugmentation[0] + 1
-			countPerAugmentation[1] = countPerAugmentation[1] + 1
+			self.totalStats[0] += 1
+			self.totalStats[1] += 1
+			correctResult = True
+			countPerAugmentation[0] += 1
+			countPerAugmentation[1] += 1
 		elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
-			correctTop5 = correctTop5 + 1
-			countPerAugmentation[1] = countPerAugmentation[1] + 1
-			if (groundTruthIndex == topIndex[3 + i*4]):
-				augmentedResults.append(2)
-			elif (groundTruthIndex == topIndex[2 + i*4]):
-				augmentedResults.append(3)
-			elif (groundTruthIndex == topIndex[1 + i*4]):
-				augmentedResults.append(4)
-			elif (groundTruthIndex == topIndex[0 + i*4]):
-				augmentedResults.append(5)
-		elif(groundTruthIndex == -1):
-			noGroundTruth = noGroundTruth + 1
-			augmentedResults.append(-1)
+			self.totalStats[1] += 1
+			countPerAugmentation[1] += 1
+			correctResult = True
 		else:
-			wrong = wrong + 1
-			augmentedResults.append(0)
-			countPerAugmentation[2] = countPerAugmentation[2] + 1
+			self.totalStats[2] += 1
+			countPerAugmentation[2] += 1
 
-		resultPerAugmentation[i] = countPerAugmentation
+		self.augStats[i] = countPerAugmentation
 
-		return resultPerAugmentation, augmentedResults
+		return correctResult
 
 	def generateADAT(modelName, hierarchy):
 		# Create ADAT folder and file

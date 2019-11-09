@@ -46,9 +46,12 @@ class InferenceViewer(QtGui.QMainWindow):
         self.augAccuracy = []
         
         self.time = QTime.currentTime()
+        self.lastTime = 0
+        self.totalAccuracy = 0
 
         self.runState = False
         self.pauseState = False
+        self.showTotal = True
         self.progIndex = 0
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
@@ -70,6 +73,8 @@ class InferenceViewer(QtGui.QMainWindow):
         self.show()
         self.updateTimer = QTimer()
         self.updateTimer.timeout.connect(self.update)
+        self.updateTimer.timeout.connect(self.plotGraph)
+        self.updateTimer.timeout.connect(self.setProgressBar)
         self.updateTimer.start(40)
 
     def initUI(self):
@@ -99,7 +104,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
         self.stop_pushButton.setStyleSheet("color: white; background-color: darkRed")
         self.pause_pushButton.clicked.connect(self.pauseView)
-        self.stop_pushButton.clicked.connect(self.closeView)
+        self.stop_pushButton.clicked.connect(self.terminate)
         self.dark_checkBox.stateChanged.connect(self.setBackground)
         self.verbose_checkBox.stateChanged.connect(self.showVerbose)
         self.dark_checkBox.setChecked(True)
@@ -133,18 +138,13 @@ class InferenceViewer(QtGui.QMainWindow):
         self.receiver_thread.terminate()
 
     def paintEvent(self, event):
-        print 'paintEvent'
-        #painter = QtGui.QPainter(self)
-        #painter.setRenderHint()
-        # update parameters for the augmentation & get 64 augmentations for an image
-        augmentation = self.getIntensity()
-        #self.raliEngine.updateAugmentationParameter(augmentation)
-
-        # original_image, aug_image = self.inferenceEngine.runInference()
-        print self.origImageQueue.qsize()
-        print self.augImageQueue.qsize()
         if not self.origImageQueue.empty() and not self.augImageQueue.empty():
             self.showImage()
+            # if self.progIndex == 0:
+            #     self.setTotalProgress()
+                #self.plotGraph()
+            # else:
+            #     self.setAugProgress(self.progIndex)
     
     def resetViewer(self):
         self.imgCount = 0
@@ -159,63 +159,58 @@ class InferenceViewer(QtGui.QMainWindow):
         self.time = QTime.currentTime()
         self.lastTime = 0
         self.progIndex = 0
+        self.showTotal = True
         self.lastIndex = self.frameCount - 1
         self.graph.clear()
 
-    def setTotalProgress(self, value):
-        self.total_progressBar.setValue(value)
-        if self.getIndex() == 0:
-            self.total_progressBar.setMaximum(self.total_images*self.batch_size)
-            self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images*self.batch_size))
+    def setProgressBar(self):
+        if self.showTotal:
+            self.setTotalProgress()
         else:
-            self.total_progressBar.setMaximum(self.total_images)
-            self.imgProg_label.setText("Processed: %d of %d" % (value, self.total_images))
-    
-    def setTop1Progress(self, value, total):
-        self.top1_progressBar.setValue(value)
-        self.top1_progressBar.setMaximum(total)
-    
-    def setTop5Progress(self, value, total):
-        self.top5_progressBar.setValue(value)
-        self.top5_progressBar.setMaximum(total)
-    
-    def setMisProgress(self, value, total):
-        self.mis_progressBar.setValue(value)
-        self.mis_progressBar.setMaximum(total)
-    
-    # def setNoGTProgress(self, value):
-    #     self.noGT_progressBar.setValue(value)
+            self.setAugProgress(self.progIndex)
 
-    def plotGraph(self, accuracy):
+    def setTotalProgress(self):
+        totalStats = self.inferenceEngine.getTotalStats()
+        top1 = totalStats[0]
+        top5 = totalStats[1]
+        mis = totalStats[2]
+        totalCount = top5 + mis
+        self.totalAccuracy = (float)(top5) / (totalCount+1) * 100
+        self.total_progressBar.setValue(totalCount)
+        self.total_progressBar.setMaximum(self.total_images*self.batch_size_int)
+        self.imgProg_label.setText("Processed: %d of %d" % (totalCount, self.total_images*self.batch_size_int))
+        self.top1_progressBar.setValue(top1)
+        self.top1_progressBar.setMaximum(totalCount)
+        self.top5_progressBar.setValue(top5)
+        self.top5_progressBar.setMaximum(totalCount)
+        self.mis_progressBar.setValue(mis)
+        self.mis_progressBar.setMaximum(totalCount)
+
+    def setAugProgress(self, augmentation):
+        augStats = self.inferenceEngine.getAugStats(augmentation)
+        top1 = augStats[0]
+        top5 = augStats[1]
+        mis = augStats[2]
+        totalCount = top5 + mis
+        self.total_progressBar.setValue(totalCount)
+        self.total_progressBar.setMaximum(self.total_images)
+        self.imgProg_label.setText("Processed: %d of %d" % (totalCount, self.total_images))
+        self.top1_progressBar.setValue(top1)
+        self.top1_progressBar.setMaximum(totalCount)
+        self.top5_progressBar.setValue(top5)
+        self.top5_progressBar.setMaximum(totalCount)
+        self.mis_progressBar.setValue(mis)
+        self.mis_progressBar.setMaximum(totalCount)
+
+    def plotGraph(self):
         curTime = self.time.elapsed()/1000.0
-        if (curTime - self.lastTime > 0.1):
+        if (curTime - self.lastTime > 0.005):
             self.x.append(curTime)
-            self.y.append(accuracy)
+            self.y.append(self.totalAccuracy)
             self.graph.plot(self.x, self.y, pen=self.pen)
-            if self.progIndex:
-                self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
             self.lastTime = curTime
-
-    # def showImage(self, image, width, height):
-    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-    #     qimage_resized = qimage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)
-    #     index = self.imgCount % self.frameCount
-    #     self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qimage_resized))
-    #     self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
-    #     self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
-    #     self.imgCount += 1
-    #     self.lastIndex = index
-
-    # def showAugImage(self, image, width, height):
-    #     qimage = QtGui.QImage(image, width, height, width*3, QtGui.QImage.Format_RGB888)
-    #     if self.batch_size == 64:
-    #         qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)
-    #         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-    #         self.aug_label.setPixmap(pixmap)
-    #     elif self.batch_size == 16:
-    #         qimage_resized = qimage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
-    #         pixmap = QtGui.QPixmap.fromImage(qimage_resized)
-    #         self.aug_label.setPixmap(pixmap)
+            # if self.progIndex:
+            #     self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
 
     def showImage(self):
         origImage = self.origImageQueue.get()
@@ -238,7 +233,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
-            self.closeView()
+            self.terminate()
             
         if event.key() == QtCore.Qt.Key_Space:
             self.pauseView()
@@ -249,8 +244,11 @@ class InferenceViewer(QtGui.QMainWindow):
             if self.aug_label.geometry().contains(mousePos):
                 index = self.calculateIndex(mousePos.x(), mousePos.y())
                 self.progIndex = index
+                self.showTotal = False
+                self.name_label.setText(self.inferenceEngine.getAugName(index))
             else:
-                self.progIndex = 0
+                self.showTotal = True
+                self.name_label.setText(self.model_name)
             
             self.graph.clear()
 
@@ -315,32 +313,28 @@ class InferenceViewer(QtGui.QMainWindow):
         self.pauseState = not self.pauseState
         if self.pauseState:
             self.pause_pushButton.setText('Resume')
+            self.receiver_thread.wait()
         else:
             self.pause_pushButton.setText('Pause')
+            self.receiver_thread.start()
 
-    def closeView(self):
-        self.runState = False
+    def terminate(self):
+        self.inferenceEngine.terminate()
+        self.receiver_thread.quit()
+        for count in range(10):
+            QThread.msleep(50)
 
-    def startView(self):
-        self.runState = True
+        self.close()
 
-    def stopView(self):
-        self.runState = False
-
-    def getState(self):
-        return self.runState
-
-    def isPaused(self):
-        return self.pauseState
+    def closeEvent(self, event):
+        self.terminate()
 
     def setIntensity(self):
-        self.augIntensity = (float)(self.level_slider.value()) / 100.0
-
-    def getIntensity(self):
-        return self.augIntensity
+        augIntensity = (float)(self.level_slider.value()) / 100.0
+        self.inferenceEngine.setIntensity(augIntensity)
 
     def calculateIndex(self, x, y):
-        if self.batch_size == 64:
+        if self.batch_size_int == 64:
             imgWidth = self.aug_label.width() / 16.0
         else:
             imgWidth = self.aug_label.width() / 4.0
@@ -350,15 +344,4 @@ class InferenceViewer(QtGui.QMainWindow):
         column = (int)(x / imgWidth)
         row = (int)(y / imgHeight)
         index = 4 * column + row
-        return index + 1
-
-    def getIndex(self):
-        return self.progIndex
-    
-    def setAugName(self, name):
-        self.name_label.setText(name)
-
-    def storeAccuracy(self, index, accuracy):
-        curTime = self.time.elapsed()/1000.0
-        if (curTime - self.lastTime > 0.1):
-            self.augAccuracy[index].append(accuracy)
+        return index
