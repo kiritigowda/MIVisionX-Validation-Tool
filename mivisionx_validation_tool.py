@@ -781,7 +781,6 @@ if __name__ == '__main__':
 		if x == 0:
 			correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 			#create output dict for all the images
-			guiResults = {}
 			#to calculate FPS
 			avg_benchmark = 0.0
 			frameMsecs = 0.0
@@ -809,9 +808,6 @@ if __name__ == '__main__':
 		groundTruthIndex = int(groundTruthIndex)
 		end = time.time()
 		msFrame += (end-start)*1000
-
-		#create output list for each image
-		augmentedResults = []
 
 		#create images for display
 		start = time.time()
@@ -876,30 +872,22 @@ if __name__ == '__main__':
 			#data collection for individual augmentation scores
 			countPerAugmentation = resultPerAugmentation[i]
 
-			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 			if(groundTruthIndex == topIndex[4 + i*4]):
 				correctTop1 = correctTop1 + 1
 				correctTop5 = correctTop5 + 1
-				augmentedResults.append(1)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 				countPerAugmentation[0] = countPerAugmentation[0] + 1
 				countPerAugmentation[1] = countPerAugmentation[1] + 1
 			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
 				correctTop5 = correctTop5 + 1
 				countPerAugmentation[1] = countPerAugmentation[1] + 1
-				if (groundTruthIndex == topIndex[3 + i*4]):
-					augmentedResults.append(2)
-				elif (groundTruthIndex == topIndex[2 + i*4]):
-					augmentedResults.append(3)
-				elif (groundTruthIndex == topIndex[1 + i*4]):
-					augmentedResults.append(4)
-				elif (groundTruthIndex == topIndex[0 + i*4]):
-					augmentedResults.append(5)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 			elif(groundTruthIndex == -1):
 				noGroundTruth = noGroundTruth + 1
-				augmentedResults.append(-1)
+
 			else:
 				wrong = wrong + 1
-				augmentedResults.append(0)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
 				countPerAugmentation[2] = countPerAugmentation[2] + 1
 
 			resultPerAugmentation[i] = countPerAugmentation
@@ -920,13 +908,7 @@ if __name__ == '__main__':
 					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
-
-				# put augmented image result
-				if augmentedResults[i] == 0:
-					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
-					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)					
 
 				end = time.time()
 				msFrameGUI += (end - start)*1000
@@ -1006,7 +988,6 @@ if __name__ == '__main__':
 				if not viewer.getState():
 					break
 
-		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
 		if(verbosePrint):
 			print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
