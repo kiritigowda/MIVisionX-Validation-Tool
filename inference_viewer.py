@@ -248,7 +248,7 @@ class InferenceViewer(QtGui.QMainWindow):
                 self.name_label.setText(self.inferenceEngine.getAugName(index))
             else:
                 self.showTotal = True
-                self.name_label.setText(self.model_name)
+                self.name_label.setText("Model: %s" % (self.model_name))
             
             self.graph.clear()
 
