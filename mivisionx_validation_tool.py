@@ -494,6 +494,7 @@ if __name__ == '__main__':
 		verbose = (str)(panel.verbose)
 		loop = (str)(panel.loop)
 		gui = (str)(panel.gui)
+		container_logo = panel.container_logo
 		fps_file = ''
 	else:
 		parser = argparse.ArgumentParser()
@@ -540,6 +541,7 @@ if __name__ == '__main__':
 		loop = args.loop
 		gui = args.gui
 		fps_file = args.fps_file
+		container_logo = 0
 
 	# set verbose print
 	if(verbose != 'no'):
@@ -548,8 +550,9 @@ if __name__ == '__main__':
 	# set fp16 inference turned on/off
 	tensor_dtype = TensorDataType.FLOAT32
 	if(fp16 != 'no'):
-		FP16inference = True
-		tensor_dtype = TensorDataType.FLOAT16
+		#FP16inference = True
+		#tensor_dtype = TensorDataType.FLOAT16
+		print 'FP16 not supported in current version'
 
 	# set paths
 	modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
@@ -764,7 +767,7 @@ if __name__ == '__main__':
 
 
 	if guiFlag:
-		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt)
+		viewer = inference_viewer(modelName, raliMode, totalImages, modelBatchSizeInt, container_logo)
 		viewer.startView()
 
 	#image_tensor has the input tensor required for inference
