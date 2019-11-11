@@ -121,8 +121,10 @@ class modelInference(QtCore.QObject):
 			self.verbosePrint = True
 
 		# set fp16 inference turned on/off
+		self.tensor_dtype = TensorDataType.FLOAT32
 		if(fp16 != 'no'):
 			self.FP16inference = True
+			self.tensor_dtype=TensorDataType.FLOAT16
 
 		#set loop parameter based on user input
 		if loop == 'yes':
@@ -244,7 +246,7 @@ class modelInference(QtCore.QObject):
 					print("ERROR: Converting NNIR to OpenVX Failed")
 					quit()
 
-		#os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+		os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 		print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 		# create inference classifier
@@ -274,7 +276,7 @@ class modelInference(QtCore.QObject):
 		# Setup Rali Data Loader. 
 		rali_batch_size = 1
 		self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
-										TensorLayout.NCHW, False, self.Ax, self.Mx)
+										TensorLayout.NCHW, False, self.Ax, self.Mx, self.tensor_dtype)
 		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, self.modelBatchSizeInt)
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])

@@ -209,8 +209,8 @@ class InferenceViewer(QtGui.QMainWindow):
             self.y.append(self.totalAccuracy)
             self.graph.plot(self.x, self.y, pen=self.pen)
             self.lastTime = curTime
-            # if self.progIndex:
-            #     self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
+            if self.progIndex:
+                self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
 
     def showImage(self):
         origImage = self.origImageQueue.get()

@@ -73,7 +73,7 @@ raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain',
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
 	def __init__(self, input_path, rali_batch_size, model_batch_size, input_color_format, affinity, image_validation, h_img, w_img, raliMode, loop_parameter,
-				 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0]):
+				 tensor_layout = TensorLayout.NCHW, reverse_channels = False, multiplier = [1.0,1.0,1.0], offset = [0.0, 0.0, 0.0], tensor_dtype=TensorDataType.FLOAT32):
 		RaliGraph.__init__(self, rali_batch_size, affinity)
 		self.validation_dict = {}
 		self.process_validation(image_validation)
@@ -137,7 +137,7 @@ class DataLoader(RaliGraph):
 				self.temp_img = self.colorTemp(self.bright_img, True, self.adjustment_param)
 
 				self.exposed_img = self.exposure(self.input, True, self.shift_param)
-				self.vignette_img = self.vignette(self.exposed_img, True)
+				self.vignette_itensor_dtypemg = self.vignette(self.exposed_img, True)
 				self.fog_img = self.fog(self.input, True)
 				self.snow_img = self.snow(self.fog_img, True)
 
@@ -220,6 +220,7 @@ class DataLoader(RaliGraph):
 		self.multiplier = multiplier
 		self.offset = offset
 		self.reverse_channels = reverse_channels
+		self.tensor_dtype = tensor_dtype
 		self.w = self.getOutputWidth()
 		self.h = self.getOutputHeight()
 		self.b = self.getBatchSize()
@@ -308,9 +309,9 @@ class DataLoader(RaliGraph):
 			return -1
 		self.copyToNPArray(self.out_image)
 		if(TensorLayout.NCHW == self.tensor_format):
-			self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+			self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
 		else:
-			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels)
+			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
 		return self.out_image , self.out_tensor
 
 	def get_rali_list(self, raliMode, model_batch_size):
