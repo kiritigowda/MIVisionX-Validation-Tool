@@ -309,6 +309,7 @@ class modelInference(QtCore.QObject):
 		self.abortRequested = True
 
 	def runInference(self):
+		self.raliEngine.start_iterator()
 		while True and self.setupDone and not self.abortRequested:
 			image_batch, image_tensor = self.raliEngine.get_next_augmentation()
 			frame = image_tensor
@@ -320,6 +321,7 @@ class modelInference(QtCore.QObject):
 			groundTruthIndex = self.raliEngine.get_ground_truth()
 			groundTruthIndex = int(groundTruthIndex)
 			groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+			#print groundTruthIndex, groundTruthLabel
 			frame = image_tensor
 			original_image = image_batch[0:self.h_i, 0:self.w_i]
 			cloned_image = np.copy(image_batch)
@@ -407,6 +409,7 @@ class modelInference(QtCore.QObject):
 		countPerAugmentation = self.augStats[i]
 
 		correctResult = False
+		#print groundTruthIndex, topIndex
 		# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 		if(groundTruthIndex == topIndex[4 + i*4]):
 			self.totalStats[0] += 1
