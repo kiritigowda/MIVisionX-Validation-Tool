@@ -1,27 +1,10 @@
 import os
 from PyQt4 import QtGui, uic
+from inference_viewer import *
 
-class inference_control(QtGui.QMainWindow):
+class InferenceControl(QtGui.QMainWindow):
     def __init__(self, parent=None):
-        super(inference_control, self).__init__(parent)
-        self.model_format = ''
-        self.model_name = ''
-        self.model = ''
-        self.batch = ''
-        self.input_dims = ''
-        self.output_dims = ''
-        self.label = ''
-        self.output = ''
-        self.image = ''
-        self.val = ''
-        self.hier = ''
-        self.add = '0,0,0'
-        self.multiply = '1,1,1'
-        self.gui = 'yes'
-        self.fp16 = 'no'
-        self.replace = 'no'
-        self.verbose = 'no'
-        self.loop = 'yes'
+        super(InferenceControl, self).__init__(parent)
         self.runningState = False
         self.initUI()
 
@@ -205,33 +188,37 @@ class inference_control(QtGui.QMainWindow):
             self.run_pushButton.setStyleSheet("background-color: 0")
 
     def runConfig(self):
-        self.model_format = self.format_comboBox.currentText()
-        self.model_name = self.name_lineEdit.text()
-        self.model = self.file_lineEdit.text()
-        self.batch = self.batch_lineEdit.text()
-        self.mode = self.mode_comboBox.currentIndex()
-        self.input_dims = '%s' % (self.idims_lineEdit.text())
-        self.output_dims = '%s' % (self.odims_lineEdit.text())
-        self.label = self.label_lineEdit.text()
-        self.output = self.output_lineEdit.text()
-        self.image = self.image_lineEdit.text()
-        self.val = self.val_lineEdit.text()
-        self.hier = self.hier_lineEdit.text()
+        model_format = (str)(self.format_comboBox.currentText())
+        model_name = (str)(self.name_lineEdit.text())
+        model_location = (str)(self.file_lineEdit.text())
+        batch_size = (str)(self.batch_lineEdit.text())
+        rali_mode = self.mode_comboBox.currentIndex() + 1 
+        input_dims = (str)('%s' % (self.idims_lineEdit.text()))
+        output_dims = (str)('%s' % (self.odims_lineEdit.text()))
+        label = (str)(self.label_lineEdit.text())
+        output_dir = (str)(self.output_lineEdit.text())
+        image_dir = (str)(self.image_lineEdit.text())
+        image_val = (str)(self.val_lineEdit.text())
+        hierarchy = (str)(self.hier_lineEdit.text())
         if len(self.padd_lineEdit.text()) < 1:
-            self.add = '[0,0,0]'
+            add = '[0,0,0]'
         else:
-            self.add = '[%s]' % (self.padd_lineEdit.text())
+            add = (str)('[%s]' % (self.padd_lineEdit.text()))
         if len(self.pmul_lineEdit.text()) < 1:
-            self.multiply = '[1,1,1]'
+            multiply = '[1,1,1]'
         else:
-            self.multiply = '[%s]' % (self.pmul_lineEdit.text())
-        self.gui = 'yes' if self.gui_checkBox.isChecked() else 'no'
-        self.fp16 = 'yes' if self.fp16_checkBox.isChecked() else 'no'
-        self.replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
-        self.verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
-        self.loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
+            multiply = (str)('[%s]' % (self.pmul_lineEdit.text()))
+        gui = 'yes' if self.gui_checkBox.isChecked() else 'no'
+        fp16 = 'yes' if self.fp16_checkBox.isChecked() else 'no'
+        replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
+        verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
+        loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
+        container_logo = self.container_comboBox.currentIndex()
         self.runningState = True
         self.close()
+
+        viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo, self)
 
     def closeEvent(self, event):
         if not self.runningState:
