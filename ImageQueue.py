@@ -1,15 +1,14 @@
 import Queue
-
+from PyQt4 import QtCore
 class ImageQueue:
     def __init__(self):
-        print 'init'
+        self.mutex = QtCore.QMutex()
         self.queue = Queue.Queue()
 
-    def __del__(self):
-        print 'del'
-
     def enqueue(self, image):
+        self.mutex.lock()
         self.queue.put(image)
+        self.mutex.unlock()
 
     def dequeue(self):
         return self.queue.get()

@@ -147,10 +147,13 @@ class InferenceViewer(QtGui.QMainWindow):
         self.receiver_thread.terminate()
 
     def paintEvent(self, event):
-        if not self.origImageQueue.empty() and not self.augImageQueue.empty():
-            self.showImage()
-            if self.imgCount == self.total_images:
-                self.resetViewer()
+    
+        self.showAugImage()
+        self.showImage()
+        
+        self.displayFPS()
+        if self.imgCount == self.total_images:
+            self.resetViewer()
     
     def resetViewer(self):
         self.imgCount = 0
@@ -169,6 +172,9 @@ class InferenceViewer(QtGui.QMainWindow):
         self.lastIndex = self.frameCount - 1
         self.totalCurve.clear()
         self.augCurve.clear()
+        self.origImageQueue.clear()
+        self.augImageQueue.clear()
+        self.name_label.setText("Model: %s" % (self.model_name))
 
     def setProgressBar(self):
         if self.showAug:
@@ -230,26 +236,30 @@ class InferenceViewer(QtGui.QMainWindow):
             self.lastTime = curTime
 
     def showImage(self):
-        origImage = self.origImageQueue.get()
-        augImage = self.augImageQueue.get()
-        origWidth = origImage.shape[1]
-        origHeight = origImage.shape[0]
-        augWidth = augImage.shape[1]
-        augHeight = augImage.shape[0]
-        qOrigImage = QtGui.QImage(origImage, origWidth, origHeight, origWidth*3, QtGui.QImage.Format_RGB888)
-        qOrigImageResized = qOrigImage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)  
-        qAugImage = QtGui.QImage(augImage, augWidth, augHeight, augWidth*3, QtGui.QImage.Format_RGB888)
-        if self.batch_size_int == 64:
-            qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)              
-        else:
-            qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
-        index = self.imgCount % self.frameCount
-        self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qOrigImageResized))
-        self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
-        self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
-        self.aug_label.setPixmap(QtGui.QPixmap.fromImage(qAugImageResized))
-        self.imgCount += 1
-        self.lastIndex = index
+        if not self.origImageQueue.empty():
+            origImage = self.origImageQueue.get()    
+            origWidth = origImage.shape[1]
+            origHeight = origImage.shape[0]
+            qOrigImage = QtGui.QImage(origImage, origWidth, origHeight, origWidth*3, QtGui.QImage.Format_RGB888)
+            qOrigImageResized = qOrigImage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)  
+            index = self.imgCount % self.frameCount
+            self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qOrigImageResized))
+            self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
+            self.origImage_layout.itemAt(self.lastIndex).widget().setStyleSheet("border: 0");
+            self.imgCount += 1
+            self.lastIndex = index
+
+    def showAugImage(self):
+        if not self.augImageQueue.empty():
+            augImage = self.augImageQueue.get()
+            augWidth = augImage.shape[1]
+            augHeight = augImage.shape[0]
+            qAugImage = QtGui.QImage(augImage, augWidth, augHeight, augWidth*3, QtGui.QImage.Format_RGB888)
+            if self.batch_size_int == 64:
+                qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)              
+            else:
+                qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
+            self.aug_label.setPixmap(QtGui.QPixmap.fromImage(qAugImageResized))
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
@@ -351,8 +361,8 @@ class InferenceViewer(QtGui.QMainWindow):
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
 
-    def displayFPS(self, fps):
-        self.fps_lcdNumber.display(fps)
+    def displayFPS(self):
+        self.fps_lcdNumber.display(self.inferenceEngine.getFPS())
 
     def pauseView(self):
         self.pauseState = not self.pauseState
