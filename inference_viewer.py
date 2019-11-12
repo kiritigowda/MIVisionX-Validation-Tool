@@ -69,6 +69,9 @@ class InferenceViewer(QtGui.QMainWindow):
         self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
         self.docker_pixmap = QPixmap("./data/images/Docker.png")
         self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
+        self.rali_pixmap = QPixmap("./data/images/RALI.png")
+        self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
+        self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
         self.initUI()
         self.initEngines()
         if gui == 'yes':
@@ -111,8 +114,9 @@ class InferenceViewer(QtGui.QMainWindow):
         self.stop_pushButton.clicked.connect(self.terminate)
         self.dark_checkBox.stateChanged.connect(self.setBackground)
         self.verbose_checkBox.stateChanged.connect(self.showVerbose)
+        self.rali_checkBox.stateChanged.connect(self.showRALI)
         self.dark_checkBox.setChecked(True)
-
+        self.graph_imageLabel.setPixmap(self.graph_image_pixmap)
         if self.container_index == 1:
             self.container_logo.setPixmap(self.docker_pixmap)
         elif self.container_index == 2:
@@ -124,6 +128,7 @@ class InferenceViewer(QtGui.QMainWindow):
             self.augAccuracy.append([0])
 
         self.showVerbose()
+        self.showRALI()
 
     def initEngines(self):
         
@@ -284,11 +289,15 @@ class InferenceViewer(QtGui.QMainWindow):
             self.fps_label.setStyleSheet("color: #C82327;")
             self.dark_checkBox.setStyleSheet("color: white;")
             self.verbose_checkBox.setStyleSheet("color: white;")
+            self.rali_checkBox.setStyleSheet("color: white;")
             self.level_label.setStyleSheet("color: white;")
             self.low_label.setStyleSheet("color: white;")
             self.high_label.setStyleSheet("color: white;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
-            self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
+            if self.rali_checkBox.isChecked():
+                self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+            else:
+                self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
         else:
             self.setStyleSheet("background-color: white;")
@@ -305,11 +314,15 @@ class InferenceViewer(QtGui.QMainWindow):
             self.fps_label.setStyleSheet("color: 0;")
             self.dark_checkBox.setStyleSheet("color: 0;")
             self.verbose_checkBox.setStyleSheet("color: 0;")
+            self.rali_checkBox.setStyleSheet("color: 0;")
             self.level_label.setStyleSheet("color: 0;")
             self.low_label.setStyleSheet("color: 0;")
             self.high_label.setStyleSheet("color: 0;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
-            self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
+            if self.rali_checkBox.isChecked():
+                self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+            else:
+                self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
             
     def showVerbose(self):
@@ -324,6 +337,20 @@ class InferenceViewer(QtGui.QMainWindow):
             self.fps_lcdNumber.hide()
             self.graph.plotItem.legend.hide()
         
+    def showRALI(self):
+        if self.rali_checkBox.isChecked():
+            self.graph_imageLabel.show()
+            if self.dark_checkBox.isChecked():
+                self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+            else:
+                self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+        else:
+            self.graph_imageLabel.hide()
+            if self.dark_checkBox.isChecked():
+                self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
+            else:
+                self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
+
     def displayFPS(self, fps):
         self.fps_lcdNumber.display(fps)
 

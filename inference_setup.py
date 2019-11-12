@@ -337,6 +337,7 @@ class modelInference(QtCore.QObject):
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			cv2.imshow("hi", original_image)
 			#Step 7: call python inference. Returns output tensor with 1000 class probabilites
 			output = self.classifier.classify(frame)
 

@@ -938,6 +938,19 @@ color: rgb(0, 0, 0);</string>
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QCheckBox" name="rali_checkBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>RALI</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
@@ -974,6 +987,13 @@ color: rgb(0, 0, 0);</string>
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="graph_imageLabel">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
