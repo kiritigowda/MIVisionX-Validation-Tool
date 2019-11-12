@@ -22,6 +22,7 @@ import numpy as np
 from numpy.ctypeslib import ndpointer
 from rali import *
 from rali_image_iterator import *
+from  rali_common import *
 from inference_control import *
 from inference_viewer import *
 
@@ -85,6 +86,39 @@ raliList_mode3_64 = ['original', 'warpAffine', 'contrast', 'rain',
 			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
 			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
 			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend']
+raliList_mode4_64 = ['original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original']
+raliList_mode5_64 = ['original', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop']
+
 #batch size = 16
 raliList_mode1_16 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
@@ -98,6 +132,14 @@ raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain',
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'fog', 'vignette+snow', 'pixelate', 'gamma',
 			'SnPNoise+gamma', 'rotate', 'jitter+pixelate', 'blend']
+raliList_mode4_16 = ['original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original',
+					'original', 'original', 'original', 'original']
+raliList_mode5_16 = ['original', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop',
+					'nop', 'nop', 'nop', 'nop']
 
 # Class to initialize Rali and call the augmentations 
 class DataLoader(RaliGraph):
@@ -198,6 +240,20 @@ class DataLoader(RaliGraph):
 				self.jitter_img = self.jitter(self.pixelate_img, True)
 
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
+			elif raliMode == 4:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(15):
+					self.copy_img = self.copy(self.input, True)
+
+			elif raliMode == 5:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(15):
+					self.nop_img = self.nop(self.input, True)
+
 		elif model_batch_size == 64:
 			if raliMode == 1:	        
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
@@ -237,7 +293,21 @@ class DataLoader(RaliGraph):
 				self.setof16_mode1(self.input, h_img, w_img)
 				self.setof16_mode1(self.colorTemp1_img, h_img, w_img)
 				self.setof16_mode1(self.colorTemp2_img, h_img, w_img)
-				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)	
+				self.setof16_mode1(self.warpAffine2_img , h_img, w_img)
+
+			elif raliMode == 4:
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(63):
+					self.copy_img = self.copy(self.input, True)
+
+			elif raliMode == 5:	
+				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
+				self.input = self.resize(self.jpg_img, h_img, w_img, True)
+
+				for i in range(63):
+					self.nop_img = self.nop(self.input, True)
 
     def get_input_name(self):
         return self.jpg_img.name(0)
@@ -351,7 +421,7 @@ class annieObjectWrapper():
 	def __del__(self):
 		self.api.annReleaseInference(self.hdl)
 
-	def runInference(self, img_tensor, out):
+	def runInference(self, img_tensor, out, FP16inference):
 		# copy input f32 to inference input
 		status = self.api.annCopyToInferenceInput(self.hdl, np.ascontiguousarray(img_tensor, dtype=np.float32), img_tensor.nbytes, 0)
 		if(status):
@@ -364,14 +434,18 @@ class annieObjectWrapper():
 		status = self.api.annCopyFromInferenceOutput(self.hdl, np.ascontiguousarray(out, dtype=np.float32), out.nbytes)
 		if(status):
 			print('ERROR: annCopyFromInferenceOutput Failed')
-		return out
 
-	def classify(self, img_tensor):
+		if FP16inference:
+			return out.astype(np.float16)
+		else:
+			return out
+	
+	def classify(self, img_tensor, FP16inference):
 		# create output.f32 buffer
 		out_buf = bytearray(self.outputDim[0]*self.outputDim[1]*self.outputDim[2]*self.outputDim[3]*4)
 		out = np.frombuffer(out_buf, dtype=numpy.float32)
 		# run inference & receive output
-		output = self.runInference(img_tensor, out)
+		output = self.runInference(img_tensor, out, FP16inference)
 		return output
 
 # process classification output function
@@ -474,8 +548,10 @@ if __name__ == '__main__':
 		verbosePrint = True
 
 	# set fp16 inference turned on/off
+	tensor_dtype = TensorDataType.FLOAT32
 	if(fp16 != 'no'):
 		#FP16inference = True
+		#tensor_dtype = TensorDataType.FLOAT16
 		print 'FP16 not supported in current version'
 
 	# set paths
@@ -606,7 +682,7 @@ if __name__ == '__main__':
 				quit()
 			# convert the model to FP16
 			if(FP16inference):
-				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --convert-fp16 1 --fuse-ops 1 nnir-files nnir-files)')
+				os.system('(cd '+modelDir+'; python '+modelCompilerPath+'/nnir_update.py --convert-fp16 1 nnir-files nnir-files)')
 				print("\nModel Quantized to FP16\n")
 			# convert to openvx
 			if(os.path.exists(nnirDir)):
@@ -655,7 +731,7 @@ if __name__ == '__main__':
 	rali_batch_size = 1
 	start_rali = time.time()
 	loader = DataLoader(inputImageDir, rali_batch_size, modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, h_i, w_i, raliMode, loop_parameter)
-	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax)
+	imageIterator = ImageIterator(loader, reverse_channels=False,multiplier=Mx,offset=Ax, tensor_dtype=tensor_dtype)
 	raliNumberOfImages = imageIterator.imageCount()
 	end_rali = time.time()
 	if (verbosePrint):
@@ -672,6 +748,10 @@ if __name__ == '__main__':
 			raliList = raliList_mode2_16
 		elif raliMode == 3:
 			raliList = raliList_mode3_16
+		elif raliMode == 4:
+			raliList = raliList_mode4_16
+		elif raliMode == 5:
+			raliList = raliList_mode5_16
 	elif modelBatchSizeInt == 64:
 		if raliMode == 1:
 			raliList = raliList_mode1_64
@@ -679,6 +759,11 @@ if __name__ == '__main__':
 			raliList = raliList_mode2_64
 		elif raliMode == 3:
 			raliList = raliList_mode3_64
+		elif raliMode == 4:
+			raliList = raliList_mode4_64
+		elif raliMode == 5:
+			raliList = raliList_mode5_64
+
 
 
 	if guiFlag:
@@ -699,7 +784,6 @@ if __name__ == '__main__':
 		if x == 0:
 			correctTop5 = 0; correctTop1 = 0; wrong = 0; noGroundTruth = 0;
 			#create output dict for all the images
-			guiResults = {}
 			#to calculate FPS
 			avg_benchmark = 0.0
 			frameMsecs = 0.0
@@ -727,9 +811,6 @@ if __name__ == '__main__':
 		groundTruthIndex = int(groundTruthIndex)
 		end = time.time()
 		msFrame += (end-start)*1000
-
-		#create output list for each image
-		augmentedResults = []
 
 		#create images for display
 		start = time.time()
@@ -763,7 +844,7 @@ if __name__ == '__main__':
 
 		# run inference
 		start = time.time()
-		output = classifier.classify(frame)
+		output = classifier.classify(frame, FP16inference)
 		end = time.time()
 		msFrame += (end - start)*1000
 		if(verbosePrint):
@@ -794,30 +875,22 @@ if __name__ == '__main__':
 			#data collection for individual augmentation scores
 			countPerAugmentation = resultPerAugmentation[i]
 
-			# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 			if(groundTruthIndex == topIndex[4 + i*4]):
 				correctTop1 = correctTop1 + 1
 				correctTop5 = correctTop5 + 1
-				augmentedResults.append(1)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 				countPerAugmentation[0] = countPerAugmentation[0] + 1
 				countPerAugmentation[1] = countPerAugmentation[1] + 1
 			elif(groundTruthIndex == topIndex[3 + i*4] or groundTruthIndex == topIndex[2 + i*4] or groundTruthIndex == topIndex[1 + i*4] or groundTruthIndex == topIndex[0 + i*4]):
 				correctTop5 = correctTop5 + 1
 				countPerAugmentation[1] = countPerAugmentation[1] + 1
-				if (groundTruthIndex == topIndex[3 + i*4]):
-					augmentedResults.append(2)
-				elif (groundTruthIndex == topIndex[2 + i*4]):
-					augmentedResults.append(3)
-				elif (groundTruthIndex == topIndex[1 + i*4]):
-					augmentedResults.append(4)
-				elif (groundTruthIndex == topIndex[0 + i*4]):
-					augmentedResults.append(5)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 			elif(groundTruthIndex == -1):
 				noGroundTruth = noGroundTruth + 1
-				augmentedResults.append(-1)
+
 			else:
 				wrong = wrong + 1
-				augmentedResults.append(0)
+				cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
 				countPerAugmentation[2] = countPerAugmentation[2] + 1
 
 			resultPerAugmentation[i] = countPerAugmentation
@@ -838,13 +911,7 @@ if __name__ == '__main__':
 					text_off_y = (i*h_i)+h_i-7-(cnt*text_height)
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)	
-
-				# put augmented image result
-				if augmentedResults[i] == 0:
-					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-				elif augmentedResults[i] > 0  and augmentedResults[i] < 6:		
-					cv2.rectangle(cloned_image, (0,(i*(h_i-1)+i)),((w_i-1),(h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)					
 
 				end = time.time()
 				msFrameGUI += (end - start)*1000
@@ -924,7 +991,6 @@ if __name__ == '__main__':
 				if not viewer.getState():
 					break
 
-		guiResults[imageFileName] = augmentedResults
 		end_main = time.time()
 		if(verbosePrint):
 			print '%30s' % 'Process Batch Time ', str((end_main - start_main)*1000), 'ms'
