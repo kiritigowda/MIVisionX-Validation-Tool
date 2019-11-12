@@ -231,7 +231,6 @@ class DataLoader(RaliGraph):
 		height = self.h*self.n
 		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
 		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
-		self.old_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
 
 	def get_input_name(self):
 		return self.jpg_img.name(0)
@@ -321,8 +320,6 @@ class DataLoader(RaliGraph):
 		else:
 			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
 
-		#print self.out_image.shape , self.out_tensor.shape
-		#print self.out_tensor[0][0][:100]#, self.out_image[0][0:100]
 		return self.out_image , self.out_tensor
 
 	def get_rali_list(self, raliMode, model_batch_size):
