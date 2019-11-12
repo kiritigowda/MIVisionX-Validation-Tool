@@ -175,7 +175,7 @@ class modelInference(QtCore.QObject):
 				with open(self.analyzerDir + "/setupFile.txt", "w") as fout:
 				    fout.writelines(data[1:])
 				with open(self.analyzerDir + "/setupFile.txt", "a") as fappend:
-					fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+					fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 					fappend.close()
 
 		self.replaceModel = replaceModel
@@ -184,6 +184,9 @@ class modelInference(QtCore.QObject):
 		self.modelOutputDims = modelOutputDims
 		self.imageVal = imageVal
 		self.stdout = None
+		#to calculate FPS
+		self.msFrame = 0.0
+		self.totalFPS = 0.0
 		# get correct list for augmentations
 		self.raliList = []
 		self.setupInference()
@@ -302,6 +305,7 @@ class modelInference(QtCore.QObject):
 				#topLabels.append(labelNames[x])
 				topProb.append(softmaxOutput[x])
 		end = time.time()
+		self.msFrame += (end-start)*1000
 		if(self.verbosePrint):
 			print '%30s' % 'Processed results in ', str((end - start)*1000), 'ms'
 
@@ -318,43 +322,58 @@ class modelInference(QtCore.QObject):
 
 	def runInference(self):
 		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
+			self.msFrame = 0.0
+			start = time.time()
 			image_batch, image_tensor = self.raliEngine.get_next_augmentation()
 			frame = image_tensor
 			original_image = image_batch[0:self.h_i, 0:self.w_i]
 			cloned_image = np.copy(image_batch)
+			end = time.time()
+			self.msFrame += (end-start)*1000
+			if (self.verbosePrint):
+				print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
 
+			start = time.time()
 			#get image file name and ground truth
 			imageFileName = self.raliEngine.get_input_name()
 			groundTruthIndex = self.raliEngine.get_ground_truth()
 			groundTruthIndex = int(groundTruthIndex)
 			groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+			#print groundTruthIndex, groundTruthLabel
 			frame = image_tensor
 			original_image = image_batch[0:self.h_i, 0:self.w_i]
 			cloned_image = np.copy(image_batch)
+			end = time.time()
+			self.msFrame += (end-start)*1000
 			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 			text_off_x = (self.w_i/2) - (text_width/2)
 			text_off_y = self.h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			
+			#if (self.verbosePrint):
+			#	print '%30s' % 'Creating original image with labels took ', str((end - start)*1000), 'ms' 
 			#Step 7: call python inference. Returns output tensor with 1000 class probabilites
-			output = self.classifier.classify(frame)
 
+			start = time.time()
+			output = self.classifier.classify(frame)
+			end = time.time()
+			self.msFrame += (end-start)*1000
+			if (self.verbosePrint):
+				print '%30s' % 'inference took', str((end - start)*1000), 'ms' 
 			#Step 8: Process output for each of the 64 images
 			for i in range(self.modelBatchSizeInt):
+				start = time.time()
 				topIndex, topProb = self.processClassificationOutput(output)
-
-				#create output dict for all the images
-				guiResults = {}
-				#to calculate FPS
-				avg_benchmark = 0.0
-				frameMsecs = 0.0
-				frameMsecsGUI = 0.0
-				totalFPS = 0.0
-				
+				end = time.time()
+				self.msFrame += (end-start)*1000
+				if (self.verbosePrint):
+					print '%30s' % 'processing inference output took', str((end - start)*1000), 'ms' 
 				#process the output tensor
 				correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
 
+				#start = time.time()
 				augmentationText = self.raliList[i].split('+')
 				textCount = len(augmentationText)
 				for cnt in range(0,textCount):
@@ -370,24 +389,41 @@ class modelInference(QtCore.QObject):
 					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
 				else:      
 					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+				#end = time.time()
+				#self.msFrame += (end-start)*1000
+				#if (self.verbosePrint):
+				#	print '%30s' % 'Creating augmented images took', str((end - start)*1000), 'ms'
 
 			#Step 9: split image as needed
+			start = time.time()
 			if self.modelBatchSizeInt == 64:
 					image_batch = np.vsplit(cloned_image, 16)
 					final_image_batch = np.hstack((image_batch))
 			elif self.modelBatchSizeInt == 16:
 				image_batch = np.vsplit(cloned_image, 4)
 				final_image_batch = np.hstack((image_batch))
-			
+			end = time.time()
+			self.msFrame += (end-start)*1000
+			if (self.verbosePrint):
+				print '%30s' % 'Splitting final image took ', str((end - start)*1000), 'ms' 
 			self.origQueue.put(original_image)
 			self.augQueue.put(final_image_batch)
-			
+			self.updateFPS() 
 			self.imgCount +=  1
 			if self.imgCount == self.totalImages:
 				if self.adatFlag == False:
 				 	self.generateADAT(self.modelName, self.hierarchy)
 				 	self.adatFlag = True
 				self.resetStats()
+
+	def updateFPS(self):
+		#print self.msFrame
+		self.totalFPS += (self.msFrame)
+		self.totalFPS = 1000/(self.totalFPS/self.modelBatchSizeInt)
+		print self.totalFPS
+	
+	def getFPS(self):
+		return self.totalFPS
 
 	def getTotalStats(self):
 		return self.totalStats
@@ -399,8 +435,6 @@ class modelInference(QtCore.QObject):
 		return self.raliList[index]
 
 	def processOutput(self, groundTruthIndex, topIndex, topProb, i, imageFileName):
-		msFrame = 0.0
-		msFrameGUI = 0.0
 		start = time.time()
 		sys.stdout = open(self.finalImageResultsFile,'a')
 		print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
@@ -408,14 +442,16 @@ class modelInference(QtCore.QObject):
 		','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
 		sys.stdout = self.orig_stdout
 		end = time.time()
-		msFrame += (end - start)*1000
+		self.msFrame += (end - start)*1000
 		if(self.verbosePrint):
-			print '%30s' % 'Image result saved in ', str((end - start)*1000), 'ms'
+			print '%30s' % 'Image result saved in ADAT took', str((end - start)*1000), 'ms'
 
+		start = time.time()
 		#data collection for individual augmentation scores
 		countPerAugmentation = self.augStats[i]
 
 		correctResult = False
+		#print groundTruthIndex, topIndex
 		# augmentedResults List: 0 = wrong; 1-5 = TopK; -1 = No Ground Truth
 		if(groundTruthIndex == topIndex[4 + i*4]):
 			self.totalStats[0] += 1
@@ -432,7 +468,10 @@ class modelInference(QtCore.QObject):
 			countPerAugmentation[2] += 1
 
 		self.augStats[i] = countPerAugmentation
-
+		end = time.time()
+		self.msFrame += (end-start)*1000
+		if (self.verbosePrint):
+			print '%30s' % 'Comparing against ground truth took', str((end - start)*1000), 'ms' 
 		return correctResult
 
 	def resetStats(self):
@@ -441,6 +480,9 @@ class modelInference(QtCore.QObject):
 		self.augStats = []
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])
+		#self.msFrame = 0.0
+		self.totalFPS = 0.0
+
 
 
 	def generateADAT(self, modelName, hierarchy):

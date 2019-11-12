@@ -144,6 +144,7 @@ class InferenceViewer(QtGui.QMainWindow):
     def paintEvent(self, event):
         if not self.origImageQueue.empty() and not self.augImageQueue.empty():
             self.showImage()
+            self.displayFPS()
             if self.imgCount == self.total_images:
                 self.resetViewer()
     
@@ -324,8 +325,8 @@ class InferenceViewer(QtGui.QMainWindow):
             self.fps_lcdNumber.hide()
             self.graph.plotItem.legend.hide()
         
-    def displayFPS(self, fps):
-        self.fps_lcdNumber.display(fps)
+    def displayFPS(self):
+        self.fps_lcdNumber.display(self.inferenceEngine.getFPS())
 
     def pauseView(self):
         self.pauseState = not self.pauseState
