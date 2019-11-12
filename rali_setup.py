@@ -82,7 +82,7 @@ class DataLoader(RaliGraph):
 		#params for contrast
 		self.min_param = RaliIntParameter(0)
 		self.max_param = RaliIntParameter(255)
-		#param for brightness
+		#param for get_next_augbrightness
 		self.alpha_param = RaliFloatParameter(0.0)
 		#param for colorTemp		
 		self.adjustment_param = RaliIntParameter(0)
@@ -230,7 +230,6 @@ class DataLoader(RaliGraph):
 		height = self.h*self.n
 		self.out_image = np.zeros((height, self.w, self.p), dtype = "uint8")
 		self.out_tensor = np.zeros(( self.b*self.n, self.p, self.h/self.b, self.w,), dtype = "float32")
-
 
 	def get_input_name(self):
 		return self.jpg_img.name(0)

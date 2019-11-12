@@ -82,10 +82,12 @@ class modelInference(QtCore.QObject):
 		self.setupDir = '~/.mivisionx-validation-tool'
 
 		self.analyzerDir = os.path.expanduser(self.setupDir)
+		self.modelName = modelName
 		self.modelDir = self.analyzerDir+'/'+modelName+'_dir'
 		self.inputImageDir = os.path.expanduser((str)(imageDir))
 		self.trainedModel = os.path.expanduser((str)(modelLocation))
 		self.labelText = os.path.expanduser(label)
+		self.hierarchy = hierarchy
 		self.hierarchyText = os.path.expanduser(hierarchy)
 		self.imageValText = os.path.expanduser(imageVal)
 		self.adatOutputDir = os.path.expanduser(outputDir)
@@ -105,6 +107,9 @@ class modelInference(QtCore.QObject):
 		self.rali_mode = rali_mode
 		self.origQueue = origQueue
 		self.augQueue = augQueue
+		self.imgCount = 0
+		self.adatFlag = False
+		self.totalImages = 0
 		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
@@ -114,7 +119,7 @@ class modelInference(QtCore.QObject):
 		self.augStats = []
 		self.setupDone = False
 		finished = pyqtSignal()
-		self.abortRequested = False
+		self.pauseState = False
 
 		# set verbose print
 		if(verbose != 'no'):
@@ -135,17 +140,17 @@ class modelInference(QtCore.QObject):
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
-		Ax=[0,0,0]
+		self.Ax=[0,0,0]
 		if(inputAdd != ''):
 			self.Ax = [float(item) for item in inputAdd.strip("[]").split(',')]
-		Mx=[1,1,1]
+		self.Mx=[1,1,1]
 		if(inputMultiply != ''):
 			self.Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
 
 		# Setup Text File for Demo
 		if (not os.path.isfile(self.analyzerDir + "/setupFile.txt")):
 			f = open(self.analyzerDir + "/setupFile.txt", "w")
-			f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+			f.write(modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 			f.close()
 		else:
 			count = len(open(self.analyzerDir + "/setupFile.txt").readlines())
@@ -158,7 +163,7 @@ class modelInference(QtCore.QObject):
 							modelList.append(data[i].split(';')[1])
 					if modelName not in modelList:
 						f = open(self.analyzerDir + "/setupFile.txt", "a")
-						f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(Ax).strip('[]').replace(" ","") + ';' + str(Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
+						f.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 						f.close()
 			else:
 				with open(self.analyzerDir + "/setupFile.txt", "r") as fin:
@@ -246,7 +251,7 @@ class modelInference(QtCore.QObject):
 					print("ERROR: Converting NNIR to OpenVX Failed")
 					quit()
 
-		os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
+		#os.system('(cd '+self.modelBuildDir+'; cmake ../openvx-files; make; ./anntest ../openvx-files/weights.bin )')
 		print("\nSUCCESS: Converting Pre-Trained model to MIVisionX Runtime successful\n")
 
 		# create inference classifier
@@ -264,7 +269,7 @@ class modelInference(QtCore.QObject):
 		else:
 			print("\nFlow without Image Validation Text not implemented, pass argument --image_val\n")
 			quit()
-		totalImages = len(os.listdir(self.inputImageDir))
+		self.totalImages = len(os.listdir(self.inputImageDir))
 
 		# original std out location 
 		self.orig_stdout = sys.stdout
@@ -276,7 +281,7 @@ class modelInference(QtCore.QObject):
 		# Setup Rali Data Loader. 
 		rali_batch_size = 1
 		self.raliEngine = DataLoader(self.inputImageDir, rali_batch_size, self.modelBatchSizeInt, ColorFormat.IMAGE_RGB24, Affinity.PROCESS_CPU, imageValidation, self.h_i, self.w_i, self.rali_mode, self.loop, 
-										TensorLayout.NCHW, False, self.Ax, self.Mx, self.tensor_dtype)
+										TensorLayout.NCHW, False, self.Mx, self.Ax, self.tensor_dtype)
 		self.raliList = self.raliEngine.get_rali_list(self.rali_mode, self.modelBatchSizeInt)
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])
@@ -305,11 +310,14 @@ class modelInference(QtCore.QObject):
 	def setIntensity(self, intensity):
 		self.raliEngine.updateAugmentationParameter(intensity)
 	
+	def pauseInference(self):
+		self.pauseState = not self.pauseState
+
 	def terminate(self):
-		self.abortRequested = True
+		self.pauseState = True
 
 	def runInference(self):
-		while True and self.setupDone and not self.abortRequested:
+		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
 			image_batch, image_tensor = self.raliEngine.get_next_augmentation()
 			frame = image_tensor
 			original_image = image_batch[0:self.h_i, 0:self.w_i]
@@ -374,11 +382,12 @@ class modelInference(QtCore.QObject):
 			self.origQueue.put(original_image)
 			self.augQueue.put(final_image_batch)
 			
-			#return original_image, final_image_batch
-			#Step 10: adat generation
-			# if adatFlag == False:
-			# 	self.inferenceEngine.generateADAT(modelName, hierarchy)
-			# 	adatFlag = True
+			self.imgCount +=  1
+			if self.imgCount == self.totalImages:
+				if self.adatFlag == False:
+				 	self.generateADAT(self.modelName, self.hierarchy)
+				 	self.adatFlag = True
+				self.resetStats()
 
 	def getTotalStats(self):
 		return self.totalStats
@@ -426,7 +435,15 @@ class modelInference(QtCore.QObject):
 
 		return correctResult
 
-	def generateADAT(modelName, hierarchy):
+	def resetStats(self):
+		self.imgCount = 0
+		self.totalStats = [0,0,0]
+		self.augStats = []
+		for i in range(self.modelBatchSizeInt):
+			self.augStats.append([0,0,0])
+
+
+	def generateADAT(self, modelName, hierarchy):
 		# Create ADAT folder and file
 		print("\nADAT tool called to create the analysis toolkit\n")
 		if(not os.path.exists(self.adatOutputDir)):
