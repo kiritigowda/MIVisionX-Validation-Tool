@@ -45,6 +45,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.x = [0] 
         self.y = [0]
         self.augAccuracy = []
+        
         self.time = QTime.currentTime()
         self.lastTime = 0
         self.totalAccuracy = 0

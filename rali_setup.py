@@ -82,7 +82,7 @@ class DataLoader(RaliGraph):
 		#params for contrast
 		self.min_param = RaliIntParameter(0)
 		self.max_param = RaliIntParameter(255)
-		#param for get_next_augbrightness
+		#param for brightness
 		self.alpha_param = RaliFloatParameter(0.0)
 		#param for colorTemp		
 		self.adjustment_param = RaliIntParameter(0)
