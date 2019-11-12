@@ -210,6 +210,16 @@
           <string>Augmentation Set 3</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 5</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item row="6" column="4">

@@ -394,9 +394,9 @@ class DataLoader(RaliGraph):
 			elif raliMode == 3:
 				self.rali_list = raliList_mode3_16
 			elif raliMode == 4:
-				raliList = raliList_mode4_16
+				self.rali_list = raliList_mode4_16
 			elif raliMode == 5:
-				raliList = raliList_mode5_16
+				self.rali_list = raliList_mode5_16
 		elif model_batch_size == 64:
 			if raliMode == 1:
 				self.rali_list = raliList_mode1_64
@@ -405,8 +405,8 @@ class DataLoader(RaliGraph):
 			elif raliMode == 3:
 				self.rali_list = raliList_mode3_64
 			elif raliMode == 4:
-				raliList = raliList_mode4_64
+				self.rali_list = raliList_mode4_64
 			elif raliMode == 5:
-				raliList = raliList_mode5_64
+				self.rali_list = raliList_mode5_64
 				
 		return self.rali_list

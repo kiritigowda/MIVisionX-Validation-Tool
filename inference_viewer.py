@@ -147,11 +147,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.receiver_thread.terminate()
 
     def paintEvent(self, event):
-        if not self.origImageQueue.empty() and not self.augImageQueue.empty():
-            self.showImage()
-            self.displayFPS()
-            if self.imgCount == self.total_images:
-                self.resetViewer()
+    
         self.showAugImage()
         self.showImage()
         self.displayFPS()
@@ -349,7 +345,7 @@ class InferenceViewer(QtGui.QMainWindow):
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
             self.graph.plotItem.legend.hide()
-
+        
     def showRALI(self):
         if self.rali_checkBox.isChecked():
             self.graph_imageLabel.show()
