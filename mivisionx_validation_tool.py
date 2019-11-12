@@ -16,7 +16,6 @@ import os
 import argparse
 import ctypes
 import numpy as np
-<<<<<<< HEAD
 from numpy.ctypeslib import ndpointer
 from rali import *
 from rali_image_iterator import *
