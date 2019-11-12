@@ -148,6 +148,10 @@ class InferenceViewer(QtGui.QMainWindow):
         self.receiver_thread.terminate()
 
     def paintEvent(self, event):
+<<<<<<< HEAD
+=======
+    
+>>>>>>> upstream/develop
         self.showAugImage()
         self.showImage()
         self.displayFPS()
