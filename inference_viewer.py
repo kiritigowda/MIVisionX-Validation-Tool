@@ -150,11 +150,10 @@ class InferenceViewer(QtGui.QMainWindow):
     
         self.showAugImage()
         self.showImage()
-        
         self.displayFPS()
         if self.imgCount == self.total_images:
             self.resetViewer()
-    
+
     def resetViewer(self):
         self.imgCount = 0
         del self.x[:]
