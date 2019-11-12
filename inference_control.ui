@@ -210,13 +210,20 @@
           <string>Augmentation Set 3</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Augmentation Set 5</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item row="6" column="4">
        <widget class="QCheckBox" name="fp16_checkBox">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="layoutDirection">
          <enum>Qt::RightToLeft</enum>
         </property>
