@@ -48,6 +48,7 @@ class InferenceViewer(QtGui.QMainWindow):
         
         self.time = QTime.currentTime()
         self.lastTime = 0
+        self.pauseTime = 0
         self.totalAccuracy = 0
 
         self.runState = False
@@ -72,6 +73,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.rali_pixmap = QPixmap("./data/images/RALI.png")
         self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
         self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
+        self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
         self.initUI()
         self.initEngines()
         if gui == 'yes':
@@ -217,7 +219,7 @@ class InferenceViewer(QtGui.QMainWindow):
     def plotGraph(self):
         curTime = self.time.elapsed()/1000.0
         if (curTime - self.lastTime > 0.01):
-            self.x.append(curTime)
+            self.x.append(curTime + self.pauseTime)
             self.y.append(self.totalAccuracy)
             self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
             for augmentation in range(self.batch_size_int):
@@ -278,9 +280,9 @@ class InferenceViewer(QtGui.QMainWindow):
             else:
                 self.showAug = False
                 self.name_label.setText("Model: %s" % (self.model_name))
-            
-            self.totalCurve.clear()
-            self.augCurve.clear()
+            if not self.pauseState:
+                self.totalCurve.clear()
+                self.augCurve.clear()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
@@ -305,6 +307,7 @@ class InferenceViewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
@@ -329,9 +332,10 @@ class InferenceViewer(QtGui.QMainWindow):
             self.high_label.setStyleSheet("color: 0;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
             if self.rali_checkBox.isChecked():
-                self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+                self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_pixmap)
             else:
-                self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
+                self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
             
     def showVerbose(self):
@@ -348,17 +352,19 @@ class InferenceViewer(QtGui.QMainWindow):
         
     def showRALI(self):
         if self.rali_checkBox.isChecked():
-            self.graph_imageLabel.show()
             if self.dark_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_pixmap)
+            self.graph_imageLabel.show()
         else:
-            self.graph_imageLabel.hide()
             if self.dark_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
+            self.graph_imageLabel.hide()
 
     def displayFPS(self):
         self.fps_lcdNumber.display(self.inferenceEngine.getFPS())
@@ -367,10 +373,10 @@ class InferenceViewer(QtGui.QMainWindow):
         self.pauseState = not self.pauseState
         if self.pauseState:
             self.pause_pushButton.setText('Resume')
-            self.inferenceEngine.pauseInference()
         else:
             self.pause_pushButton.setText('Pause')
-            self.inferenceEngine.pauseInference()
+
+        self.inferenceEngine.pauseInference()
 
     def terminate(self):
         self.inferenceEngine.terminate()
