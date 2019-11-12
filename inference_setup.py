@@ -114,7 +114,6 @@ class modelInference(QtCore.QObject):
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
 		self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
-
 		self.totalStats = [0,0,0]
 		self.augStats = []
 		self.setupDone = False
@@ -293,7 +292,6 @@ class modelInference(QtCore.QObject):
 	# process classification output function
 	def processClassificationOutput(self, modelOutput):#, labelNames):
 		# post process output file
-		start = time.time()
 		softmaxOutput = np.float32(modelOutput)
 		outputList = np.split(softmaxOutput, self.modelBatchSizeInt)
 		topIndex = []
@@ -304,10 +302,6 @@ class modelInference(QtCore.QObject):
 				topIndex.append(x)
 				#topLabels.append(labelNames[x])
 				topProb.append(softmaxOutput[x])
-		end = time.time()
-		self.msFrame += (end-start)*1000
-		if(self.verbosePrint):
-			print '%30s' % 'Processed results in ', str((end - start)*1000), 'ms'
 
 		return topIndex, topProb
 
@@ -333,36 +327,28 @@ class modelInference(QtCore.QObject):
 			if (self.verbosePrint):
 				print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
 
-			start = time.time()
 			#get image file name and ground truth
 			imageFileName = self.raliEngine.get_input_name()
 			groundTruthIndex = self.raliEngine.get_ground_truth()
 			groundTruthIndex = int(groundTruthIndex)
 			groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-			#print groundTruthIndex, groundTruthLabel
-			frame = image_tensor
-			original_image = image_batch[0:self.h_i, 0:self.w_i]
-			cloned_image = np.copy(image_batch)
-			end = time.time()
-			self.msFrame += (end-start)*1000
+			
 			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 			text_off_x = (self.w_i/2) - (text_width/2)
 			text_off_y = self.h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+			self.origQueue.put(original_image)
 			
-			#if (self.verbosePrint):
-			#	print '%30s' % 'Creating original image with labels took ', str((end - start)*1000), 'ms' 
-			#Step 7: call python inference. Returns output tensor with 1000 class probabilites
-
+			# call python inference. Returns output tensor with 1000 class probabilites
 			start = time.time()
 			output = self.classifier.classify(frame)
 			end = time.time()
 			self.msFrame += (end-start)*1000
 			if (self.verbosePrint):
 				print '%30s' % 'inference took', str((end - start)*1000), 'ms' 
-			#Step 8: Process output for each of the 64 images
+			# Process output for each of the 64 images
 			for i in range(self.modelBatchSizeInt):
 				start = time.time()
 				topIndex, topProb = self.processClassificationOutput(output)
@@ -371,9 +357,13 @@ class modelInference(QtCore.QObject):
 				if (self.verbosePrint):
 					print '%30s' % 'processing inference output took', str((end - start)*1000), 'ms' 
 				#process the output tensor
+				start = time.time()
 				correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
+				end = time.time()
+				self.msFrame += (end-start)*1000
+				if (self.verbosePrint):
+					print '%30s' % 'Processing top 5 results took ', str((end - start)*1000), 'ms' 
 
-				#start = time.time()
 				augmentationText = self.raliList[i].split('+')
 				textCount = len(augmentationText)
 				for cnt in range(0,textCount):
@@ -389,12 +379,8 @@ class modelInference(QtCore.QObject):
 					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
 				else:      
 					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
-				#end = time.time()
-				#self.msFrame += (end-start)*1000
-				#if (self.verbosePrint):
-				#	print '%30s' % 'Creating augmented images took', str((end - start)*1000), 'ms'
 
-			#Step 9: split image as needed
+			#split image as needed
 			start = time.time()
 			if self.modelBatchSizeInt == 64:
 					image_batch = np.vsplit(cloned_image, 16)
@@ -406,7 +392,7 @@ class modelInference(QtCore.QObject):
 			self.msFrame += (end-start)*1000
 			if (self.verbosePrint):
 				print '%30s' % 'Splitting final image took ', str((end - start)*1000), 'ms' 
-			self.origQueue.put(original_image)
+
 			self.augQueue.put(final_image_batch)
 			self.updateFPS() 
 			self.imgCount +=  1
@@ -417,10 +403,8 @@ class modelInference(QtCore.QObject):
 				self.resetStats()
 
 	def updateFPS(self):
-		#print self.msFrame
 		self.totalFPS += (self.msFrame)
 		self.totalFPS = 1000/(self.totalFPS/self.modelBatchSizeInt)
-		print self.totalFPS
 	
 	def getFPS(self):
 		return self.totalFPS
@@ -435,18 +419,12 @@ class modelInference(QtCore.QObject):
 		return self.raliList[index]
 
 	def processOutput(self, groundTruthIndex, topIndex, topProb, i, imageFileName):
-		start = time.time()
 		sys.stdout = open(self.finalImageResultsFile,'a')
 		print(imageFileName+','+str(groundTruthIndex)+','+str(topIndex[4 + i*4])+
 		','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
 		','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
 		sys.stdout = self.orig_stdout
-		end = time.time()
-		self.msFrame += (end - start)*1000
-		if(self.verbosePrint):
-			print '%30s' % 'Image result saved in ADAT took', str((end - start)*1000), 'ms'
-
-		start = time.time()
+		
 		#data collection for individual augmentation scores
 		countPerAugmentation = self.augStats[i]
 
@@ -468,10 +446,6 @@ class modelInference(QtCore.QObject):
 			countPerAugmentation[2] += 1
 
 		self.augStats[i] = countPerAugmentation
-		end = time.time()
-		self.msFrame += (end-start)*1000
-		if (self.verbosePrint):
-			print '%30s' % 'Comparing against ground truth took', str((end - start)*1000), 'ms' 
 		return correctResult
 
 	def resetStats(self):
