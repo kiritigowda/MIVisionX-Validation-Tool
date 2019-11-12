@@ -313,9 +313,6 @@ class DataLoader(RaliGraph):
 		self.copyToNPArray(self.out_image)
 		if(TensorLayout.NCHW == self.tensor_format):
 			self.copyToTensorNCHW(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
-			res = numpy.allclose(self.out_tensor, self.old_tensor)
-			print res
-			self.copyToTensorNCHW(self.old_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
 
 		else:
 			self.copyToTensorNHWC(self.out_tensor, self.multiplier, self.offset, self.reverse_channels, self.tensor_dtype)
