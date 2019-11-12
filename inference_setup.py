@@ -114,7 +114,6 @@ class modelInference(QtCore.QObject):
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
 		self.c_o = int(str_c_o); self.h_o = int(str_h_o); self.w_o = int(str_w_o)
-
 		self.totalStats = [0,0,0]
 		self.augStats = []
 		self.setupDone = False
@@ -334,28 +333,38 @@ class modelInference(QtCore.QObject):
 			groundTruthIndex = self.raliEngine.get_ground_truth()
 			groundTruthIndex = int(groundTruthIndex)
 			groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+
 			#print groundTruthIndex, groundTruthLabel
 			frame = image_tensor
 			original_image = image_batch[0:self.h_i, 0:self.w_i]
 			cloned_image = np.copy(image_batch)
 			end = time.time()
 			self.msFrame += (end-start)*1000
+
+			
+
 			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 			text_off_x = (self.w_i/2) - (text_width/2)
 			text_off_y = self.h_i-7
 			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
 			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
 			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+
 			
 			#Step 7: call python inference. Returns output tensor with 1000 class probabilites
+
+
+			self.origQueue.put(original_image)
+			
+			# call python inference. Returns output tensor with 1000 class probabilites
 
 			start = time.time()
 			output = self.classifier.classify(frame)
 			end = time.time()
 			self.msFrame += (end-start)*1000
 			if (self.verbosePrint):
-				print '%30s' % 'Inference took', str((end - start)*1000), 'ms' 
-			#Step 8: Process output for each of the 64 images
+				print '%30s' % 'Inference took', str((end - start)*1000), 'ms'
+
 			for i in range(self.modelBatchSizeInt):
 				start = time.time()
 				topIndex, topProb = self.processClassificationOutput(output)
@@ -387,7 +396,7 @@ class modelInference(QtCore.QObject):
 				else:      
 					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-			#Step 9: split image as needed
+			#split image as needed
 			start = time.time()
 			if self.modelBatchSizeInt == 64:
 					image_batch = np.vsplit(cloned_image, 16)
@@ -431,7 +440,6 @@ class modelInference(QtCore.QObject):
 		','+str(topIndex[3 + i*4])+','+str(topIndex[2 + i*4])+','+str(topIndex[1 + i*4])+','+str(topIndex[0 + i*4])+','+str(topProb[4 + i*4])+
 		','+str(topProb[3 + i*4])+','+str(topProb[2 + i*4])+','+str(topProb[1 + i*4])+','+str(topProb[0 + i*4]))
 		sys.stdout = self.orig_stdout
-
 		#data collection for individual augmentation scores
 		countPerAugmentation = self.augStats[i]
 
@@ -453,8 +461,6 @@ class modelInference(QtCore.QObject):
 			countPerAugmentation[2] += 1
 
 		self.augStats[i] = countPerAugmentation
-		if (self.verbosePrint):
-			print '%30s' % 'Comparing against ground truth took', str((end - start)*1000), 'ms' 
 		return correctResult
 
 	def resetStats(self):
