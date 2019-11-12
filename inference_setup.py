@@ -355,7 +355,7 @@ class modelInference(QtCore.QObject):
 				end = time.time()
 				self.msFrame += (end-start)*1000
 				if (self.verbosePrint):
-					print '%30s' % 'processing inference output took', str((end - start)*1000), 'ms' 
+					print '%30s' % 'Processing inference output took', str((end - start)*1000), 'ms' 
 				#process the output tensor
 				start = time.time()
 				correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
@@ -454,7 +454,6 @@ class modelInference(QtCore.QObject):
 		self.augStats = []
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])
-		#self.msFrame = 0.0
 		self.totalFPS = 0.0
 
 
