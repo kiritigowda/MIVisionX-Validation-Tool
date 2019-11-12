@@ -276,9 +276,11 @@ class InferenceViewer(QtGui.QMainWindow):
                 self.progIndex = index
                 self.showAug = True
                 self.name_label.setText(self.inferenceEngine.getAugName(index))
+                self.augCurve.setData(x=self.x, y=self.augAccuracy[self.progIndex], pen=pg.mkPen('b', width=4))
             else:
                 self.showAug = False
                 self.name_label.setText("Model: %s" % (self.model_name))
+                self.augCurve.clear()
             if not self.pauseState:
                 self.totalCurve.clear()
                 self.augCurve.clear()
@@ -310,6 +312,7 @@ class InferenceViewer(QtGui.QMainWindow):
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
+            self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
         else:
             self.setStyleSheet("background-color: white;")
             self.pen = pg.mkPen('k', width=4)
@@ -336,6 +339,7 @@ class InferenceViewer(QtGui.QMainWindow):
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
+            self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
             
     def showVerbose(self):
         if self.verbose_checkBox.isChecked():
@@ -371,8 +375,7 @@ class InferenceViewer(QtGui.QMainWindow):
     def pauseView(self):
         self.pauseState = not self.pauseState
         if self.pauseState:
-            self.totalElapsedTime += self.elapsedTime.elapsed() / 1000 
-            print self.totalElapsedTime
+            self.totalElapsedTime += self.elapsedTime.elapsed() / 1000.0
             self.pause_pushButton.setText('Resume')
         else:
             self.elapsedTime.restart()
