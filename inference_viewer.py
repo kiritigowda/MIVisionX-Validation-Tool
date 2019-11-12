@@ -9,7 +9,7 @@ from inference_setup import *
 
 class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, container_logo, parent):
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, parent):
         super(InferenceViewer, self).__init__(parent)
         self.parent = parent
 
@@ -39,8 +39,9 @@ class InferenceViewer(QtGui.QMainWindow):
         self.container_index = (int)(container_logo)
         self.origImageQueue = Queue.Queue()
         self.augImageQueue = Queue.Queue()
-
-        self.graph = pg.PlotWidget(title="Accuracy vs Time")
+        self.totalCurve = None
+        self.augCurve = None
+        self.graph = None
         self.x = [0] 
         self.y = [0]
         self.augAccuracy = []
@@ -51,7 +52,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.runState = False
         self.pauseState = False
-        self.showTotal = True
+        self.showAug = False
         self.progIndex = 0
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
@@ -70,7 +71,8 @@ class InferenceViewer(QtGui.QMainWindow):
         self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
         self.initUI()
         self.initEngines()
-        self.show()
+        if gui == 'yes':
+            self.show()
         self.updateTimer = QTimer()
         self.updateTimer.timeout.connect(self.update)
         self.updateTimer.timeout.connect(self.plotGraph)
@@ -89,16 +91,18 @@ class InferenceViewer(QtGui.QMainWindow):
         self.top5_progressBar.setStyleSheet("QProgressBar::chunk { background: lightgreen; }")
         self.mis_progressBar.setStyleSheet("QProgressBar::chunk { background: red; }")
         self.total_progressBar.setMaximum(self.total_images*self.batch_size_int)
-
+        self.graph = pg.PlotWidget(title="Accuracy vs Time")
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
         self.graph.setYRange(0, 100, padding=0)
-        #self.graph.addLegend()
-        self.graph.plot(self.x, self.y, pen=self.pen, name='Total')
-        self.verticalLayout_2.addWidget(self.graph)
+        self.graph.addLegend(size=(0.5,0.5), offset=(320,10))
+        pg.setConfigOptions(antialias=True)
+        self.totalCurve = self.graph.plot(pen=self.pen, name='Total')
+        self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4), name='Augmented Image')
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
         self.graph.setMaximumHeight(300)
+        self.verticalLayout_2.addWidget(self.graph)
         self.level_slider.setMaximum(100)
         self.level_slider.valueChanged.connect(self.setIntensity)
         self.pause_pushButton.setStyleSheet("color: white; background-color: darkBlue")
@@ -140,11 +144,8 @@ class InferenceViewer(QtGui.QMainWindow):
     def paintEvent(self, event):
         if not self.origImageQueue.empty() and not self.augImageQueue.empty():
             self.showImage()
-            # if self.progIndex == 0:
-            #     self.setTotalProgress()
-                #self.plotGraph()
-            # else:
-            #     self.setAugProgress(self.progIndex)
+            if self.imgCount == self.total_images:
+                self.resetViewer()
     
     def resetViewer(self):
         self.imgCount = 0
@@ -159,15 +160,16 @@ class InferenceViewer(QtGui.QMainWindow):
         self.time = QTime.currentTime()
         self.lastTime = 0
         self.progIndex = 0
-        self.showTotal = True
+        self.showAug = False
         self.lastIndex = self.frameCount - 1
-        self.graph.clear()
+        self.totalCurve.clear()
+        self.augCurve.clear()
 
     def setProgressBar(self):
-        if self.showTotal:
-            self.setTotalProgress()
-        else:
+        if self.showAug:
             self.setAugProgress(self.progIndex)
+        else:
+            self.setTotalProgress()
 
     def setTotalProgress(self):
         totalStats = self.inferenceEngine.getTotalStats()
@@ -204,13 +206,23 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def plotGraph(self):
         curTime = self.time.elapsed()/1000.0
-        if (curTime - self.lastTime > 0.005):
+        if (curTime - self.lastTime > 0.01):
             self.x.append(curTime)
             self.y.append(self.totalAccuracy)
-            self.graph.plot(self.x, self.y, pen=self.pen)
+            self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
+            for augmentation in range(self.batch_size_int):
+                augStats = self.inferenceEngine.getAugStats(augmentation)
+                top1 = augStats[0]
+                top5 = augStats[1]
+                mis = augStats[2]
+                totalCount = top5 + mis
+                totalAccuracy = (float)(top5) / (totalCount+1) * 100
+                self.augAccuracy[augmentation].append(totalAccuracy)
+        
+            if self.showAug:
+                self.augCurve.setData(x=self.x, y=self.augAccuracy[self.progIndex], pen=pg.mkPen('b', width=4))
+            
             self.lastTime = curTime
-            if self.progIndex:
-                self.graph.plot(self.x, self.augAccuracy[self.progIndex-1], pen=pg.mkPen('b', width=4))
 
     def showImage(self):
         origImage = self.origImageQueue.get()
@@ -222,7 +234,10 @@ class InferenceViewer(QtGui.QMainWindow):
         qOrigImage = QtGui.QImage(origImage, origWidth, origHeight, origWidth*3, QtGui.QImage.Format_RGB888)
         qOrigImageResized = qOrigImage.scaled(self.image_label.width(), self.image_label.height(), QtCore.Qt.IgnoreAspectRatio)  
         qAugImage = QtGui.QImage(augImage, augWidth, augHeight, augWidth*3, QtGui.QImage.Format_RGB888)
-        qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)              
+        if self.batch_size_int == 64:
+            qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.IgnoreAspectRatio)              
+        else:
+            qAugImageResized = qAugImage.scaled(self.aug_label.width(), self.aug_label.height(), QtCore.Qt.KeepAspectRatio)
         index = self.imgCount % self.frameCount
         self.origImage_layout.itemAt(index).widget().setPixmap(QtGui.QPixmap.fromImage(qOrigImageResized))
         self.origImage_layout.itemAt(index).widget().setStyleSheet("border: 5px solid yellow;");
@@ -244,13 +259,14 @@ class InferenceViewer(QtGui.QMainWindow):
             if self.aug_label.geometry().contains(mousePos):
                 index = self.calculateIndex(mousePos.x(), mousePos.y())
                 self.progIndex = index
-                self.showTotal = False
+                self.showAug = True
                 self.name_label.setText(self.inferenceEngine.getAugName(index))
             else:
-                self.showTotal = True
+                self.showAug = False
                 self.name_label.setText("Model: %s" % (self.model_name))
             
-            self.graph.clear()
+            self.totalCurve.clear()
+            self.augCurve.clear()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
@@ -301,10 +317,12 @@ class InferenceViewer(QtGui.QMainWindow):
             self.dataset_label.show()
             self.fps_label.show()
             self.fps_lcdNumber.show()
+            self.graph.plotItem.legend.show()
         else:
             self.dataset_label.hide()
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
+            self.graph.plotItem.legend.hide()
         
     def displayFPS(self, fps):
         self.fps_lcdNumber.display(fps)
@@ -313,10 +331,10 @@ class InferenceViewer(QtGui.QMainWindow):
         self.pauseState = not self.pauseState
         if self.pauseState:
             self.pause_pushButton.setText('Resume')
-            self.receiver_thread.wait()
+            self.inferenceEngine.pauseInference()
         else:
             self.pause_pushButton.setText('Pause')
-            self.receiver_thread.start()
+            self.inferenceEngine.pauseInference()
 
     def terminate(self):
         self.inferenceEngine.terminate()
