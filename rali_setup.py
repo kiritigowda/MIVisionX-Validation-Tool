@@ -1,12 +1,9 @@
 import sys
 #setup python path for RALI
 sys.path.append('/opt/rocm/mivisionx/rali/python/')
-
-import os
 from rali import *
 from rali_image_iterator import *
 from rali_common import *
-import numpy
 
 #batch size = 64
 raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain', 

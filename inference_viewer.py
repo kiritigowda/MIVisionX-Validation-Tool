@@ -1,6 +1,4 @@
 import pyqtgraph as pg
-import cv2
-import numpy as np
 import Queue
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QPixmap
@@ -27,67 +25,66 @@ class InferenceViewer(QtGui.QMainWindow):
         self.output_dir = output_dir
         self.add = add
         self.multiply = multiply
-        self.verbose = verbose
+        self.gui = True if gui == 'yes' else False
         self.fp16 = fp16
         self.replace = replace
+        self.verbose = verbose
         self.loop = loop
         self.rali_mode = rali_mode
         inputImageDir = os.path.expanduser(image_dir)
         self.total_images = len(os.listdir(inputImageDir))
-        self.imgCount = 0
-        self.frameCount = 9
-        self.container_index = (int)(container_logo)
         self.origImageQueue = Queue.Queue()
         self.augImageQueue = Queue.Queue()
-        self.totalCurve = None
-        self.augCurve = None
-        self.graph = None
-        self.x = [0] 
-        self.y = [0]
-        self.augAccuracy = []
-        
-        self.time = QTime.currentTime()
-        self.lastTime = 0
-        self.totalAccuracy = 0
-
-        self.runState = False
-        self.pauseState = False
-        self.showAug = False
-        self.progIndex = 0
-        self.augIntensity = 0.0
-        self.lastIndex = self.frameCount - 1
-
-        self.pen = pg.mkPen('w', width=4)
 
         self.inferenceEngine = None
         self.receiver_thread = None
-
-        self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
-        self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
-        self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
-        self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
-        self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
-        self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
-        self.docker_pixmap = QPixmap("./data/images/Docker.png")
-        self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
-
-        self.rali_pixmap = QPixmap("./data/images/RALI.png")
-        self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
-        self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
-
-        self.initUI()
+    
         self.initEngines()
-        if gui == 'yes':
+        
+        if self.gui:
+            self.container_index = (int)(container_logo)
+            self.pauseState = False
+            self.showAug = False
+            self.elapsedTime = QTime.currentTime()
+            self.lastTime = 0
+            self.totalElapsedTime = 0.0
+            self.totalAccuracy = 0
+            self.progIndex = 0
+            self.augIntensity = 0.0
+            self.imgCount = 0
+            self.frameCount = 9
+            self.lastIndex = self.frameCount - 1
+            self.x = [0] 
+            self.y = [0]
+            self.augAccuracy = []
+            self.totalCurve = None
+            self.augCurve = None
+            self.graph = None
+            self.pen = pg.mkPen('w', width=4)
+            self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
+            self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
+            self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
+            self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
+            self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
+            self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
+            self.docker_pixmap = QPixmap("./data/images/Docker.png")
+            self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
+            self.rali_pixmap = QPixmap("./data/images/RALI.png")
+            self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
+            self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
+            self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
+            self.initUI()
             self.show()
-        self.updateTimer = QTimer()
-        self.updateTimer.timeout.connect(self.update)
-        self.updateTimer.timeout.connect(self.plotGraph)
-        self.updateTimer.timeout.connect(self.setProgressBar)
-        self.updateTimer.start(40)
+            #self.showMaximized()
+            self.updateTimer = QTimer()
+            self.updateTimer.timeout.connect(self.update)
+            self.updateTimer.timeout.connect(self.plotGraph)
+            self.updateTimer.timeout.connect(self.setProgressBar)
+            self.updateTimer.start(40)
+        
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
-        #self.showMaximized()
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
@@ -134,23 +131,19 @@ class InferenceViewer(QtGui.QMainWindow):
         self.showRALI()
 
     def initEngines(self):
-        
         self.receiver_thread = QThread()
         # Creating an object for inference.
         self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
                                                 self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
-                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue)
+                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue, self.gui, self.total_images)
         
         self.inferenceEngine.moveToThread(self.receiver_thread)
         self.receiver_thread.started.connect(self.inferenceEngine.runInference)
-        #self.inferenceEngine.finished.connect(self.inferenceEngine.quit)
-        #self.inferenceEngine.finished.connect(self.inferenceEngine.deleteLater)
         self.receiver_thread.finished.connect(self.inferenceEngine.deleteLater)
         self.receiver_thread.start()
         self.receiver_thread.terminate()
 
     def paintEvent(self, event):
-    
         self.showAugImage()
         self.showImage()
         self.displayFPS()
@@ -167,15 +160,14 @@ class InferenceViewer(QtGui.QMainWindow):
         for augmentation in range(self.batch_size_int):
             self.augAccuracy.append([0])
 
-        self.time = QTime.currentTime()
         self.lastTime = 0
+        self.elapsedTime = QTime.currentTime()
+        self.totalElapsedTime = 0.0
         self.progIndex = 0
         self.showAug = False
         self.lastIndex = self.frameCount - 1
         self.totalCurve.clear()
         self.augCurve.clear()
-        self.origImageQueue.clear()
-        self.augImageQueue.clear()
         self.name_label.setText("Model: %s" % (self.model_name))
 
     def setProgressBar(self):
@@ -218,23 +210,24 @@ class InferenceViewer(QtGui.QMainWindow):
         self.mis_progressBar.setMaximum(totalCount)
 
     def plotGraph(self):
-        curTime = self.time.elapsed()/1000.0
-        if (curTime - self.lastTime > 0.01):
-            self.x.append(curTime)
-            self.y.append(self.totalAccuracy)
-            self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
-            for augmentation in range(self.batch_size_int):
-                augStats = self.inferenceEngine.getAugStats(augmentation)
-                top1 = augStats[0]
-                top5 = augStats[1]
-                mis = augStats[2]
-                totalCount = top5 + mis
-                totalAccuracy = (float)(top5) / (totalCount+1) * 100
-                self.augAccuracy[augmentation].append(totalAccuracy)
-        
-            if self.showAug:
-                self.augCurve.setData(x=self.x, y=self.augAccuracy[self.progIndex], pen=pg.mkPen('b', width=4))
+        if not self.pauseState:
+            curTime = self.elapsedTime.elapsed()/1000.0
+            if (curTime - self.lastTime > 0.01):
+                self.x.append(curTime+self.totalElapsedTime)
+                self.y.append(self.totalAccuracy)
+                self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
+                for augmentation in range(self.batch_size_int):
+                    augStats = self.inferenceEngine.getAugStats(augmentation)
+                    top1 = augStats[0]
+                    top5 = augStats[1]
+                    mis = augStats[2]
+                    totalCount = top5 + mis
+                    totalAccuracy = (float)(top5) / (totalCount+1) * 100
+                    self.augAccuracy[augmentation].append(totalAccuracy)
             
+                if self.showAug:
+                    self.augCurve.setData(x=self.x, y=self.augAccuracy[self.progIndex], pen=pg.mkPen('b', width=4))
+                
             self.lastTime = curTime
 
     def showImage(self):
@@ -278,12 +271,14 @@ class InferenceViewer(QtGui.QMainWindow):
                 self.progIndex = index
                 self.showAug = True
                 self.name_label.setText(self.inferenceEngine.getAugName(index))
+                self.augCurve.setData(x=self.x, y=self.augAccuracy[self.progIndex], pen=pg.mkPen('b', width=4))
             else:
                 self.showAug = False
                 self.name_label.setText("Model: %s" % (self.model_name))
-            
-            self.totalCurve.clear()
-            self.augCurve.clear()
+                self.augCurve.clear()
+            if not self.pauseState:
+                self.totalCurve.clear()
+                self.augCurve.clear()
 
     def setBackground(self):
         if self.dark_checkBox.isChecked():
@@ -308,9 +303,11 @@ class InferenceViewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
+            self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
         else:
             self.setStyleSheet("background-color: white;")
             self.pen = pg.mkPen('k', width=4)
@@ -333,9 +330,11 @@ class InferenceViewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
+            self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
             
     def showVerbose(self):
         if self.verbose_checkBox.isChecked():
@@ -351,17 +350,19 @@ class InferenceViewer(QtGui.QMainWindow):
         
     def showRALI(self):
         if self.rali_checkBox.isChecked():
-            self.graph_imageLabel.show()
             if self.dark_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_pixmap)
+            self.graph_imageLabel.show()
         else:
-            self.graph_imageLabel.hide()
             if self.dark_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
+            self.graph_imageLabel.hide()
 
     def displayFPS(self):
         self.fps_lcdNumber.display(self.inferenceEngine.getFPS())
@@ -369,11 +370,13 @@ class InferenceViewer(QtGui.QMainWindow):
     def pauseView(self):
         self.pauseState = not self.pauseState
         if self.pauseState:
+            self.totalElapsedTime += self.elapsedTime.elapsed() / 1000.0
             self.pause_pushButton.setText('Resume')
-            self.inferenceEngine.pauseInference()
         else:
+            self.elapsedTime.restart()
             self.pause_pushButton.setText('Pause')
-            self.inferenceEngine.pauseInference()
+
+        self.inferenceEngine.pauseInference()
 
     def terminate(self):
         self.inferenceEngine.terminate()
@@ -385,6 +388,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         self.terminate()
+        exit(0)
 
     def setIntensity(self):
         augIntensity = (float)(self.level_slider.value()) / 100.0
