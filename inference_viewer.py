@@ -38,7 +38,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
         self.inferenceEngine = None
         self.receiver_thread = None
-        
+    
         self.initEngines()
         
         if self.gui:
