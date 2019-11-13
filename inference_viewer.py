@@ -39,9 +39,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.container_index = (int)(container_logo)
         self.origImageQueue = Queue.Queue()
         self.augImageQueue = Queue.Queue()
-        self.totalCurve = None
-        self.augCurve = None
-        self.graph = None
+        
         self.x = [0] 
         self.y = [0]
         self.augAccuracy = []
@@ -57,33 +55,38 @@ class InferenceViewer(QtGui.QMainWindow):
         self.progIndex = 0
         self.augIntensity = 0.0
         self.lastIndex = self.frameCount - 1
-
-        self.pen = pg.mkPen('w', width=4)
+        self.gui = gui
 
         self.inferenceEngine = None
         self.receiver_thread = None
-        self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
-        self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
-        self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
-        self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
-        self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
-        self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
-        self.docker_pixmap = QPixmap("./data/images/Docker.png")
-        self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
-        self.rali_pixmap = QPixmap("./data/images/RALI.png")
-        self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
-        self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
-        self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
-        self.initUI()
+        
         self.initEngines()
-        if gui == 'yes':
+        if gui:
+            self.totalCurve = None
+            self.augCurve = None
+            self.graph = None
+            self.pen = pg.mkPen('w', width=4)
+            self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
+            self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
+            self.MIVisionX_pixmap = QPixmap("./data/images/MIVisionX-logo.png")
+            self.MIVisionX_white_pixmap = QPixmap("./data/images/MIVisionX-logo-white.png")
+            self.EPYC_pixmap = QPixmap("./data/images/EPYC-blue.png")
+            self.EPYC_white_pixmap = QPixmap("./data/images/EPYC-blue-white.png")
+            self.docker_pixmap = QPixmap("./data/images/Docker.png")
+            self.singularity_pixmap = QPixmap("./data/images/Singularity.png")
+            self.rali_pixmap = QPixmap("./data/images/RALI.png")
+            self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
+            self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
+            self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
+            self.initUI()
             self.show()
             #self.showMaximized()
-        self.updateTimer = QTimer()
-        self.updateTimer.timeout.connect(self.update)
-        self.updateTimer.timeout.connect(self.plotGraph)
-        self.updateTimer.timeout.connect(self.setProgressBar)
-        self.updateTimer.start(40)
+            self.updateTimer = QTimer()
+            self.updateTimer.timeout.connect(self.update)
+            self.updateTimer.timeout.connect(self.plotGraph)
+            self.updateTimer.timeout.connect(self.setProgressBar)
+            self.updateTimer.start(40)
+        
 
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
@@ -137,7 +140,7 @@ class InferenceViewer(QtGui.QMainWindow):
         # Creating an object for inference.
         self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
                                                 self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
-                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue)
+                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue, self.gui)
         
         self.inferenceEngine.moveToThread(self.receiver_thread)
         self.receiver_thread.started.connect(self.inferenceEngine.runInference)
@@ -393,6 +396,7 @@ class InferenceViewer(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         self.terminate()
+        exit(0)
 
     def setIntensity(self):
         augIntensity = (float)(self.level_slider.value()) / 100.0

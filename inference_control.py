@@ -208,11 +208,11 @@ class InferenceControl(QtGui.QMainWindow):
             multiply = '[1,1,1]'
         else:
             multiply = (str)('[%s]' % (self.pmul_lineEdit.text()))
-        gui = 'yes' if self.gui_checkBox.isChecked() else 'no'
-        fp16 = 'yes' if self.fp16_checkBox.isChecked() else 'no'
-        replace = 'yes' if self.replace_checkBox.isChecked() else 'no'
-        verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
-        loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
+        gui = True if self.gui_checkBox.isChecked() else False
+        fp16 = True if self.fp16_checkBox.isChecked() else False
+        replace = True if self.replace_checkBox.isChecked() else False
+        verbose = True if self.verbose_checkBox.isChecked() else False
+        loop = True if self.loop_checkBox.isChecked() else False
         container_logo = self.container_comboBox.currentIndex()
         self.runningState = True
         self.close()

@@ -22,7 +22,7 @@ from inference_control import *
 # MIVisionX Classifier
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
-	#app.setQuitOnLastWindowClosed(False)
+	app.setQuitOnLastWindowClosed(False)
 	if len(sys.argv) == 1:
 		panel = InferenceControl()
 		panel.show()

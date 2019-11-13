@@ -74,7 +74,7 @@ class annieObjectWrapper():
 
 class modelInference(QtCore.QObject):
 	def __init__(self, modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, parent=None):
+				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, gui, parent=None):
 
 		super(modelInference, self).__init__(parent)
 		self.modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
@@ -97,6 +97,7 @@ class modelInference(QtCore.QObject):
 		self.pythonLib = self.modelBuildDir+'/libannpython.so'
 		self.weightsFile = self.openvxDir+'/weights.bin'
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
+		self.fpsFile = str(self.analyzerDir+"/fps.txt")
 		self.modelBatchSize = modelBatchSize
 		self.verbosePrint = False
 		self.FP16inference = False
@@ -117,25 +118,23 @@ class modelInference(QtCore.QObject):
 		self.totalStats = [0,0,0]
 		self.augStats = []
 		self.setupDone = False
-		finished = pyqtSignal()
 		self.pauseState = False
 
 		# set verbose print
-		if(verbose != 'no'):
-			self.verbosePrint = True
+		self.verbosePrint = verbose
 
 		# set fp16 inference turned on/off
 		self.tensor_dtype = TensorDataType.FLOAT32
-		if(fp16 != 'no'):
+		if fp16:
 			self.FP16inference = True
 			self.tensor_dtype=TensorDataType.FLOAT16
 
 		#set loop parameter based on user input
-		if loop == 'yes':
-			self.loop = True
-		else:
-			self.loop = False
+		self.loop = loop
 		
+		#set gui parameter based on user input
+		self.gui = gui
+
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
@@ -210,7 +209,7 @@ class modelInference(QtCore.QObject):
 		if(os.path.exists(self.analyzerDir)):
 			print("\nMIVisionX Validation Tool\n")
 			# replace old model or throw error
-			if(self.replaceModel == 'yes'):
+			if(self.replaceModel):
 				os.system('rm -rf '+self.modelDir)
 			elif(os.path.exists(self.modelDir)):
 				print("OK: Model exists")
@@ -219,7 +218,7 @@ class modelInference(QtCore.QObject):
 			os.system('(cd ; mkdir .mivisionx-validation-tool)')
 
 		# Compile Model and generate python .so files
-		if (self.replaceModel == 'yes' or not os.path.exists(self.modelDir)):
+		if (self.replaceModel or not os.path.exists(self.modelDir)):
 			os.system('mkdir '+self.modelDir)
 			if(os.path.exists(self.modelDir)):
 				# convert to NNIR
@@ -323,24 +322,26 @@ class modelInference(QtCore.QObject):
 				frame = image_tensor
 				original_image = image_batch[0:self.h_i, 0:self.w_i]
 				cloned_image = np.copy(image_batch)
-				end = time.time()
-				self.msFrame += (end-start)*1000
-				if (self.verbosePrint):
-					print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
-
+			
 				#get image file name and ground truth
 				imageFileName = self.raliEngine.get_input_name()
 				groundTruthIndex = self.raliEngine.get_ground_truth()
 				groundTruthIndex = int(groundTruthIndex)
 				groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-				
-				text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-				text_off_x = (self.w_i/2) - (text_width/2)
-				text_off_y = self.h_i-7
-				box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-				cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-				cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
-				self.origQueue.put(original_image)
+
+				end = time.time()
+				self.msFrame += (end-start)*1000
+				if (self.verbosePrint):
+					print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
+	
+				if self.gui:
+					text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+					text_off_x = (self.w_i/2) - (text_width/2)
+					text_off_y = self.h_i-7
+					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+					cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+					cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+					self.origQueue.put(original_image)
 				
 				# call python inference. Returns output tensor with 1000 class probabilites
 				start = time.time()
@@ -365,36 +366,33 @@ class modelInference(QtCore.QObject):
 					if (self.verbosePrint):
 						print '%30s' % 'Processing top 5 results took ', str((end - start)*1000), 'ms' 
 
-					augmentationText = self.raliList[i].split('+')
-					textCount = len(augmentationText)
-					for cnt in range(0,textCount):
-						currentText = augmentationText[cnt]
-						text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-						text_off_x = (self.w_i/2) - (text_width/2)
-						text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
-						box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-						cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-						cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
-					# put augmented image result
-					if not correctResult:
-						cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-					else:      
-						cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+					if self.gui:
+						augmentationText = self.raliList[i].split('+')
+						textCount = len(augmentationText)
+						for cnt in range(0,textCount):
+							currentText = augmentationText[cnt]
+							text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+							text_off_x = (self.w_i/2) - (text_width/2)
+							text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
+							box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+							cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+							cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
+						# put augmented image result
+						if not correctResult:
+							cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+						else:      
+							cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-				#split image as needed
-				start = time.time()
-				if self.modelBatchSizeInt == 64:
-						image_batch = np.vsplit(cloned_image, 16)
+				if self.gui:
+					#split image as needed
+					if self.modelBatchSizeInt == 64:
+							image_batch = np.vsplit(cloned_image, 16)
+							final_image_batch = np.hstack((image_batch))
+					elif self.modelBatchSizeInt == 16:
+						image_batch = np.vsplit(cloned_image, 4)
 						final_image_batch = np.hstack((image_batch))
-				elif self.modelBatchSizeInt == 16:
-					image_batch = np.vsplit(cloned_image, 4)
-					final_image_batch = np.hstack((image_batch))
-				end = time.time()
-				self.msFrame += (end-start)*1000
-				if (self.verbosePrint):
-					print '%30s' % 'Splitting final image took ', str((end - start)*1000), 'ms' 
-
-				self.augQueue.put(final_image_batch)
+					self.augQueue.put(final_image_batch)
+				
 				self.updateFPS() 
 				self.imgCount +=  1
 				if self.imgCount == self.totalImages:
@@ -406,6 +404,11 @@ class modelInference(QtCore.QObject):
 	def updateFPS(self):
 		self.totalFPS += (self.msFrame)
 		self.totalFPS = 1000/(self.totalFPS/self.modelBatchSizeInt)
+		if not self.gui:
+			fpsText = open(self.fpsFile, "w")
+			fpsText.write(str(int(self.totalFPS)))
+			fpsText.close()
+			print 'FPS: %d\n' % self.totalFPS
 	
 	def getFPS(self):
 		return self.totalFPS
