@@ -97,6 +97,7 @@ class modelInference(QtCore.QObject):
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
 		self.fpsFile = str(self.analyzerDir+"/fps.txt")
 		self.modelBatchSize = modelBatchSize
+		self.replaceModel = replaceModel
 		self.verbosePrint = False
 		self.FP16inference = False
 		self.loop = False
@@ -122,6 +123,11 @@ class modelInference(QtCore.QObject):
 		if(verbose != 'no'):
 			self.verbosePrint = True
 
+		# set replace model
+		self.replaceModel = False
+		if(replaceModel != 'no'):
+			self.replaceModel = True
+
 		# set fp16 inference turned on/off
 		self.tensor_dtype = TensorDataType.FLOAT32
 		if(fp16 != 'no'):
@@ -137,6 +143,8 @@ class modelInference(QtCore.QObject):
 		#set gui parameter based on user input
 		self.gui = gui
 
+		self.completed = False
+
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
@@ -146,6 +154,18 @@ class modelInference(QtCore.QObject):
 		self.Mx=[1,1,1]
 		if(inputMultiply != ''):
 			self.Mx = [float(item) for item in inputMultiply.strip("[]").split(',')]
+
+		# MIVisionX setup
+		if(os.path.exists(self.analyzerDir)):
+			print("\nMIVisionX Validation Tool\n")
+			# replace old model or throw error
+			if(self.replaceModel):
+				os.system('rm -rf '+self.modelDir)
+			elif(os.path.exists(self.modelDir)):
+				print("OK: Model exists")
+		else:
+			print("\nMIVisionX Validation Tool Created\n")
+			os.system('(cd ; mkdir .mivisionx-validation-tool)')
 
 		# Setup Text File for Demo
 		if (not os.path.isfile(self.analyzerDir + "/setupFile.txt")):
@@ -178,7 +198,6 @@ class modelInference(QtCore.QObject):
 					fappend.write("\n" + modelFormat + ';' + modelName + ';' + modelLocation + ';' + modelBatchSize + ';' + modelInputDims + ';' + modelOutputDims + ';' + label + ';' + outputDir + ';' + imageDir + ';' + imageVal + ';' + hierarchy + ';' + str(self.Ax).strip('[]').replace(" ","") + ';' + str(self.Mx).strip('[]').replace(" ","") + ';' + fp16 + ';' + replaceModel + ';' + verbose + ';' + loop)
 					fappend.close()
 
-		self.replaceModel = replaceModel
 		self.modelFormat = modelFormat
 		self.modelInputDims = modelInputDims
 		self.modelOutputDims = modelOutputDims
@@ -205,18 +224,6 @@ class modelInference(QtCore.QObject):
 			fp = open(self.labelText, 'r')
 			self.labelNames = [x.strip('\n') for x in fp.readlines()]
 			fp.close()
-
-		# MIVisionX setup
-		if(os.path.exists(self.analyzerDir)):
-			print("\nMIVisionX Validation Tool\n")
-			# replace old model or throw error
-			if(self.replaceModel):
-				os.system('rm -rf '+self.modelDir)
-			elif(os.path.exists(self.modelDir)):
-				print("OK: Model exists")
-		else:
-			print("\nMIVisionX Validation Tool Created\n")
-			os.system('(cd ; mkdir .mivisionx-validation-tool)')
 
 		# Compile Model and generate python .so files
 		if (self.replaceModel or not os.path.exists(self.modelDir)):
@@ -314,7 +321,7 @@ class modelInference(QtCore.QObject):
 		self.pauseState = True
 
 	def runInference(self):
-		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
+		while self.setupDone and not self.completed:
 			while not self.pauseState:
 				self.msFrame = 0.0
 				start = time.time()
@@ -399,7 +406,11 @@ class modelInference(QtCore.QObject):
 					if self.adatFlag == False:
 						self.generateADAT(self.modelName, self.hierarchy)
 						self.adatFlag = True
-					self.resetStats()
+					if self.loop:
+						self.resetStats()
+					else:
+						self.completed = True
+						self.terminate()
 
 	def updateFPS(self):
 		self.totalFPS = 1000/(self.msFrame/self.modelBatchSizeInt)
