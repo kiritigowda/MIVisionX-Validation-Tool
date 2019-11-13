@@ -1,6 +1,4 @@
 import pyqtgraph as pg
-import cv2
-import numpy as np
 import Queue
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QPixmap
@@ -27,41 +25,38 @@ class InferenceViewer(QtGui.QMainWindow):
         self.output_dir = output_dir
         self.add = add
         self.multiply = multiply
-        self.verbose = verbose
+        self.gui = True if gui == 'yes' else False
         self.fp16 = fp16
         self.replace = replace
+        self.verbose = verbose
         self.loop = loop
         self.rali_mode = rali_mode
         inputImageDir = os.path.expanduser(image_dir)
         self.total_images = len(os.listdir(inputImageDir))
-        self.imgCount = 0
-        self.frameCount = 9
-        self.container_index = (int)(container_logo)
         self.origImageQueue = Queue.Queue()
         self.augImageQueue = Queue.Queue()
-        
-        self.x = [0] 
-        self.y = [0]
-        self.augAccuracy = []
-        
-        self.elapsedTime = QTime.currentTime()
-        self.lastTime = 0
-        self.totalElapsedTime = 0.0
-        self.totalAccuracy = 0
-
-        self.runState = False
-        self.pauseState = False
-        self.showAug = False
-        self.progIndex = 0
-        self.augIntensity = 0.0
-        self.lastIndex = self.frameCount - 1
-        self.gui = gui
 
         self.inferenceEngine = None
         self.receiver_thread = None
         
         self.initEngines()
-        if gui:
+        
+        if self.gui:
+            self.container_index = (int)(container_logo)
+            self.pauseState = False
+            self.showAug = False
+            self.elapsedTime = QTime.currentTime()
+            self.lastTime = 0
+            self.totalElapsedTime = 0.0
+            self.totalAccuracy = 0
+            self.progIndex = 0
+            self.augIntensity = 0.0
+            self.imgCount = 0
+            self.frameCount = 9
+            self.lastIndex = self.frameCount - 1
+            self.x = [0] 
+            self.y = [0]
+            self.augAccuracy = []
             self.totalCurve = None
             self.augCurve = None
             self.graph = None
@@ -140,12 +135,10 @@ class InferenceViewer(QtGui.QMainWindow):
         # Creating an object for inference.
         self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
                                                 self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
-                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue, self.gui)
+                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue, self.gui, self.total_images)
         
         self.inferenceEngine.moveToThread(self.receiver_thread)
         self.receiver_thread.started.connect(self.inferenceEngine.runInference)
-        #self.inferenceEngine.finished.connect(self.inferenceEngine.quit)
-        #self.inferenceEngine.finished.connect(self.inferenceEngine.deleteLater)
         self.receiver_thread.finished.connect(self.inferenceEngine.deleteLater)
         self.receiver_thread.start()
         self.receiver_thread.terminate()
@@ -167,15 +160,14 @@ class InferenceViewer(QtGui.QMainWindow):
         for augmentation in range(self.batch_size_int):
             self.augAccuracy.append([0])
 
-        #self.time = QTime.currentTime()
         self.lastTime = 0
+        self.elapsedTime = QTime.currentTime()
+        self.totalElapsedTime = 0.0
         self.progIndex = 0
         self.showAug = False
         self.lastIndex = self.frameCount - 1
         self.totalCurve.clear()
         self.augCurve.clear()
-        self.origImageQueue.clear()
-        self.augImageQueue.clear()
         self.name_label.setText("Model: %s" % (self.model_name))
 
     def setProgressBar(self):

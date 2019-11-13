@@ -6,9 +6,7 @@ import numpy as np
 import cv2
 import Queue
 from numpy.ctypeslib import ndpointer
-from PyQt4 import QtGui, uic, QtCore
-from PyQt4.QtCore import pyqtSignal
-
+from PyQt4 import QtCore
 from rali_setup import *
 
 # AMD Neural Net python wrapper
@@ -74,7 +72,7 @@ class annieObjectWrapper():
 
 class modelInference(QtCore.QObject):
 	def __init__(self, modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, gui, parent=None):
+				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, gui, totalImages, parent=None):
 
 		super(modelInference, self).__init__(parent)
 		self.modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
@@ -110,7 +108,7 @@ class modelInference(QtCore.QObject):
 		self.augQueue = augQueue
 		self.imgCount = 0
 		self.adatFlag = False
-		self.totalImages = 0
+		self.totalImages = totalImages
 		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
@@ -121,16 +119,20 @@ class modelInference(QtCore.QObject):
 		self.pauseState = False
 
 		# set verbose print
-		self.verbosePrint = verbose
+		if(verbose != 'no'):
+			self.verbosePrint = True
 
 		# set fp16 inference turned on/off
 		self.tensor_dtype = TensorDataType.FLOAT32
-		if fp16:
+		if(fp16 != 'no'):
 			self.FP16inference = True
 			self.tensor_dtype=TensorDataType.FLOAT16
 
 		#set loop parameter based on user input
-		self.loop = loop
+		if loop == 'yes':
+			self.loop = True
+		else:
+			self.loop = False
 		
 		#set gui parameter based on user input
 		self.gui = gui
@@ -201,7 +203,6 @@ class modelInference(QtCore.QObject):
 			quit()
 		else:
 			fp = open(self.labelText, 'r')
-			#labelNames = fp.readlines()
 			self.labelNames = [x.strip('\n') for x in fp.readlines()]
 			fp.close()
 
@@ -270,7 +271,6 @@ class modelInference(QtCore.QObject):
 		else:
 			print("\nFlow without Image Validation Text not implemented, pass argument --image_val\n")
 			quit()
-		self.totalImages = len(os.listdir(self.inputImageDir))
 
 		# original std out location 
 		self.orig_stdout = sys.stdout
@@ -402,8 +402,7 @@ class modelInference(QtCore.QObject):
 					self.resetStats()
 
 	def updateFPS(self):
-		self.totalFPS += (self.msFrame)
-		self.totalFPS = 1000/(self.totalFPS/self.modelBatchSizeInt)
+		self.totalFPS = 1000/(self.msFrame/self.modelBatchSizeInt)
 		if not self.gui:
 			fpsText = open(self.fpsFile, "w")
 			fpsText.write(str(int(self.totalFPS)))
@@ -459,8 +458,6 @@ class modelInference(QtCore.QObject):
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])
 		self.totalFPS = 0.0
-
-
 
 	def generateADAT(self, modelName, hierarchy):
 		# Create ADAT folder and file

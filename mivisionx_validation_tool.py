@@ -9,13 +9,7 @@ __status__      = "ALPHA"
 __script_name__ = "MIVisionX Validation Tool"
 
 import sys
-#setup python path for RALI
-#sys.path.append('/opt/rocm/mivisionx/rali/python/')
-
-import os
 import argparse
-import ctypes
-import numpy as np
 from PyQt4 import QtGui
 from inference_control import *
 
