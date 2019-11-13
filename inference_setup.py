@@ -6,9 +6,7 @@ import numpy as np
 import cv2
 import Queue
 from numpy.ctypeslib import ndpointer
-from PyQt4 import QtGui, uic, QtCore
-from PyQt4.QtCore import pyqtSignal
-
+from PyQt4 import QtCore
 from rali_setup import *
 
 # AMD Neural Net python wrapper
@@ -74,7 +72,7 @@ class annieObjectWrapper():
 
 class modelInference(QtCore.QObject):
 	def __init__(self, modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, parent=None):
+				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, gui, totalImages, parent=None):
 
 		super(modelInference, self).__init__(parent)
 		self.modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
@@ -97,6 +95,7 @@ class modelInference(QtCore.QObject):
 		self.pythonLib = self.modelBuildDir+'/libannpython.so'
 		self.weightsFile = self.openvxDir+'/weights.bin'
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
+		self.fpsFile = str(self.analyzerDir+"/fps.txt")
 		self.modelBatchSize = modelBatchSize
 		self.verbosePrint = False
 		self.FP16inference = False
@@ -109,7 +108,7 @@ class modelInference(QtCore.QObject):
 		self.augQueue = augQueue
 		self.imgCount = 0
 		self.adatFlag = False
-		self.totalImages = 0
+		self.totalImages = totalImages
 		str_c_i, str_h_i, str_w_i = modelInputDims.split(',')
 		self.c_i = int(str_c_i); self.h_i = int(str_h_i); self.w_i = int(str_w_i)
 		str_c_o, str_h_o, str_w_o = modelOutputDims.split(',')
@@ -117,7 +116,6 @@ class modelInference(QtCore.QObject):
 		self.totalStats = [0,0,0]
 		self.augStats = []
 		self.setupDone = False
-		finished = pyqtSignal()
 		self.pauseState = False
 
 		# set verbose print
@@ -136,6 +134,9 @@ class modelInference(QtCore.QObject):
 		else:
 			self.loop = False
 		
+		#set gui parameter based on user input
+		self.gui = gui
+
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
@@ -202,7 +203,6 @@ class modelInference(QtCore.QObject):
 			quit()
 		else:
 			fp = open(self.labelText, 'r')
-			#labelNames = fp.readlines()
 			self.labelNames = [x.strip('\n') for x in fp.readlines()]
 			fp.close()
 
@@ -210,7 +210,7 @@ class modelInference(QtCore.QObject):
 		if(os.path.exists(self.analyzerDir)):
 			print("\nMIVisionX Validation Tool\n")
 			# replace old model or throw error
-			if(self.replaceModel == 'yes'):
+			if(self.replaceModel):
 				os.system('rm -rf '+self.modelDir)
 			elif(os.path.exists(self.modelDir)):
 				print("OK: Model exists")
@@ -219,7 +219,7 @@ class modelInference(QtCore.QObject):
 			os.system('(cd ; mkdir .mivisionx-validation-tool)')
 
 		# Compile Model and generate python .so files
-		if (self.replaceModel == 'yes' or not os.path.exists(self.modelDir)):
+		if (self.replaceModel or not os.path.exists(self.modelDir)):
 			os.system('mkdir '+self.modelDir)
 			if(os.path.exists(self.modelDir)):
 				# convert to NNIR
@@ -271,7 +271,6 @@ class modelInference(QtCore.QObject):
 		else:
 			print("\nFlow without Image Validation Text not implemented, pass argument --image_val\n")
 			quit()
-		self.totalImages = len(os.listdir(self.inputImageDir))
 
 		# original std out location 
 		self.orig_stdout = sys.stdout
@@ -316,95 +315,99 @@ class modelInference(QtCore.QObject):
 
 	def runInference(self):
 		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
-			self.msFrame = 0.0
-			start = time.time()
-			image_batch, image_tensor = self.raliEngine.get_next_augmentation()
-			frame = image_tensor
-			original_image = image_batch[0:self.h_i, 0:self.w_i]
-			cloned_image = np.copy(image_batch)
-			end = time.time()
-			self.msFrame += (end-start)*1000
-			if (self.verbosePrint):
-				print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
-
-			#get image file name and ground truth
-			imageFileName = self.raliEngine.get_input_name()
-			groundTruthIndex = self.raliEngine.get_ground_truth()
-			groundTruthIndex = int(groundTruthIndex)
-			groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
-			
-			text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-			text_off_x = (self.w_i/2) - (text_width/2)
-			text_off_y = self.h_i-7
-			box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-			cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-			cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
-			self.origQueue.put(original_image)
-			
-			# call python inference. Returns output tensor with 1000 class probabilites
-			start = time.time()
-			output = self.classifier.classify(frame)
-			end = time.time()
-			self.msFrame += (end-start)*1000
-			if (self.verbosePrint):
-				print '%30s' % 'inference took', str((end - start)*1000), 'ms' 
-			# Process output for each of the 64 images
-			for i in range(self.modelBatchSizeInt):
+			while not self.pauseState:
+				self.msFrame = 0.0
 				start = time.time()
-				topIndex, topProb = self.processClassificationOutput(output)
+				image_batch, image_tensor = self.raliEngine.get_next_augmentation()
+				frame = image_tensor
+				original_image = image_batch[0:self.h_i, 0:self.w_i]
+				cloned_image = np.copy(image_batch)
+			
+				#get image file name and ground truth
+				imageFileName = self.raliEngine.get_input_name()
+				groundTruthIndex = self.raliEngine.get_ground_truth()
+				groundTruthIndex = int(groundTruthIndex)
+				groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
+
 				end = time.time()
 				self.msFrame += (end-start)*1000
 				if (self.verbosePrint):
-					print '%30s' % 'Processing inference output took', str((end - start)*1000), 'ms' 
-				#process the output tensor
-				start = time.time()
-				correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
-				end = time.time()
-				self.msFrame += (end-start)*1000
-				if (self.verbosePrint):
-					print '%30s' % 'Processing top 5 results took ', str((end - start)*1000), 'ms' 
-
-				augmentationText = self.raliList[i].split('+')
-				textCount = len(augmentationText)
-				for cnt in range(0,textCount):
-					currentText = augmentationText[cnt]
-					text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+					print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
+	
+				if self.gui:
+					text_width, text_height = cv2.getTextSize(groundTruthLabel[1].split(',')[0], cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
 					text_off_x = (self.w_i/2) - (text_width/2)
-					text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
+					text_off_y = self.h_i-7
 					box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
-					cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
-					cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
-				# put augmented image result
-				if not correctResult:
-					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
-				else:      
-					cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
+					cv2.rectangle(original_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+					cv2.putText(original_image, groundTruthLabel[1].split(',')[0], (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
+					self.origQueue.put(original_image)
+				
+				# call python inference. Returns output tensor with 1000 class probabilites
+				start = time.time()
+				output = self.classifier.classify(frame)
+				end = time.time()
+				self.msFrame += (end-start)*1000
+				if (self.verbosePrint):
+					print '%30s' % 'inference took', str((end - start)*1000), 'ms' 
+				# Process output for each of the 64 images
+				for i in range(self.modelBatchSizeInt):
+					start = time.time()
+					topIndex, topProb = self.processClassificationOutput(output)
+					end = time.time()
+					self.msFrame += (end-start)*1000
+					if (self.verbosePrint):
+						print '%30s' % 'Processing inference output took', str((end - start)*1000), 'ms' 
+					#process the output tensor
+					start = time.time()
+					correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
+					end = time.time()
+					self.msFrame += (end-start)*1000
+					if (self.verbosePrint):
+						print '%30s' % 'Processing top 5 results took ', str((end - start)*1000), 'ms' 
 
-			#split image as needed
-			start = time.time()
-			if self.modelBatchSizeInt == 64:
-					image_batch = np.vsplit(cloned_image, 16)
-					final_image_batch = np.hstack((image_batch))
-			elif self.modelBatchSizeInt == 16:
-				image_batch = np.vsplit(cloned_image, 4)
-				final_image_batch = np.hstack((image_batch))
-			end = time.time()
-			self.msFrame += (end-start)*1000
-			if (self.verbosePrint):
-				print '%30s' % 'Splitting final image took ', str((end - start)*1000), 'ms' 
+					if self.gui:
+						augmentationText = self.raliList[i].split('+')
+						textCount = len(augmentationText)
+						for cnt in range(0,textCount):
+							currentText = augmentationText[cnt]
+							text_width, text_height = cv2.getTextSize(currentText, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
+							text_off_x = (self.w_i/2) - (text_width/2)
+							text_off_y = (i*self.h_i)+self.h_i-7-(cnt*text_height)
+							box_coords = ((text_off_x, text_off_y), (text_off_x + text_width - 2, text_off_y - text_height - 2))
+							cv2.rectangle(cloned_image, box_coords[0], box_coords[1], (245, 197, 66), cv2.FILLED)
+							cv2.putText(cloned_image, currentText, (text_off_x, text_off_y), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2) 
+						# put augmented image result
+						if not correctResult:
+							cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (255,0,0), 4, cv2.LINE_8, 0)
+						else:      
+							cv2.rectangle(cloned_image, (0,(i*(self.h_i-1)+i)),((self.w_i-1),(self.h_i-1)*(i+1) + i), (0,255,0), 4, cv2.LINE_8, 0)
 
-			self.augQueue.put(final_image_batch)
-			self.updateFPS() 
-			self.imgCount +=  1
-			if self.imgCount == self.totalImages:
-				if self.adatFlag == False:
-				 	self.generateADAT(self.modelName, self.hierarchy)
-				 	self.adatFlag = True
-				self.resetStats()
+				if self.gui:
+					#split image as needed
+					if self.modelBatchSizeInt == 64:
+							image_batch = np.vsplit(cloned_image, 16)
+							final_image_batch = np.hstack((image_batch))
+					elif self.modelBatchSizeInt == 16:
+						image_batch = np.vsplit(cloned_image, 4)
+						final_image_batch = np.hstack((image_batch))
+					self.augQueue.put(final_image_batch)
+				
+				self.updateFPS() 
+				self.imgCount +=  1
+				if self.imgCount == self.totalImages:
+					if self.adatFlag == False:
+						self.generateADAT(self.modelName, self.hierarchy)
+						self.adatFlag = True
+					self.resetStats()
 
 	def updateFPS(self):
-		self.totalFPS += (self.msFrame)
-		self.totalFPS = 1000/(self.totalFPS/self.modelBatchSizeInt)
+		self.totalFPS = 1000/(self.msFrame/self.modelBatchSizeInt)
+		if not self.gui:
+			fpsText = open(self.fpsFile, "w")
+			fpsText.write(str(int(self.totalFPS)))
+			fpsText.close()
+			print 'FPS: %d\n' % self.totalFPS
 	
 	def getFPS(self):
 		return self.totalFPS
@@ -455,8 +458,6 @@ class modelInference(QtCore.QObject):
 		for i in range(self.modelBatchSizeInt):
 			self.augStats.append([0,0,0])
 		self.totalFPS = 0.0
-
-
 
 	def generateADAT(self, modelName, hierarchy):
 		# Create ADAT folder and file
