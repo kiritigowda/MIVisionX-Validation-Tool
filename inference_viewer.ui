@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MIVisionX Inference Viewer</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>data/images/rocm_logo.png</normaloff>data/images/rocm_logo.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
