@@ -222,7 +222,6 @@ class InferenceViewer(QtGui.QMainWindow):
                 self.totalCurve.setData(x=self.x, y=self.y, pen=self.pen)
                 for augmentation in range(self.batch_size_int):
                     augStats = self.inferenceEngine.getAugStats(augmentation)
-                    top1 = augStats[0]
                     top5 = augStats[1]
                     mis = augStats[2]
                     totalCount = top5 + mis

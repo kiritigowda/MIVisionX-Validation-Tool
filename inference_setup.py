@@ -4,7 +4,6 @@ import ctypes
 import time
 import numpy as np
 import cv2
-import Queue
 from numpy.ctypeslib import ndpointer
 from PyQt4 import QtCore
 from rali_setup import *
@@ -56,10 +55,16 @@ class annieObjectWrapper():
 	def runInference(self, img_tensor, out):
 		# copy input f32 to inference input
 		status = self.api.annCopyToInferenceInput(self.hdl, np.ascontiguousarray(img_tensor, dtype=np.float32), img_tensor.nbytes, 0)
+		if(status):
+				print('ERROR: annCopyToInferenceInput Failed ')
 		# run inference
 		status = self.api.annRunInference(self.hdl, 1)
+		if(status):
+				print('ERROR: annRunInference Failed ')
 		# copy output f32
 		status = self.api.annCopyFromInferenceOutput(self.hdl, np.ascontiguousarray(out, dtype=np.float32), out.nbytes)
+		if(status):
+				print('ERROR: annCopyFromInferenceOutput Failed ')
 		return out
 
 	def classify(self, img_tensor):
