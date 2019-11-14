@@ -214,11 +214,12 @@ class InferenceControl(QtGui.QMainWindow):
         verbose = 'yes' if self.verbose_checkBox.isChecked() else 'no'
         loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
         container_logo = self.container_comboBox.currentIndex()
+        fps_file = ''
         self.runningState = True
         self.close()
 
         viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, self)
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, self)
 
     def closeEvent(self, event):
         if not self.runningState:

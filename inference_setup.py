@@ -72,7 +72,7 @@ class annieObjectWrapper():
 
 class modelInference(QtCore.QObject):
 	def __init__(self, modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, gui, totalImages, parent=None):
+				modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, rali_mode, origQueue, augQueue, gui, totalImages, fps_file, parent=None):
 
 		super(modelInference, self).__init__(parent)
 		self.modelCompilerPath = '/opt/rocm/mivisionx/model_compiler/python'
@@ -95,7 +95,10 @@ class modelInference(QtCore.QObject):
 		self.pythonLib = self.modelBuildDir+'/libannpython.so'
 		self.weightsFile = self.openvxDir+'/weights.bin'
 		self.finalImageResultsFile = self.modelDir+'/imageResultsFile.csv'
-		self.fpsFile = str(self.analyzerDir+"/fps.txt")
+		if(fps_file != ''):
+			self.fps_fileName = str(self.analyzerDir +"/"+ fps_file + '.txt')
+		else:
+			self.fps_fileName = str(self.analyzerDir+"/fps.txt")
 		self.modelBatchSize = modelBatchSize
 		self.replaceModel = replaceModel
 		self.verbosePrint = False
@@ -321,7 +324,7 @@ class modelInference(QtCore.QObject):
 		self.pauseState = True
 
 	def runInference(self):
-		while self.setupDone and not self.completed:
+		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
 			while not self.pauseState:
 				self.msFrame = 0.0
 				start = time.time()
@@ -406,16 +409,12 @@ class modelInference(QtCore.QObject):
 					if self.adatFlag == False:
 						self.generateADAT(self.modelName, self.hierarchy)
 						self.adatFlag = True
-					if self.loop:
-						self.resetStats()
-					else:
-						self.completed = True
-						self.terminate()
+					self.resetStats()
 
 	def updateFPS(self):
 		self.totalFPS = 1000/(self.msFrame/self.modelBatchSizeInt)
 		if not self.gui:
-			fpsText = open(self.fpsFile, "w")
+			fpsText = open(self.fps_fileName, "w")
 			fpsText.write(str(int(self.totalFPS)))
 			fpsText.close()
 			print 'FPS: %d\n' % self.totalFPS
