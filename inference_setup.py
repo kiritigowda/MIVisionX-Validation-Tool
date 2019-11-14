@@ -150,9 +150,6 @@ class modelInference(QtCore.QObject):
 		
 		#set gui parameter based on user input
 		self.gui = gui
-
-		self.completed = False
-
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
@@ -329,8 +326,8 @@ class modelInference(QtCore.QObject):
 		self.pauseState = True
 
 	def runInference(self):
-		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
-			while not self.pauseState:
+		while self.setupDone:
+			while not self.pauseState and self.raliEngine.getReaminingImageCount() > 0:
 				msFrame = 0.0
 				start = time.time()
 				image_batch, image_tensor = self.raliEngine.get_next_augmentation()

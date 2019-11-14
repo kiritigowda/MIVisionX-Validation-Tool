@@ -148,7 +148,7 @@ class InferenceViewer(QtGui.QMainWindow):
         if self.imgCount == self.total_images:
             if self.loop == 'yes':
                 self.resetViewer()
-            else:                
+            else:
                 self.terminate()
                 
 
@@ -383,7 +383,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.inferenceEngine.terminate()
         self.receiver_thread.quit()
         for count in range(10):
-            QThread.msleep(30)
+            QThread.msleep(50)
 
         self.close()
 
