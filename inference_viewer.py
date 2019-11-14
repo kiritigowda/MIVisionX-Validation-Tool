@@ -73,16 +73,14 @@ class InferenceViewer(QtGui.QMainWindow):
             self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
             self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
             self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
+            
             self.initUI()
-            self.show()
-            #self.showMaximized()
             self.updateTimer = QTimer()
             self.updateTimer.timeout.connect(self.update)
             self.updateTimer.timeout.connect(self.plotGraph)
             self.updateTimer.timeout.connect(self.setProgressBar)
             self.updateTimer.start(40)
-        
-
+       
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
         self.setStyleSheet("background-color: white")

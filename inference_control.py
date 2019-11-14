@@ -220,6 +220,10 @@ class InferenceControl(QtGui.QMainWindow):
 
         viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
                                     batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, self)
+        if gui == 'yes':
+            viewer.show()
+            #viewer.showMaximized()
+            
 
     def closeEvent(self, event):
         if not self.runningState:
