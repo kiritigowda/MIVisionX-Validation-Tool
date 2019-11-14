@@ -143,6 +143,8 @@ class modelInference(QtCore.QObject):
 		#set gui parameter based on user input
 		self.gui = gui
 
+		self.completed = False
+
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
@@ -319,7 +321,7 @@ class modelInference(QtCore.QObject):
 		self.pauseState = True
 
 	def runInference(self):
-		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
+		while self.setupDone and not self.completed:
 			while not self.pauseState:
 				self.msFrame = 0.0
 				start = time.time()
@@ -404,7 +406,11 @@ class modelInference(QtCore.QObject):
 					if self.adatFlag == False:
 						self.generateADAT(self.modelName, self.hierarchy)
 						self.adatFlag = True
-					self.resetStats()
+					if self.loop:
+						self.resetStats()
+					else:
+						self.completed = True
+						self.terminate()
 
 	def updateFPS(self):
 		self.totalFPS = 1000/(self.msFrame/self.modelBatchSizeInt)

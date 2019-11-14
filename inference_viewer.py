@@ -148,7 +148,11 @@ class InferenceViewer(QtGui.QMainWindow):
         self.showImage()
         self.displayFPS()
         if self.imgCount == self.total_images:
-            self.resetViewer()
+            if self.loop == 'yes':
+                self.resetViewer()
+            else:                
+                self.terminate()
+                
 
     def resetViewer(self):
         self.imgCount = 0
