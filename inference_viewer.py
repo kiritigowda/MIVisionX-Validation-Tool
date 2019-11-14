@@ -42,7 +42,7 @@ class inference_viewer(QtGui.QMainWindow):
         self.rali_pixmap = QPixmap("./data/images/RALI.png")
         self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
         self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
-
+        self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
         self.initUI()
 
         self.show()
@@ -205,6 +205,7 @@ class inference_viewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_white_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_white_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_white_pixmap)
@@ -230,6 +231,7 @@ class inference_viewer(QtGui.QMainWindow):
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_pixmap)
+                self.graph_imageLabel.setPixmap(self.graph_image_pixmap)
             else:
                 self.MIVisionX_logo.setPixmap(self.MIVisionX_pixmap)
             self.EPYC_logo.setPixmap(self.EPYC_pixmap)
