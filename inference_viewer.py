@@ -7,7 +7,7 @@ from inference_setup import *
 
 class InferenceViewer(QtGui.QMainWindow):
     def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, parent):
+                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, parent):
         super(InferenceViewer, self).__init__(parent)
         self.parent = parent
 
@@ -35,7 +35,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.total_images = len(os.listdir(inputImageDir))
         self.origImageQueue = Queue.Queue()
         self.augImageQueue = Queue.Queue()
-
+        self.fps_file = fps_file
         self.inferenceEngine = None
         self.receiver_thread = None
     
@@ -135,7 +135,7 @@ class InferenceViewer(QtGui.QMainWindow):
         # Creating an object for inference.
         self.inferenceEngine = modelInference(self.model_name, self.model_format, self.image_dir, self.model_location, self.label, self.hierarchy, self.image_val,
                                                 self.input_dims, self.output_dims, self.batch_size, self.output_dir, self.add, self.multiply, self.verbose, self.fp16, 
-                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue, self.gui, self.total_images)
+                                                self.replace, self.loop, self.rali_mode, self.origImageQueue, self.augImageQueue, self.gui, self.total_images, self.fps_file)
         
         self.inferenceEngine.moveToThread(self.receiver_thread)
         self.receiver_thread.started.connect(self.inferenceEngine.runInference)
@@ -386,7 +386,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.inferenceEngine.terminate()
         self.receiver_thread.quit()
         for count in range(10):
-            QThread.msleep(50)
+            QThread.msleep(30)
 
         self.close()
 

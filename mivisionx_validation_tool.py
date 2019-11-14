@@ -68,5 +68,5 @@ if __name__ == '__main__':
 		container_logo = 0
 
 		viewer = InferenceViewer(modelName, modelFormat, imageDir, modelLocation, label, hierarchy, imageVal, modelInputDims, modelOutputDims, 
-                                    modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, raliMode, gui, container_logo, parent=None)
+                                    modelBatchSize, outputDir, inputAdd, inputMultiply, verbose, fp16, replaceModel, loop, raliMode, gui, container_logo, fps_file, parent=None)
 	app.exec_()
