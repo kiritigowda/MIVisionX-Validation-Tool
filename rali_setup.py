@@ -8,52 +8,52 @@ from rali_common import *
 #batch size = 64
 raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
+			'blur', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'flip', 'blend',
 			'rotate45+resize', 'rotate45+warpAffine', 'rotate45+contrast', 'rotate45+rain', 
 			'rotate45+brightness', 'rotate45+colorTemp', 'rotate45+exposure', 'rotate45+vignette', 
-			'rotate45+fog', 'rotate45+snow', 'rotate45+pixelate', 'rotate45+SnPNoise', 
-			'rotate45+gamma', 'rotate45+rotate', 'rotate45+jitter', 'rotate45+blend',
+			'rotate45+blur', 'rotate45+snow', 'rotate45+pixelate', 'rotate45+SnPNoise', 
+			'rotate45+gamma', 'rotate45+rotate', 'rotate45+flip', 'rotate45+blend',
 			'flip+resize', 'flip+warpAffine', 'flip+contrast', 'flip+rain', 
 			'flip+brightness', 'flip+colorTemp', 'flip+exposure', 'flip+vignette', 
-			'flip+fog', 'flip+snow', 'flip+pixelate', 'flip+SnPNoise', 
-			'flip+gamma', 'flip+rotate', 'flip+jitter', 'flip+blend',			
+			'flip+blur', 'flip+snow', 'flip+pixelate', 'flip+SnPNoise', 
+			'flip+gamma', 'flip+rotate', 'flip+flip', 'flip+blend',			
 			'rotate135+resize', 'rotate135+warpAffine', 'rotate135+contrast', 'rotate135+rain', 
 			'rotate135+brightness', 'rotate135+colorTemp', 'rotate135+exposure', 'rotate135+vignette', 
-			'rotate135+fog', 'rotate135+snow', 'rotate135+pixelate', 'rotate135+SnPNoise', 
-			'rotate135+gamma', 'rotate135+rotate', 'rotate135+jitter', 'rotate135+blend']
+			'rotate135+blur', 'rotate135+snow', 'rotate135+pixelate', 'rotate135+SnPNoise', 
+			'rotate135+gamma', 'rotate135+rotate', 'rotate135+flip', 'rotate135+blend']
 raliList_mode2_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
+			'blur', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'flip', 'blend',
 			'warpAffine+original', 'warpAffine+warpAffine', 'warpAffine+contrast', 'warpAffine+rain', 
 			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
-			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
-			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend',
+			'warpAffine+blur', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
+			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+flip', 'warpAffine+blend',
 			'fishEye+original', 'fishEye+warpAffine', 'fishEye+contrast', 'fishEye+rain', 
 			'fishEye+brightness', 'fishEye+colorTemp', 'fishEye+exposure', 'fishEye+vignette', 
-			'fishEye+fog', 'fishEye+snow', 'fishEye+pixelate', 'fishEye+SnPNoise', 
-			'fishEye+gamma', 'fishEye+rotate', 'fishEye+jitter', 'fishEye+blend',
+			'fishEye+blur', 'fishEye+snow', 'fishEye+pixelate', 'fishEye+SnPNoise', 
+			'fishEye+gamma', 'fishEye+rotate', 'fishEye+flip', 'fishEye+blend',
 			'lensCorrection+original', 'lensCorrection+warpAffine', 'lensCorrection+contrast', 'lensCorrection+rain', 
 			'lensCorrection+brightness', 'lensCorrection+colorTemp', 'exposure', 'lensCorrection+vignette', 
-			'lensCorrection+fog', 'lensCorrection+snow', 'lensCorrection+pixelate', 'lensCorrection+SnPNoise', 
-			'lensCorrection+gamma', 'lensCorrection+rotate', 'lensCorrection+jitter', 'lensCorrection+blend',]
+			'lensCorrection+blur', 'lensCorrection+snow', 'lensCorrection+pixelate', 'lensCorrection+SnPNoise', 
+			'lensCorrection+gamma', 'lensCorrection+rotate', 'lensCorrection+flip', 'lensCorrection+blend',]
 raliList_mode3_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend',
+			'blur', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'flip', 'blend',
 			'colorTemp+original', 'colorTemp+warpAffine', 'colorTemp+contrast', 'colorTemp+rain', 
 			'colorTemp+brightness', 'colorTemp+colorTemp', 'colorTemp+exposure', 'colorTemp+vignette', 
-			'colorTemp+fog', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
-			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+jitter', 'colorTemp+blend',
+			'colorTemp+blur', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
+			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+flip', 'colorTemp+blend',
 			'colorTemp+original', 'colorTemp+warpAffine', 'colorTemp+contrast', 'colorTemp+rain', 
 			'colorTemp+brightness', 'colorTemp+colorTemp', 'colorTemp+exposure', 'colorTemp+vignette', 
-			'colorTemp+fog', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
-			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+jitter', 'colorTemp+blend',
+			'colorTemp+blur', 'colorTemp+snow', 'colorTemp+pixelate', 'colorTemp+SnPNoise', 
+			'colorTemp+gamma', 'colorTemp+rotate', 'colorTemp+flip', 'colorTemp+blend',
 			'warpAffine+original', 'warpAffine+warpAffine', 'warpAffine+contrast', 'warpAffine+rain', 
 			'warpAffine+brightness', 'warpAffine+colorTemp', 'warpAffine+exposure', 'warpAffine+vignette', 
-			'warpAffine+fog', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
-			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+jitter', 'warpAffine+blend']
+			'warpAffine+blur', 'warpAffine+snow', 'pixelate', 'warpAffine+SnPNoise', 
+			'warpAffine+gamma', 'warpAffine+rotate', 'warpAffine+flip', 'warpAffine+blend']
 raliList_mode4_64 = ['original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original',
@@ -89,16 +89,16 @@ raliList_mode5_64 = ['original', 'nop', 'nop', 'nop',
 #batch size = 16
 raliList_mode1_16 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'snow', 'pixelate', 'SnPNoise', 
-			'gamma', 'rotate', 'jitter', 'blend']
+			'blur', 'snow', 'pixelate', 'SnPNoise', 
+			'gamma', 'rotate', 'flip', 'blend']
 raliList_mode2_16 = ['original', 'warpAffine', 'contrast', 'contrast+rain', 
 			'brightness', 'brightness+colorTemp', 'exposure', 'exposure+vignette', 
-			'fog', 'fog+snow', 'pixelate', 'pixelate+SnPNoise', 
-			'gamma', 'rotate', 'rotate+jitter', 'blend']
+			'blur', 'blur+snow', 'pixelate', 'pixelate+SnPNoise', 
+			'gamma', 'rotate', 'rotate+flip', 'blend']
 raliList_mode3_16 = ['original', 'warpAffine', 'contrast', 'warpAffine+rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
-			'fog', 'vignette+snow', 'pixelate', 'gamma',
-			'SnPNoise+gamma', 'rotate', 'jitter+pixelate', 'blend']
+			'blur', 'vignette+snow', 'pixelate', 'gamma',
+			'SnPNoise+gamma', 'rotate', 'flip+pixelate', 'blend']
 raliList_mode4_16 = ['original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original',
 					'original', 'original', 'original', 'original',
@@ -151,7 +151,7 @@ class DataLoader(RaliGraph):
 
 				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.input, True)
-				self.fog_img = self.fog(self.input, True)
+				self.blur_img = self.blur(self.input, True)
 				self.snow_img = self.snow(self.input, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
@@ -159,7 +159,8 @@ class DataLoader(RaliGraph):
 				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
 
 				self.rotate_img = self.rotate(self.input, True, self.degree_param)
-				self.jitter_img = self.jitter(self.input, True)
+				self.flip_img = self.flip(self.input, True, 1)
+				#self.jitter_img = self.jitter(self.input, True)
 				
 				self.blend_img = self.blend(self.input, self.contrast_img, True)
 			elif raliMode == 2:
@@ -176,15 +177,16 @@ class DataLoader(RaliGraph):
 
 				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_itensor_dtypemg = self.vignette(self.exposed_img, True)
-				self.fog_img = self.fog(self.input, True)
-				self.snow_img = self.snow(self.fog_img, True)
+				self.blur_img = self.blur(self.input, True)
+				self.snow_img = self.snow(self.blur_img, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
 				self.snp_img = self.SnPNoise(self.pixelate_img, True, self.sdev_param)
 				self.gamma_img = self.gamma(self.input, True, self.gamma_shift_param)
 
 				self.rotate_img = self.rotate(self.input, True, self.degree_param)
-				self.jitter_img = self.jitter(self.rotate_img, True)
+				self.flip_img = self.flip(self.input, True, 1)
+				#self.jitter_img = self.jitter(self.rotate_img, True)
 
 				self.blend_img = self.blend(self.rotate_img, self.warped, True)
 			elif raliMode == 3:
@@ -200,7 +202,7 @@ class DataLoader(RaliGraph):
 
 				self.exposed_img = self.exposure(self.input, True, self.shift_param)
 				self.vignette_img = self.vignette(self.input, True)
-				self.fog_img = self.fog(self.input, True)
+				self.blur_img = self.blur(self.input, True)
 				self.snow_img = self.snow(self.vignette_img, True)
 
 				self.pixelate_img = self.pixelate(self.input, True)
@@ -208,7 +210,8 @@ class DataLoader(RaliGraph):
 				self.snp_img = self.SnPNoise(self.gamma_img, True, self.sdev_param)
 
 				self.rotate_img = self.rotate(self.input, True, self.degree_param)
-				self.jitter_img = self.jitter(self.pixelate_img, True)
+				self.flip_img = self.flip(self.input, True, 1)
+				#self.jitter_img = self.jitter(self.pixelate_img, True)
 
 				self.blend_img = self.blend(self.snow_img, self.bright_img, True)
 			elif raliMode == 4:
@@ -319,7 +322,7 @@ class DataLoader(RaliGraph):
 
 		self.exposed_img = self.exposure(input_image, True, self.shift_param)
 		self.vignette_img = self.vignette(input_image, True)
-		self.fog_img = self.fog(input_image, True)
+		self.blur_img = self.blur(input_image, True)
 		self.snow_img = self.snow(input_image, True)
 
 		self.pixelate_img = self.pixelate(input_image, True)
@@ -327,7 +330,8 @@ class DataLoader(RaliGraph):
 		self.gamma_img = self.gamma(input_image, True, self.gamma_shift_param)
 
 		self.rotate_img = self.rotate(input_image, True, self.degree_param)
-		self.jitter_img = self.jitter(input_image, True)
+		self.flip_img = self.flip(input_image, True, 1)
+		#self.jitter_img = self.jitter(input_image, True)
 		
 		self.blend_img = self.blend(input_image, self.contrast_img, True)
 
