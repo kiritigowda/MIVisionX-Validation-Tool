@@ -60,6 +60,8 @@ class InferenceViewer(QtGui.QMainWindow):
             self.totalCurve = None
             self.augCurve = None
             self.graph = None
+            self.legend = None
+            self.lastAugName = None
             self.pen = pg.mkPen('w', width=4)
             self.AMD_Radeon_pixmap = QPixmap("./data/images/AMD_Radeon.png")
             self.AMD_Radeon_white_pixmap = QPixmap("./data/images/AMD_Radeon-white.png")
@@ -73,16 +75,14 @@ class InferenceViewer(QtGui.QMainWindow):
             self.rali_white_pixmap = QPixmap("./data/images/RALI-white.png")
             self.graph_image_pixmap = QPixmap("./data/images/Graph-image.png")
             self.graph_image_white_pixmap = QPixmap("./data/images/Graph-image-white.png")
+            
             self.initUI()
-            self.show()
-            #self.showMaximized()
             self.updateTimer = QTimer()
             self.updateTimer.timeout.connect(self.update)
             self.updateTimer.timeout.connect(self.plotGraph)
             self.updateTimer.timeout.connect(self.setProgressBar)
             self.updateTimer.start(40)
-        
-
+       
     def initUI(self):
         uic.loadUi("inference_viewer.ui", self)
         self.setStyleSheet("background-color: white")
@@ -98,10 +98,12 @@ class InferenceViewer(QtGui.QMainWindow):
         self.graph.setLabel('left', 'Accuracy', '%')
         self.graph.setLabel('bottom', 'Time', 's')
         self.graph.setYRange(0, 100, padding=0)
-        self.graph.addLegend(size=(0.5,0.5), offset=(320,10))
         pg.setConfigOptions(antialias=True)
-        self.totalCurve = self.graph.plot(pen=self.pen, name='Total')
-        self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4), name='Augmented Image')
+        self.totalCurve = self.graph.plot(pen=self.pen)
+        self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4))
+        self.legend = pg.LegendItem(offset=(380,1))
+        self.legend.setParentItem(self.graph.plotItem)
+        self.legend.addItem(self.totalCurve, 'Cumulative')
         self.graph.setBackground(None)
         self.graph.setMaximumWidth(550)
         self.graph.setMaximumHeight(300)
@@ -150,7 +152,7 @@ class InferenceViewer(QtGui.QMainWindow):
         if self.imgCount == self.total_images:
             if self.loop == 'yes':
                 self.resetViewer()
-            else:                
+            else:
                 self.terminate()
                 
 
@@ -273,12 +275,17 @@ class InferenceViewer(QtGui.QMainWindow):
                 index = self.calculateIndex(mousePos.x(), mousePos.y())
                 self.progIndex = index
                 self.showAug = True
-                self.name_label.setText(self.inferenceEngine.getAugName(index))
+                augName = self.inferenceEngine.getAugName(index)
+                self.name_label.setText(augName)
                 self.augCurve.setData(x=self.x, y=self.augAccuracy[self.progIndex], pen=pg.mkPen('b', width=4))
+                self.legend.removeItem(self.lastAugName)
+                self.legend.addItem(self.augCurve, augName)
+                self.lastAugName = augName
             else:
                 self.showAug = False
                 self.name_label.setText("Model: %s" % (self.model_name))
                 self.augCurve.clear()
+                self.legend.removeItem(self.lastAugName)
             if not self.pauseState:
                 self.totalCurve.clear()
                 self.augCurve.clear()
@@ -344,12 +351,12 @@ class InferenceViewer(QtGui.QMainWindow):
             self.dataset_label.show()
             self.fps_label.show()
             self.fps_lcdNumber.show()
-            self.graph.plotItem.legend.show()
+            self.legend.show()
         else:
             self.dataset_label.hide()
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
-            self.graph.plotItem.legend.hide()
+            self.legend.hide()
         
     def showRALI(self):
         if self.rali_checkBox.isChecked():
@@ -385,7 +392,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.inferenceEngine.terminate()
         self.receiver_thread.quit()
         for count in range(10):
-            QThread.msleep(30)
+            QThread.msleep(50)
 
         self.close()
 

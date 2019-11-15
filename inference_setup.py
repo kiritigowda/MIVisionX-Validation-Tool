@@ -150,9 +150,6 @@ class modelInference(QtCore.QObject):
 		
 		#set gui parameter based on user input
 		self.gui = gui
-
-		self.completed = False
-
 		# get input & output dims
 		self.modelBatchSizeInt = int(modelBatchSize)
 		# input pre-processing values
@@ -329,9 +326,9 @@ class modelInference(QtCore.QObject):
 		self.pauseState = True
 
 	def runInference(self):
-		while self.setupDone and self.raliEngine.getReaminingImageCount() > 0:
-			while not self.pauseState:
-				self.msFrame = 0.0
+		while self.setupDone:
+			while not self.pauseState and self.raliEngine.getReaminingImageCount() > 0:
+				msFrame = 0.0
 				start = time.time()
 				image_batch, image_tensor = self.raliEngine.get_next_augmentation()
 				frame = image_tensor
@@ -345,7 +342,7 @@ class modelInference(QtCore.QObject):
 				groundTruthLabel = self.labelNames[groundTruthIndex].decode("utf-8").split(' ', 1)
 
 				end = time.time()
-				self.msFrame += (end-start)*1000
+				msFrame += (end-start)*1000
 				if (self.verbosePrint):
 					print '%30s' % 'Get next image from RALI took', str((end - start)*1000), 'ms'
 	
@@ -362,22 +359,22 @@ class modelInference(QtCore.QObject):
 				start = time.time()
 				output = self.classifier.classify(frame)
 				end = time.time()
-				self.msFrame += (end-start)*1000
+				msFrame += (end-start)*1000
 				if (self.verbosePrint):
 					print '%30s' % 'inference took', str((end - start)*1000), 'ms' 
+				start = time.time()
+				topIndex, topProb = self.processClassificationOutput(output)
+				end = time.time()
+				msFrame += (end-start)*1000
+				if (self.verbosePrint):
+					print '%30s' % 'Processing inference output took', str((end - start)*1000), 'ms' 
 				# Process output for each of the 64 images
 				for i in range(self.modelBatchSizeInt):
-					start = time.time()
-					topIndex, topProb = self.processClassificationOutput(output)
-					end = time.time()
-					self.msFrame += (end-start)*1000
-					if (self.verbosePrint):
-						print '%30s' % 'Processing inference output took', str((end - start)*1000), 'ms' 
 					#process the output tensor
 					start = time.time()
 					correctResult = self.processOutput(groundTruthIndex, topIndex, topProb, i, imageFileName)
 					end = time.time()
-					self.msFrame += (end-start)*1000
+					msFrame += (end-start)*1000
 					if (self.verbosePrint):
 						print '%30s' % 'Processing top 5 results took ', str((end - start)*1000), 'ms' 
 
@@ -407,8 +404,7 @@ class modelInference(QtCore.QObject):
 						image_batch = np.vsplit(cloned_image, 4)
 						final_image_batch = np.hstack((image_batch))
 					self.augQueue.put(final_image_batch)
-				
-				self.updateFPS() 
+				self.updateFPS(msFrame) 
 				self.imgCount +=  1
 				if self.imgCount == self.totalImages:
 					if self.adatFlag == False:
@@ -416,8 +412,8 @@ class modelInference(QtCore.QObject):
 						self.adatFlag = True
 					self.resetStats()
 
-	def updateFPS(self):
-		self.totalFPS = 1000/(self.msFrame/self.modelBatchSizeInt)
+	def updateFPS(self, msFrame):
+		self.totalFPS = 1000/(msFrame/self.modelBatchSizeInt)
 		if not self.gui:
 			fpsText = open(self.fps_fileName, "w")
 			fpsText.write(str(int(self.totalFPS)))
