@@ -6,8 +6,8 @@ from PyQt4.QtCore import QTime, QTimer, QThread
 from inference_setup import *
 
 class InferenceViewer(QtGui.QMainWindow):
-    def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, parent):
+    def __init__(self, model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, batch_size, output_dir, 
+                                        add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, cpu_name, gpu_name, parent):
         super(InferenceViewer, self).__init__(parent)
         self.parent = parent
 
@@ -38,11 +38,13 @@ class InferenceViewer(QtGui.QMainWindow):
         self.fps_file = fps_file
         self.inferenceEngine = None
         self.receiver_thread = None
-    
+
         self.initEngines()
         
         if self.gui:
             self.container_index = (int)(container_logo)
+            self.cpu_name = cpu_name
+            self.gpu_name = gpu_name
             self.pauseState = False
             self.showAug = False
             self.elapsedTime = QTime.currentTime()
@@ -87,6 +89,8 @@ class InferenceViewer(QtGui.QMainWindow):
         uic.loadUi("inference_viewer.ui", self)
         self.setStyleSheet("background-color: white")
         self.name_label.setText("Model: %s" % (self.model_name))
+        self.cpuName_label.setText(self.cpu_name)
+        self.gpuName_label.setText(self.gpu_name)
         self.dataset_label.setText("Augmentation set - %d" % (self.rali_mode))
         self.imagesFrame.setStyleSheet(".QFrame {border-width: 20px; border-image: url(./data/images/filmStrip.png);}")
         self.total_progressBar.setStyleSheet("QProgressBar::chunk { background: lightblue; }")
@@ -125,7 +129,6 @@ class InferenceViewer(QtGui.QMainWindow):
             self.container_logo.setPixmap(self.singularity_pixmap)
         else:
             self.container_logo.hide()
-
         for augmentation in range(self.batch_size_int):
             self.augAccuracy.append([0])
 
@@ -175,6 +178,7 @@ class InferenceViewer(QtGui.QMainWindow):
         self.totalCurve.clear()
         self.augCurve.clear()
         self.name_label.setText("Model: %s" % (self.model_name))
+        self.legend.removeItem(self.lastAugName)
 
     def setProgressBar(self):
         if self.showAug:
@@ -312,6 +316,10 @@ class InferenceViewer(QtGui.QMainWindow):
             self.level_label.setStyleSheet("color: white;")
             self.low_label.setStyleSheet("color: white;")
             self.high_label.setStyleSheet("color: white;")
+            self.cpu_label.setStyleSheet("color: #C82327;")
+            self.gpu_label.setStyleSheet("color: #C82327;")
+            self.cpuName_label.setStyleSheet("color: white;")
+            self.gpuName_label.setStyleSheet("color: white;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_white_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_white_pixmap)
@@ -339,6 +347,10 @@ class InferenceViewer(QtGui.QMainWindow):
             self.level_label.setStyleSheet("color: 0;")
             self.low_label.setStyleSheet("color: 0;")
             self.high_label.setStyleSheet("color: 0;")
+            self.cpu_label.setStyleSheet("color: 0;")
+            self.gpu_label.setStyleSheet("color: 0;")
+            self.cpuName_label.setStyleSheet("color: 0;")
+            self.gpuName_label.setStyleSheet("color: 0;")
             self.AMD_logo.setPixmap(self.AMD_Radeon_pixmap)
             if self.rali_checkBox.isChecked():
                 self.MIVisionX_logo.setPixmap(self.rali_pixmap)
@@ -354,11 +366,19 @@ class InferenceViewer(QtGui.QMainWindow):
             self.fps_label.show()
             self.fps_lcdNumber.show()
             self.legend.show()
+            self.cpu_label.show()
+            self.gpu_label.show()
+            self.cpuName_label.show()
+            self.gpuName_label.show()
         else:
             self.dataset_label.hide()
             self.fps_label.hide()
             self.fps_lcdNumber.hide()
             self.legend.hide()
+            self.cpu_label.hide()
+            self.gpu_label.hide()
+            self.gpuName_label.hide()
+            self.cpuName_label.hide()
         
     def showRALI(self):
         if self.rali_checkBox.isChecked():
