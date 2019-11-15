@@ -101,7 +101,7 @@ class InferenceViewer(QtGui.QMainWindow):
         pg.setConfigOptions(antialias=True)
         self.totalCurve = self.graph.plot(pen=self.pen)
         self.augCurve = self.graph.plot(pen=pg.mkPen('b', width=4))
-        self.legend = pg.LegendItem(offset=(380,1))
+        self.legend = pg.LegendItem(offset=(370,1))
         self.legend.setParentItem(self.graph.plotItem)
         self.legend.addItem(self.totalCurve, 'Cumulative')
         self.graph.setBackground(None)
@@ -286,6 +286,8 @@ class InferenceViewer(QtGui.QMainWindow):
                 self.name_label.setText("Model: %s" % (self.model_name))
                 self.augCurve.clear()
                 self.legend.removeItem(self.lastAugName)
+                self.legend.removeItem('Cumulative')
+                self.legend.addItem(self.totalCurve, 'Cumulative')
             if not self.pauseState:
                 self.totalCurve.clear()
                 self.augCurve.clear()
