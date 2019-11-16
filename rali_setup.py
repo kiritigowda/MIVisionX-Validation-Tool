@@ -18,10 +18,10 @@ raliList_mode1_64 = ['original', 'warpAffine', 'contrast', 'rain',
 			'flip+brightness', 'flip+colorTemp', 'flip+exposure', 'flip+vignette', 
 			'flip+blur', 'flip+snow', 'flip+pixelate', 'flip+SnPNoise', 
 			'flip+gamma', 'flip+rotate', 'flip+flip', 'flip+blend',			
-			'rotate150+resize', 'rotate150+warpAffine', 'rotate150+contrast', 'rotate150+rain', 
-			'rotate150+brightness', 'rotate150+colorTemp', 'rotate150+exposure', 'rotate150+vignette', 
-			'rotate150+blur', 'rotate150+snow', 'rotate150+pixelate', 'rotate150+SnPNoise', 
-			'rotate150+gamma', 'rotate150+rotate', 'rotate150+flip', 'rotate150+blend']
+			'rotate135+resize', 'rotate135+warpAffine', 'rotate135+contrast', 'rotate135+rain', 
+			'rotate135+brightness', 'rotate135+colorTemp', 'rotate135+exposure', 'rotate135+vignette', 
+			'rotate135+blur', 'rotate135+snow', 'rotate135+pixelate', 'rotate135+SnPNoise', 
+			'rotate135+gamma', 'rotate135+rotate', 'rotate135+flip', 'rotate135+blend']
 raliList_mode2_64 = ['original', 'warpAffine', 'contrast', 'rain', 
 			'brightness', 'colorTemp', 'exposure', 'vignette', 
 			'blur', 'snow', 'pixelate', 'SnPNoise', 
@@ -116,7 +116,7 @@ class DataLoader(RaliGraph):
 		self.validation_dict = {}
 		self.process_validation(image_validation)
 		self.setSeed(0)
-
+		self.aug_strength = 0
 		#params for contrast
 		self.min_param = RaliIntParameter(0)
 		self.max_param = RaliIntParameter(255)
@@ -232,14 +232,14 @@ class DataLoader(RaliGraph):
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
 				self.input = self.resize(self.jpg_img, h_img, w_img, False)
 
-				self.rot150_img = self.rotate(self.input, False, 150)
+				self.rot135_img = self.rotate(self.input, False, 135)
 				self.flip_img = self.flip(self.input, False)
 				self.rot45_img = self.rotate(self.input, False, 45)
 
 				self.setof16_mode1(self.input, h_img, w_img)
 				self.setof16_mode1(self.rot45_img, h_img, w_img)
 				self.setof16_mode1(self.flip_img, h_img, w_img)
-				self.setof16_mode1(self.rot150_img , h_img, w_img)
+				self.setof16_mode1(self.rot135_img , h_img, w_img)
 				
 			elif raliMode == 2:
 				self.jpg_img = self.jpegFileInput(input_path, input_color_format, False, loop_parameter, 0)
@@ -337,6 +337,7 @@ class DataLoader(RaliGraph):
 
 	def updateAugmentationParameter(self, augmentation):
 		#values for contrast
+		self.aug_strength = augmentation
 		min = int(augmentation*100)
 		max = 150 + int((1-augmentation)*100)
 		self.min_param.update(min)
@@ -363,9 +364,13 @@ class DataLoader(RaliGraph):
 		gamma_shift = augmentation*5.0
 		self.gamma_shift_param.update(gamma_shift)
 
-		#values for rotation
-		degree = augmentation * 180.0
-		self.degree_param.update(degree)
+
+
+	def renew_parameters(self):
+		curr_degree = self.degree_param.get()
+		#values for rotation change
+		degree = self.aug_strength * 100
+		self.degree_param.update(curr_degree+degree)
 
 	def start_iterator(self):
 		self.reset()
@@ -374,6 +379,7 @@ class DataLoader(RaliGraph):
 		if self.getReaminingImageCount() <= 0:
 			#raise StopIteration
 			return -1
+		self.renew_parameters()
 		if self.run() != 0:
 			#raise StopIteration
 			return -1
