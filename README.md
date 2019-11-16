@@ -47,6 +47,10 @@ Pre-trained models in [ONNX](https://onnx.ai/), [NNEF](https://www.khronos.org/n
 	export PATH=$PATH:/opt/rocm/mivisionx/bin
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/mivisionx/lib:/opt/rocm/rpp/lib
 	````
+* To set number of cores used:
+	```
+	export OMP_NUM_THREADS=<number of threads>
+	```
 
 ### Use MIVisionX Docker
 
