@@ -647,17 +647,17 @@
        <widget class="QComboBox" name="gpu_comboBox">
         <item>
          <property name="text">
+          <string>Radeon VII</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
           <string>Vega 10</string>
          </property>
         </item>
         <item>
          <property name="text">
           <string>Vega 20</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Radeon VII</string>
          </property>
         </item>
         <item>
@@ -793,6 +793,11 @@
        <widget class="QComboBox" name="cpu_comboBox">
         <item>
          <property name="text">
+          <string>Threadripper</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
           <string>Ryzen 3</string>
          </property>
         </item>
@@ -809,11 +814,6 @@
         <item>
          <property name="text">
           <string>Ryzen 9</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Threadripper</string>
          </property>
         </item>
         <item>
