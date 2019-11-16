@@ -116,7 +116,7 @@ class DataLoader(RaliGraph):
 		self.validation_dict = {}
 		self.process_validation(image_validation)
 		self.setSeed(0)
-
+		self.aug_strength = 0
 		#params for contrast
 		self.min_param = RaliIntParameter(0)
 		self.max_param = RaliIntParameter(255)
@@ -337,6 +337,7 @@ class DataLoader(RaliGraph):
 
 	def updateAugmentationParameter(self, augmentation):
 		#values for contrast
+		self.aug_strength = augmentation
 		min = int(augmentation*100)
 		max = 150 + int((1-augmentation)*100)
 		self.min_param.update(min)
@@ -363,9 +364,13 @@ class DataLoader(RaliGraph):
 		gamma_shift = augmentation*5.0
 		self.gamma_shift_param.update(gamma_shift)
 
-		#values for rotation
-		degree = augmentation * 180.0
-		self.degree_param.update(degree)
+
+
+	def renew_parameters(self):
+		curr_degree = self.degree_param.get()
+		#values for rotation change
+		degree = self.aug_strength * 100
+		self.degree_param.update(curr_degree+degree)
 
 	def start_iterator(self):
 		self.reset()
@@ -374,6 +379,7 @@ class DataLoader(RaliGraph):
 		if self.getReaminingImageCount() <= 0:
 			#raise StopIteration
 			return -1
+		self.renew_parameters()
 		if self.run() != 0:
 			#raise StopIteration
 			return -1
