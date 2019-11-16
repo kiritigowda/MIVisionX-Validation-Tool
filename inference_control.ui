@@ -150,9 +150,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="2" colspan="2">
-       <widget class="QLineEdit" name="batch_lineEdit"/>
-      </item>
       <item row="4" column="5" colspan="2">
        <widget class="QLineEdit" name="odims_lineEdit">
         <property name="text">
@@ -508,6 +505,20 @@
         </property>
        </widget>
       </item>
+      <item row="3" column="2">
+       <widget class="QComboBox" name="batch_comboBox">
+        <item>
+         <property name="text">
+          <string>64</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>16</string>
+         </property>
+        </item>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -525,18 +536,53 @@
     </item>
     <item>
      <layout class="QGridLayout" name="inference_gridLayout">
-      <item row="2" column="1">
-       <widget class="QLabel" name="image_label">
+      <item row="4" column="1">
+       <widget class="QLabel" name="hier_label">
         <property name="text">
-         <string>Image Directory</string>
+         <string>Hierarchy</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
-      <item row="2" column="5">
-       <widget class="QPushButton" name="image_pushButton">
+      <item row="1" column="2" colspan="6">
+       <widget class="QLineEdit" name="label_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QComboBox" name="container_comboBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <item>
+         <property name="text">
+          <string>None</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Docker</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Singularity</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="8">
+       <widget class="QPushButton" name="output_pushButton">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -545,8 +591,116 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="5">
-       <widget class="QPushButton" name="label_pushButton">
+      <item row="2" column="2" colspan="6">
+       <widget class="QLineEdit" name="image_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2" colspan="6">
+       <widget class="QLineEdit" name="hier_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="5">
+       <widget class="QLabel" name="gpu_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>GPU</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2" colspan="6">
+       <widget class="QLineEdit" name="val_lineEdit">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="6">
+       <widget class="QComboBox" name="gpu_comboBox">
+        <item>
+         <property name="text">
+          <string>Radeon VII</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Vega 10</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Vega 20</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>MI25</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>MI50</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>MI60</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="QLabel" name="cpu_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>CPU</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="8">
+       <widget class="QPushButton" name="val_pushButton">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -555,10 +709,20 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="val_label">
+      <item row="5" column="1">
+       <widget class="QLabel" name="container_label">
         <property name="text">
-         <string>Validation txt file</string>
+         <string>Container</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="image_label">
+        <property name="text">
+         <string>Image Directory</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -575,6 +739,36 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="8">
+       <widget class="QPushButton" name="label_pushButton">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="8">
+       <widget class="QPushButton" name="image_pushButton">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="8">
+       <widget class="QPushButton" name="run_pushButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Run</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="QLabel" name="label">
         <property name="text">
@@ -585,53 +779,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QLabel" name="hier_label">
-        <property name="text">
-         <string>Hierarchy</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="5">
-       <widget class="QPushButton" name="run_pushButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Run</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="output_pushButton">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="3">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::MinimumExpanding</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="4" column="5">
+      <item row="4" column="8">
        <widget class="QPushButton" name="hier_pushButton">
         <property name="enabled">
          <bool>true</bool>
@@ -639,6 +787,45 @@
         <property name="text">
          <string>Browse...</string>
         </property>
+       </widget>
+      </item>
+      <item row="5" column="4">
+       <widget class="QComboBox" name="cpu_comboBox">
+        <item>
+         <property name="text">
+          <string>Threadripper</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Ryzen 3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Ryzen 5</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Ryzen 7</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Ryzen 9</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>EPYC</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>EPYC 2</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item row="0" column="0" rowspan="5">
@@ -699,7 +886,17 @@
         </layout>
        </widget>
       </item>
-      <item row="5" column="4">
+      <item row="3" column="1">
+       <widget class="QLabel" name="val_label">
+        <property name="text">
+         <string>Validation txt file</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="7">
        <widget class="QPushButton" name="close_pushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -712,92 +909,13 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="5">
-       <widget class="QPushButton" name="val_pushButton">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="2">
-       <widget class="QComboBox" name="container_comboBox">
-        <item>
-         <property name="text">
-          <string>None</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Docker</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Singularity</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="4" column="2" colspan="3">
-       <widget class="QLineEdit" name="hier_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2" colspan="3">
-       <widget class="QLineEdit" name="val_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2" colspan="3">
-       <widget class="QLineEdit" name="image_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2" colspan="3">
-       <widget class="QLineEdit" name="label_lineEdit">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" colspan="3">
+      <item row="0" column="2" colspan="6">
        <widget class="QLineEdit" name="output_lineEdit">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
          <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QLabel" name="container_label">
-        <property name="text">
-         <string>Container</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -823,7 +941,6 @@
   <tabstop>file_pushButton</tabstop>
   <tabstop>format_comboBox</tabstop>
   <tabstop>name_lineEdit</tabstop>
-  <tabstop>batch_lineEdit</tabstop>
   <tabstop>mode_comboBox</tabstop>
   <tabstop>idims_lineEdit</tabstop>
   <tabstop>odims_lineEdit</tabstop>

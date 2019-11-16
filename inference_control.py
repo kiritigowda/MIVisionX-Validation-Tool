@@ -21,7 +21,6 @@ class InferenceControl(QtGui.QMainWindow):
         self.run_pushButton.clicked.connect(self.runConfig)
         self.file_lineEdit.textChanged.connect(self.checkInput)
         self.name_lineEdit.textChanged.connect(self.checkInput)
-        self.batch_lineEdit.textChanged.connect(self.checkInput)
         self.idims_lineEdit.textChanged.connect(self.checkInput)
         self.odims_lineEdit.textChanged.connect(self.checkInput)
         self.output_lineEdit.textChanged.connect(self.checkInput)
@@ -31,7 +30,6 @@ class InferenceControl(QtGui.QMainWindow):
         self.close_pushButton.clicked.connect(self.closeEvent)
         self.file_lineEdit.setPlaceholderText("File Directory [required]")
         self.name_lineEdit.setPlaceholderText("Model Name [required]")
-        self.batch_lineEdit.setPlaceholderText("n [required]")
         self.idims_lineEdit.setPlaceholderText("c,h,w [required]")
         self.odims_lineEdit.setPlaceholderText("c,h,w [required]")
         self.padd_lineEdit.setPlaceholderText("r,g,b [optional]")
@@ -81,7 +79,7 @@ class InferenceControl(QtGui.QMainWindow):
         if self.upload_comboBox.currentIndex() == 0:
             self.name_lineEdit.setEnabled(True)
             self.file_lineEdit.setEnabled(True)
-            self.batch_lineEdit.setEnabled(True)
+            self.batch_comboBox.setEnabled(True)
             self.mode_comboBox.setCurrentIndex(0)
             self.idims_lineEdit.setEnabled(True)
             self.odims_lineEdit.setEnabled(True)
@@ -107,7 +105,6 @@ class InferenceControl(QtGui.QMainWindow):
             self.format_comboBox.setCurrentIndex(0)
             self.name_lineEdit.clear()
             self.file_lineEdit.clear()
-            self.batch_lineEdit.clear()
             self.idims_lineEdit.clear()
             self.odims_lineEdit.clear()
             self.label_lineEdit.clear()
@@ -140,7 +137,8 @@ class InferenceControl(QtGui.QMainWindow):
                         self.format_comboBox.setCurrentIndex(format)
                         self.name_lineEdit.setText(tokens[1])
                         self.file_lineEdit.setText(tokens[2])
-                        self.batch_lineEdit.setText(tokens[3])
+                        batch_index = 0 if tokens[3] == '64' else 1
+                        self.batch_comboBox.setCurrentIndex(batch_index)
                         self.idims_lineEdit.setText(tokens[4])
                         self.odims_lineEdit.setText(tokens[5])
                         self.label_lineEdit.setText(tokens[6])
@@ -156,7 +154,7 @@ class InferenceControl(QtGui.QMainWindow):
                         self.loop_checkBox.setChecked(True) if tokens[16] == 'yes\n' or tokens[16] == 'yes' else self.replace_checkBox.setChecked(False)
                         self.name_lineEdit.setEnabled(False)
                         self.file_lineEdit.setEnabled(False)
-                        self.batch_lineEdit.setEnabled(False)
+                        self.batch_comboBox.setEnabled(False)
                         self.idims_lineEdit.setEnabled(False)
                         self.odims_lineEdit.setEnabled(False)
                         self.label_lineEdit.setEnabled(False)
@@ -178,7 +176,7 @@ class InferenceControl(QtGui.QMainWindow):
 
     def checkInput(self):
         if not self.file_lineEdit.text().isEmpty() and not self.name_lineEdit.text().isEmpty() \
-            and not self.batch_lineEdit.text().isEmpty() and not self.idims_lineEdit.text().isEmpty() \
+            and not self.idims_lineEdit.text().isEmpty() \
             and not self.odims_lineEdit.text().isEmpty() and not self.output_lineEdit.text().isEmpty() \
             and not self.label_lineEdit.text().isEmpty() and not self.image_lineEdit.text().isEmpty():
                 self.run_pushButton.setEnabled(True)
@@ -191,7 +189,7 @@ class InferenceControl(QtGui.QMainWindow):
         model_format = (str)(self.format_comboBox.currentText())
         model_name = (str)(self.name_lineEdit.text())
         model_location = (str)(self.file_lineEdit.text())
-        batch_size = (str)(self.batch_lineEdit.text())
+        batch_size = (str)(self.batch_comboBox.currentText())
         rali_mode = self.mode_comboBox.currentIndex() + 1 
         input_dims = (str)('%s' % (self.idims_lineEdit.text()))
         output_dims = (str)('%s' % (self.odims_lineEdit.text()))
@@ -215,14 +213,16 @@ class InferenceControl(QtGui.QMainWindow):
         loop = 'yes' if self.loop_checkBox.isChecked() else 'no'
         container_logo = self.container_comboBox.currentIndex()
         fps_file = ''
+        cpu_name = self.cpu_comboBox.currentText()
+        gpu_name = self.gpu_comboBox.currentText()
         self.runningState = True
         self.close()
 
-        viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, 
-                                    batch_size, output_dir, add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, self)
+        viewer = InferenceViewer(model_name, model_format, image_dir, model_location, label, hierarchy, image_val, input_dims, output_dims, batch_size, output_dir, 
+                                    add, multiply, verbose, fp16, replace, loop, rali_mode, gui, container_logo, fps_file, cpu_name, gpu_name, self)
         if gui == 'yes':
-            viewer.show()
-            #viewer.showMaximized()
+            #viewer.show()
+            viewer.showMaximized()
             
 
     def closeEvent(self, event):
