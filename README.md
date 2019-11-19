@@ -47,6 +47,17 @@ Pre-trained models in [ONNX](https://onnx.ai/), [NNEF](https://www.khronos.org/n
 	export PATH=$PATH:/opt/rocm/mivisionx/bin
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/mivisionx/lib:/opt/rocm/rpp/lib
 	````
+**NOTE:**
+To get the best performance from the validation toolkit use the [RPP Develop Branch](https://github.com/GPUOpen-ProfessionalCompute-Libraries/rpp/tree/develop)
+
+* Install OpenMP
+```
+sudo apt-get install libomp-dev
+```
+* Set number of OpenMP Threads
+```
+export OMP_NUM_THREADS=<number of threads to use>
+```
 
 ### Use MIVisionX Docker
 
